@@ -1,0 +1,1161 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Марина Соколова — консультант председателей МКД</title>
+<style>
+  /* ── Токены ─────────────────────────────────────────── */
+  :root {
+    --paper:      #FBFAFE;  /* молочная сирень — фон страницы */
+    --surface:    #FFFFFF;
+    --block:      #F1ECFA;  /* светло-сиреневые подложки */
+    --ink:        #2E2343;  /* тёмно-сиреневые чернила */
+    --muted:      #6E6383;
+    --lilac:      #8A6FC8;
+    --lilac-deep: #5A3F96;
+    --teal:       #17A392;
+    --teal-deep:  #0B6B61;
+    --teal-soft:  #E2F4F1;
+    --against:    #C75C7E;  /* «против» — приглушённый розово-сиреневый */
+    --abstain:    #8B8598;
+    --border:     #E3DCF0;
+    --shadow:     0 10px 30px rgba(46, 35, 67, .08);
+    --radius:     14px;
+    --font-display: Georgia, 'Times New Roman', serif;
+    --font-body:  'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-data:  ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:   #1B1628;
+      --surface: #251E38;
+      --block:   #2C2444;
+      --ink:     #EDE8F7;
+      --muted:   #A79DBB;
+      --lilac:   #A98FE0;
+      --lilac-deep: #C3ADEE;
+      --teal:    #2BC1B0;
+      --teal-deep: #6ADCCE;
+      --teal-soft: #1E3B3A;
+      --against: #E07E9E;
+      --abstain: #9A93AB;
+      --border:  #3A3153;
+      --shadow:  0 10px 30px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:   #1B1628;
+    --surface: #251E38;
+    --block:   #2C2444;
+    --ink:     #EDE8F7;
+    --muted:   #A79DBB;
+    --lilac:   #A98FE0;
+    --lilac-deep: #C3ADEE;
+    --teal:    #2BC1B0;
+    --teal-deep: #6ADCCE;
+    --teal-soft: #1E3B3A;
+    --against: #E07E9E;
+    --abstain: #9A93AB;
+    --border:  #3A3153;
+    --shadow:  0 10px 30px rgba(0, 0, 0, .35);
+  }
+  :root[data-theme="light"] {
+    --paper:   #FBFAFE;
+    --surface: #FFFFFF;
+    --block:   #F1ECFA;
+    --ink:     #2E2343;
+    --muted:   #6E6383;
+    --lilac:   #8A6FC8;
+    --lilac-deep: #5A3F96;
+    --teal:    #17A392;
+    --teal-deep: #0B6B61;
+    --teal-soft: #E2F4F1;
+    --against: #C75C7E;
+    --abstain: #8B8598;
+    --border:  #E3DCF0;
+    --shadow:  0 10px 30px rgba(46, 35, 67, .08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2; text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+  button { font-family: inherit; }
+  :focus-visible { outline: 3px solid var(--lilac); outline-offset: 2px; border-radius: 4px; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--teal-deep); margin-bottom: 12px;
+  }
+  .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+  /* ── Кнопки ─────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 22px; border-radius: 10px; border: none; cursor: pointer;
+    font-size: 15px; font-weight: 600; text-decoration: none;
+    transition: transform .15s, box-shadow .15s, background .15s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--teal); color: #fff; box-shadow: 0 4px 14px rgba(23,163,146,.35); }
+  .btn-primary:hover { background: var(--teal-deep); color: var(--surface); }
+  .btn-ghost {
+    background: transparent; color: var(--ink);
+    border: 1.5px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--lilac); color: var(--lilac-deep); }
+  .btn-small { padding: 8px 14px; font-size: 13px; border-radius: 8px; }
+
+  /* ── Шапка ──────────────────────────────────────────── */
+  .site-header {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .site-header .wrap {
+    display: flex; align-items: center; gap: 20px; padding-top: 12px; padding-bottom: 12px;
+  }
+  .stamp {
+    width: 46px; height: 46px; flex-shrink: 0;
+    border: 2px solid var(--lilac); border-radius: 8px;
+    display: grid; place-items: center;
+    font-family: var(--font-display); font-size: 13px; font-weight: 700;
+    color: var(--lilac-deep); letter-spacing: .05em;
+    transform: rotate(-4deg);
+  }
+  .brand { line-height: 1.25; }
+  .brand strong { display: block; font-size: 15px; }
+  .brand span { font-size: 12px; color: var(--muted); }
+  .site-nav { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+  .site-nav .nav-link {
+    font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none;
+    padding: 6px 12px; border-radius: 8px; transition: background .15s, color .15s;
+  }
+  .site-nav .nav-link:hover { background: var(--block); color: var(--lilac-deep); }
+  @media (max-width: 760px) { .site-nav .nav-link { display: none; } }
+
+  /* ── Герой ──────────────────────────────────────────── */
+  .hero { padding: 72px 0 56px; }
+  .hero .wrap {
+    display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; align-items: center;
+  }
+  @media (max-width: 860px) { .hero .wrap { grid-template-columns: 1fr; } }
+  .hero h1 { font-size: clamp(32px, 4.6vw, 50px); letter-spacing: -.01em; }
+  .hero h1 em { font-style: normal; color: var(--teal-deep); }
+  .hero .lead { margin-top: 18px; font-size: 18px; color: var(--muted); max-width: 34em; }
+  .hero-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+  .facts {
+    display: flex; gap: 28px; flex-wrap: wrap; margin-top: 36px;
+    font-family: var(--font-data); font-size: 13px; color: var(--muted);
+  }
+  .facts b { display: block; font-size: 20px; color: var(--ink); font-weight: 600; }
+
+  /* Живой виджет кворума */
+  .quorum-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 24px; position: relative; overflow: hidden;
+  }
+  .quorum-card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 5px;
+    background: linear-gradient(90deg, var(--lilac), var(--teal));
+  }
+  .quorum-card .qc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .quorum-card h3 { font-size: 17px; }
+  .qc-live {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--teal-deep); display: inline-flex; align-items: center; gap: 6px;
+  }
+  .qc-live::before {
+    content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--teal);
+    animation: pulse 1.6s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  .qc-big { margin-top: 18px; font-family: var(--font-data); font-size: 44px; font-weight: 600; line-height: 1; }
+  .qc-big small { font-size: 15px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .qc-bar {
+    margin-top: 14px; height: 12px; border-radius: 99px; background: var(--block);
+    position: relative; overflow: hidden;
+  }
+  .qc-bar-fill {
+    height: 100%; width: 0; border-radius: 99px;
+    background: linear-gradient(90deg, var(--lilac), var(--teal));
+    transition: width 1.4s cubic-bezier(.2,.7,.3,1);
+  }
+  .qc-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--against); left: 50%; }
+  .qc-mark::after {
+    content: "кворум 50%"; position: absolute; top: -20px; left: -32px;
+    font-size: 10px; color: var(--muted); white-space: nowrap; font-family: var(--font-data);
+  }
+  .qc-rows { margin-top: 26px; display: grid; gap: 8px; font-size: 14px; }
+  .qc-row { display: flex; justify-content: space-between; gap: 12px; }
+  .qc-row .num { color: var(--muted); }
+  .qc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; }
+
+  /* ── Секции ─────────────────────────────────────────── */
+  section { padding: 64px 0; }
+  section h2 { font-size: clamp(26px, 3.4vw, 36px); margin-bottom: 10px; }
+  .section-lead { color: var(--muted); max-width: 40em; margin-bottom: 36px; }
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s, transform .6s; }
+  .reveal.on { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+
+  /* ── Демо-стенд ─────────────────────────────────────── */
+  .demo-section { background: var(--block); }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
+  .tab {
+    padding: 12px 20px; border: 1px solid var(--border); border-bottom: none;
+    border-radius: 12px 12px 0 0; background: transparent; color: var(--muted);
+    font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--surface); color: var(--ink); }
+  .tab:hover { color: var(--lilac-deep); }
+  .demo-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 0 var(--radius) var(--radius) var(--radius);
+    padding: 28px; box-shadow: var(--shadow);
+  }
+  .demo-panel[hidden] { display: none; }
+  .demo-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+  .demo-toolbar .spacer { flex: 1; }
+  .demo-note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+
+  .table-scroll { overflow-x: auto; }
+  table.sheet { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+  .sheet th {
+    text-align: left; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; padding: 8px 12px; border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  .sheet td { padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .sheet td.num, .sheet th.num { text-align: right; }
+  .sheet input[type="number"] {
+    width: 110px; padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: var(--font-data); font-size: 14px; text-align: right;
+    background: var(--paper); color: var(--ink);
+  }
+  .sheet input[type="number"]:focus { border-color: var(--teal); outline: none; }
+  .chip {
+    display: inline-block; padding: 3px 10px; border-radius: 99px;
+    font-size: 12px; font-weight: 600;
+  }
+  .chip-ok      { background: var(--teal-soft); color: var(--teal-deep); }
+  .chip-warn    { background: color-mix(in srgb, var(--lilac) 18%, transparent); color: var(--lilac-deep); }
+  .chip-err     { background: color-mix(in srgb, var(--against) 16%, transparent); color: var(--against); }
+  .sheet tfoot td { font-weight: 600; border-bottom: none; padding-top: 12px; }
+
+  select, .field input, .field textarea {
+    padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: inherit; font-size: 14px; background: var(--paper); color: var(--ink);
+  }
+  select:focus, .field input:focus, .field textarea:focus { border-color: var(--teal); outline: none; }
+
+  /* Голосование */
+  .vote-summary {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;
+    margin-bottom: 20px;
+  }
+  .vs-card { background: var(--paper); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .vs-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+  .vs-card .value { font-family: var(--font-data); font-size: 24px; font-weight: 600; margin-top: 4px; }
+  .vs-card .value.ok { color: var(--teal-deep); }
+  .vs-card .value.no { color: var(--against); }
+  .vote-bar { height: 10px; border-radius: 99px; background: var(--block); overflow: hidden; display: flex; margin-bottom: 20px; }
+  .vote-bar i { display: block; height: 100%; transition: width .4s; }
+  .seg { display: inline-flex; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    padding: 6px 12px; border: none; background: transparent; cursor: pointer;
+    font-size: 13px; font-weight: 700; color: var(--muted); border-right: 1.5px solid var(--border);
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button[aria-pressed="true"].v-for     { background: var(--teal); color: #fff; }
+  .seg button[aria-pressed="true"].v-against { background: var(--against); color: #fff; }
+  .seg button[aria-pressed="true"].v-abstain { background: var(--abstain); color: #fff; }
+
+  /* Протокол */
+  .proto-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 28px; }
+  @media (max-width: 860px) { .proto-grid { grid-template-columns: 1fr; } }
+  .field { display: grid; gap: 6px; margin-bottom: 14px; }
+  .field label { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .field textarea { resize: vertical; min-height: 84px; }
+  .proto-paper {
+    background: var(--paper); border: 1px solid var(--border); border-radius: 10px;
+    padding: 28px 30px; font-family: var(--font-display); font-size: 14.5px; line-height: 1.7;
+    max-height: 460px; overflow-y: auto;
+  }
+  .proto-paper h4 { text-align: center; margin: 0 0 4px; font-size: 16px; letter-spacing: .04em; }
+  .proto-paper .center { text-align: center; }
+  .proto-paper .meta { display: flex; justify-content: space-between; margin: 14px 0; }
+  .proto-paper ol { padding-left: 20px; margin: 8px 0; }
+  .proto-paper .resolved { margin: 8px 0 14px; }
+  .proto-paper .sign { margin-top: 22px; display: grid; gap: 10px; }
+
+  /* ── Услуги ─────────────────────────────────────────── */
+  .cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+  .svc {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 26px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px;
+  }
+  .svc h3 { font-size: 19px; }
+  .svc p { font-size: 14.5px; color: var(--muted); flex: 1; }
+  .svc .btn { align-self: flex-start; }
+
+  /* ── Прайс ──────────────────────────────────────────── */
+  .price-section { background: var(--block); }
+  .price {
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius);
+    padding: 28px; display: flex; flex-direction: column; gap: 10px; position: relative;
+  }
+  .price.featured { border-color: var(--teal); box-shadow: 0 12px 34px rgba(23,163,146,.18); }
+  .price .badge {
+    position: absolute; top: -12px; right: 20px; background: var(--teal); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 99px;
+  }
+  .price h3 { font-size: 18px; }
+  .price .cost { font-family: var(--font-data); font-size: 34px; font-weight: 600; }
+  .price .cost small { font-size: 14px; color: var(--muted); font-weight: 400; }
+  .price ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14px; color: var(--muted); flex: 1; }
+  .price ul li::before { content: "— "; color: var(--teal); font-weight: 700; }
+
+  /* ── FAQ ────────────────────────────────────────────── */
+  .faq details {
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+    padding: 0 20px; margin-bottom: 10px;
+  }
+  .faq summary {
+    cursor: pointer; font-weight: 600; padding: 16px 0; list-style: none;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; font-size: 20px; color: var(--lilac); flex-shrink: 0; }
+  .faq details[open] summary::after { content: "–"; }
+  .faq details p { padding: 0 0 16px; color: var(--muted); font-size: 14.5px; }
+
+  /* ── Заявка ─────────────────────────────────────────── */
+  .contact-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 32px; max-width: 560px;
+  }
+  .form-actions { display: flex; gap: 12px; align-items: center; margin-top: 6px; }
+
+  /* ── Футер ──────────────────────────────────────────── */
+  footer { border-top: 1px solid var(--border); padding: 28px 0 36px; font-size: 13px; color: var(--muted); }
+  footer .wrap { display: grid; gap: 6px; }
+
+  /* ── Модалки и тосты ────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(30, 22, 48, .55); z-index: 100;
+    display: grid; place-items: center; padding: 20px;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 28px; width: 100%; max-width: 440px; position: relative;
+  }
+  .modal h3 { font-size: 20px; margin-bottom: 6px; }
+  .modal .sub { font-size: 14px; color: var(--muted); margin-bottom: 18px; }
+  .modal-close {
+    position: absolute; top: 14px; right: 14px; width: 32px; height: 32px;
+    border: none; background: var(--block); color: var(--muted); border-radius: 8px;
+    font-size: 16px; cursor: pointer;
+  }
+  .modal-close:hover { color: var(--ink); }
+
+  .toasts { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 200; display: grid; gap: 8px; }
+  .toast {
+    background: var(--ink); color: var(--paper); padding: 12px 20px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; box-shadow: var(--shadow);
+    animation: toast-in .25s;
+  }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+</style>
+
+<!-- ── Шапка ─────────────────────────────────────────── -->
+<header class="site-header">
+  <div class="wrap">
+    <div class="stamp" aria-hidden="true">МКД</div>
+    <div class="brand">
+      <strong>Марина Соколова</strong>
+      <span>консультант председателей МКД</span>
+    </div>
+    <nav class="site-nav" aria-label="Разделы">
+      <a class="nav-link" href="#demo">Демо таблиц</a>
+      <a class="nav-link" href="#services">Консультации</a>
+      <a class="nav-link" href="#price">Цены</a>
+      <a class="nav-link" href="#faq">Вопросы</a>
+      <a class="btn btn-primary btn-small" href="#contact">Записаться</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ── Герой ─────────────────────────────────────────── -->
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Совет дома · практика, а не теория</p>
+      <h1>Порядок в&nbsp;доме начинается с&nbsp;<em>правильной таблицы</em></h1>
+      <p class="lead">Помогаю председателям советов МКД проводить собрания без ошибок:
+        готовые таблицы для показаний счётчиков, подсчёта голосов и оформления протоколов —
+        плюс консультации по спорным вопросам с&nbsp;УК и жильцами.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#demo">Попробовать таблицы</a>
+        <a class="btn btn-ghost" href="#contact">Задать вопрос</a>
+      </div>
+      <div class="facts num" aria-label="Опыт в цифрах">
+        <div><b>12 лет</b>в советах МКД</div>
+        <div><b>300+</b>проведённых ОСС</div>
+        <div><b>40 домов</b>на сопровождении</div>
+      </div>
+    </div>
+
+    <div class="quorum-card" aria-label="Пример подсчёта кворума">
+      <div class="qc-head">
+        <h3>ОСС № 2 — ул. Садовая, 15</h3>
+        <span class="qc-live">идёт подсчёт</span>
+      </div>
+      <div class="qc-big"><span id="heroQuorum">0,0</span>%<small>голосов собрано</small></div>
+      <div class="qc-bar">
+        <div class="qc-bar-fill" id="heroBar"></div>
+        <div class="qc-mark" aria-hidden="true"></div>
+      </div>
+      <div class="qc-rows num">
+        <div class="qc-row"><span><i class="qc-dot" style="background:var(--teal)"></i>За</span><span class="num">4 218,7 м² · 65,7%</span></div>
+        <div class="qc-row"><span><i class="qc-dot" style="background:var(--against)"></i>Против</span><span class="num">312,4 м² · 4,9%</span></div>
+        <div class="qc-row"><span><i class="qc-dot" style="background:var(--abstain)"></i>Воздержались</span><span class="num">198,0 м² · 3,1%</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Демо-стенд ────────────────────────────────────── -->
+<section class="demo-section" id="demo">
+  <div class="wrap reveal">
+    <p class="eyebrow">Демо-стенд</p>
+    <h2>Попробуйте таблицы прямо сейчас</h2>
+    <p class="section-lead">Это уменьшенные, но полностью рабочие копии моих таблиц.
+      Вводите цифры, нажимайте кнопки — всё считается сразу, как в полной версии.</p>
+
+    <div class="tabs" role="tablist" aria-label="Демо таблиц">
+      <button class="tab" role="tab" id="tab-meters" aria-controls="panel-meters" aria-selected="true">Показания счётчиков</button>
+      <button class="tab" role="tab" id="tab-votes" aria-controls="panel-votes" aria-selected="false">Подсчёт голосов ОСС</button>
+      <button class="tab" role="tab" id="tab-proto" aria-controls="panel-proto" aria-selected="false">Протокол собрания</button>
+    </div>
+
+    <!-- Показания -->
+    <div class="demo-panel" id="panel-meters" role="tabpanel" aria-labelledby="tab-meters">
+      <div class="demo-toolbar">
+        <label for="resourceSel" style="font-size:14px;font-weight:600">Ресурс:</label>
+        <select id="resourceSel">
+          <option value="cold">Холодная вода, м³</option>
+          <option value="hot">Горячая вода, м³</option>
+          <option value="el">Электроэнергия, кВт·ч</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost btn-small" id="addFlat">+ Добавить квартиру</button>
+        <button class="btn btn-ghost btn-small" id="resetMeters">Сбросить</button>
+      </div>
+      <div class="table-scroll">
+        <table class="sheet" id="meterTable">
+          <thead>
+            <tr>
+              <th>Кв.</th>
+              <th class="num">Прошлый месяц</th>
+              <th class="num">Текущие показания</th>
+              <th class="num">Расход</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">Итого по дому</td>
+              <td class="num" id="meterTotal">0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="demo-note">Таблица сама помечает подозрительный расход («проверить» — вдвое выше обычного)
+        и не даёт записать показания меньше прошлых.</p>
+    </div>
+
+    <!-- Голоса -->
+    <div class="demo-panel" id="panel-votes" role="tabpanel" aria-labelledby="tab-votes" hidden>
+      <div class="demo-toolbar">
+        <label for="questionType" style="font-size:14px;font-weight:600">Тип вопроса:</label>
+        <select id="questionType">
+          <option value="simple">Обычный — большинство от участвующих</option>
+          <option value="twothirds">Капремонт и др. — 2/3 от всех голосов дома</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost btn-small" id="allFor">Все «за»</button>
+        <button class="btn btn-ghost btn-small" id="clearVotes">Очистить</button>
+      </div>
+
+      <div class="vote-summary num" aria-live="polite">
+        <div class="vs-card">
+          <div class="label">Кворум</div>
+          <div class="value" id="vQuorum">0%</div>
+        </div>
+        <div class="vs-card">
+          <div class="label">Собрание правомочно</div>
+          <div class="value" id="vLegal">—</div>
+        </div>
+        <div class="vs-card">
+          <div class="label">«За» по вопросу</div>
+          <div class="value" id="vFor">0%</div>
+        </div>
+        <div class="vs-card">
+          <div class="label">Решение</div>
+          <div class="value" id="vDecision">—</div>
+        </div>
+      </div>
+      <div class="vote-bar" aria-hidden="true">
+        <i id="barFor" style="background:var(--teal)"></i>
+        <i id="barAgainst" style="background:var(--against)"></i>
+        <i id="barAbstain" style="background:var(--abstain)"></i>
+      </div>
+
+      <div class="table-scroll">
+        <table class="sheet" id="voteTable">
+          <thead>
+            <tr>
+              <th>Кв.</th>
+              <th class="num">Площадь, м²</th>
+              <th class="num">Доля голосов</th>
+              <th>Голос</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="demo-note">Голос каждой квартиры весит пропорционально её площади — как требует Жилищный кодекс.
+        Попробуйте переключить тип вопроса: порог принятия решения изменится.</p>
+    </div>
+
+    <!-- Протокол -->
+    <div class="demo-panel" id="panel-proto" role="tabpanel" aria-labelledby="tab-proto" hidden>
+      <div class="proto-grid">
+        <div>
+          <div class="field">
+            <label for="pAddr">Адрес дома</label>
+            <input id="pAddr" type="text" value="г. Тверь, ул. Садовая, д. 15">
+          </div>
+          <div class="field">
+            <label for="pNum">Номер протокола</label>
+            <input id="pNum" type="text" value="2/2026">
+          </div>
+          <div class="field">
+            <label for="pDate">Дата собрания</label>
+            <input id="pDate" type="date" value="2026-07-25">
+          </div>
+          <div class="field">
+            <label for="pForm">Форма проведения</label>
+            <select id="pForm">
+              <option>очно-заочная</option>
+              <option>очная</option>
+              <option>заочная</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="pAgenda">Повестка — по одному вопросу на строку</label>
+            <textarea id="pAgenda">Выбор председателя и секретаря собрания
+Утверждение плана текущего ремонта подъездов
+Установка общедомового счётчика тепла</textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary btn-small" id="copyProto">Скопировать текст</button>
+            <button class="btn btn-ghost btn-small" id="fillProto">Заполнить примером</button>
+          </div>
+        </div>
+        <div class="proto-paper" id="protoPreview" aria-live="polite"></div>
+      </div>
+      <p class="demo-note">Предпросмотр обновляется на лету. Полная версия собирает протокол
+        по требованиям приказа Минстроя № 44/пр — с реестром собственников и итогами голосования.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Консультации ──────────────────────────────────── -->
+<section id="services">
+  <div class="wrap reveal">
+    <p class="eyebrow">Консультации</p>
+    <h2>С чем ко мне приходят председатели</h2>
+    <p class="section-lead">Каждый вопрос разбираем на вашем доме, с вашими документами — не «в среднем по стране».</p>
+    <div class="cards3">
+      <article class="svc">
+        <h3>Собрание под ключ</h3>
+        <p>Повестка без юридических ловушек, уведомления в срок, бюллетени, подсчёт и протокол,
+          который примет ГЖИ с первого раза.</p>
+        <button class="btn btn-ghost btn-small" data-consult="Собрание под ключ">Задать вопрос</button>
+      </article>
+      <article class="svc">
+        <h3>Спор с управляющей компанией</h3>
+        <p>Проверю начисления и акты, помогу составить претензию и подготовиться к разговору с УК —
+          с цифрами на руках, а не на эмоциях.</p>
+        <button class="btn btn-ghost btn-small" data-consult="Спор с управляющей компанией">Задать вопрос</button>
+      </article>
+      <article class="svc">
+        <h3>Учёт по дому с нуля</h3>
+        <p>Настрою учёт показаний, платежей и обращений жильцов в таблицах под ваш дом
+          и научу вести его за 15 минут в месяц.</p>
+        <button class="btn btn-ghost btn-small" data-consult="Учёт по дому с нуля">Задать вопрос</button>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── Прайс ─────────────────────────────────────────── -->
+<section class="price-section" id="price">
+  <div class="wrap reveal">
+    <p class="eyebrow">Таблицы</p>
+    <h2>Готовые таблицы для вашего дома</h2>
+    <p class="section-lead">Работают в Excel и Google Таблицах. Оплатили — получили файл и видеоинструкцию на почту.</p>
+    <div class="cards3">
+      <article class="price">
+        <h3>Показания счётчиков</h3>
+        <div class="cost num">990 ₽<small> · разовый платёж</small></div>
+        <ul>
+          <li>ХВС, ГВС, электричество, тепло</li>
+          <li>Автопроверка ошибок ввода</li>
+          <li>Сводка для передачи в УК</li>
+        </ul>
+        <button class="btn btn-primary" data-buy="Показания счётчиков" data-cost="990 ₽">Купить</button>
+      </article>
+      <article class="price featured">
+        <span class="badge">Берут чаще всего</span>
+        <h3>Комплект председателя</h3>
+        <div class="cost num">3 900 ₽<small> · всё сразу</small></div>
+        <ul>
+          <li>Все три таблицы + шаблон протокола</li>
+          <li>Реестр собственников с долями</li>
+          <li>Час консультации в подарок</li>
+        </ul>
+        <button class="btn btn-primary" data-buy="Комплект председателя" data-cost="3 900 ₽">Купить комплект</button>
+      </article>
+      <article class="price">
+        <h3>Голоса ОСС + протокол</h3>
+        <div class="cost num">1 490 ₽<small> · разовый платёж</small></div>
+        <ul>
+          <li>Подсчёт по долям, кворум сам</li>
+          <li>Итоги сразу в текст протокола</li>
+          <li>Порог решения по типу вопроса</li>
+        </ul>
+        <button class="btn btn-primary" data-buy="Голоса ОСС + протокол" data-cost="1 490 ₽">Купить</button>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ───────────────────────────────────────────── -->
+<section id="faq">
+  <div class="wrap reveal">
+    <p class="eyebrow">Вопросы</p>
+    <h2>Частые вопросы</h2>
+    <div class="faq" style="max-width:720px">
+      <details>
+        <summary>Подойдут ли таблицы, если я работаю только с телефона?</summary>
+        <p>Да. Таблицы открываются в бесплатном приложении Google Таблицы на любом смартфоне.
+          Формулы защищены от случайного удаления — сломать ничего не получится.</p>
+      </details>
+      <details>
+        <summary>Признает ли ГЖИ протокол, оформленный по вашему шаблону?</summary>
+        <p>Шаблон собран по приказу Минстроя № 44/пр — с обязательными реквизитами, реестром
+          и итогами голосования. По нему уже оформлены сотни протоколов, принятых жилищными инспекциями.</p>
+      </details>
+      <details>
+        <summary>Что, если в моём доме 300 квартир — таблицы потянут?</summary>
+        <p>Потянут: таблицы рассчитаны на дома до 1 000 помещений. Реестр собственников заполняется
+          один раз, дальше всё подставляется автоматически.</p>
+      </details>
+      <details>
+        <summary>Таблица обновится, если изменится законодательство?</summary>
+        <p>Да, обновления бесплатны. Когда меняются требования к протоколам или расчётам,
+          я присылаю новую версию всем покупателям на почту.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ── Заявка ────────────────────────────────────────── -->
+<section id="contact">
+  <div class="wrap reveal">
+    <p class="eyebrow">Связаться</p>
+    <h2>Запишитесь на консультацию</h2>
+    <p class="section-lead">Опишите ситуацию — отвечу в течение рабочего дня и предложу план действий.</p>
+    <form class="contact-card" id="contactForm" novalidate>
+      <div class="field">
+        <label for="cName">Как к вам обращаться</label>
+        <input id="cName" type="text" required placeholder="Имя">
+      </div>
+      <div class="field">
+        <label for="cPhone">Телефон или Telegram</label>
+        <input id="cPhone" type="text" required placeholder="+7 ___ ___-__-__ или @ник">
+      </div>
+      <div class="field">
+        <label for="cQuestion">Ваш вопрос</label>
+        <textarea id="cQuestion" required placeholder="Например: УК не отдаёт техническую документацию…"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Отправить заявку</button>
+        <span style="font-size:13px;color:var(--muted)">Без спама и рассылок</span>
+      </div>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Марина Соколова · Консультации председателей советов МКД · Таблицы для учёта и собраний</span>
+    <span>Прототип: имя, цифры и цены — образец для демонстрации; формы не отправляют данные.</span>
+  </div>
+</footer>
+
+<!-- ── Модалка заказа ────────────────────────────────── -->
+<div class="modal-overlay" id="orderOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="orderTitle">
+    <button class="modal-close" data-close="orderOverlay" aria-label="Закрыть">✕</button>
+    <h3 id="orderTitle">Заказ таблицы</h3>
+    <p class="sub" id="orderSub">Файл и видеоинструкция придут на почту после оплаты.</p>
+    <form id="orderForm" novalidate>
+      <div class="field">
+        <label for="oName">Имя</label>
+        <input id="oName" type="text" required placeholder="Имя">
+      </div>
+      <div class="field">
+        <label for="oEmail">Электронная почта</label>
+        <input id="oEmail" type="email" required placeholder="pochta@example.ru">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" id="orderSubmit">Перейти к оплате</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Модалка консультации ──────────────────────────── -->
+<div class="modal-overlay" id="consultOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="consultTitle">
+    <button class="modal-close" data-close="consultOverlay" aria-label="Закрыть">✕</button>
+    <h3 id="consultTitle">Вопрос по теме</h3>
+    <p class="sub" id="consultSub"></p>
+    <form id="consultForm" novalidate>
+      <div class="field">
+        <label for="qName">Имя</label>
+        <input id="qName" type="text" required placeholder="Имя">
+      </div>
+      <div class="field">
+        <label for="qContact">Телефон или Telegram</label>
+        <input id="qContact" type="text" required placeholder="+7 ___ ___-__-__ или @ник">
+      </div>
+      <div class="field">
+        <label for="qText">Коротко о ситуации</label>
+        <textarea id="qText" required placeholder="Что происходит и чего хотите добиться"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Отправить вопрос</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var fmt = function (n, d) {
+    return n.toLocaleString('ru-RU', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+  };
+
+  /* ── Тосты ── */
+  function toast(msg) {
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    $('#toasts').appendChild(el);
+    setTimeout(function () { el.remove(); }, 3400);
+  }
+
+  /* ── Герой: анимация кворума ── */
+  (function () {
+    var target = 73.7;
+    var label = $('#heroQuorum'), bar = $('#heroBar');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      label.textContent = fmt(target, 1);
+      bar.style.width = target + '%';
+      return;
+    }
+    setTimeout(function () {
+      bar.style.width = target + '%';
+      var t0 = null;
+      function step(ts) {
+        if (!t0) t0 = ts;
+        var p = Math.min((ts - t0) / 1400, 1);
+        p = 1 - Math.pow(1 - p, 3);
+        label.textContent = fmt(target * p, 1);
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }, 350);
+  })();
+
+  /* ── Появление секций ── */
+  (function () {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    $$('.reveal').forEach(function (el) { io.observe(el); });
+    // страховка: если наблюдатель не сработал, показать всё через 2,5 с
+    setTimeout(function () {
+      $$('.reveal').forEach(function (el) { el.classList.add('on'); });
+    }, 2500);
+  })();
+
+  /* ── Вкладки демо ── */
+  $$('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      $$('.tab').forEach(function (t) {
+        t.setAttribute('aria-selected', String(t === tab));
+      });
+      $$('.demo-panel').forEach(function (p) {
+        p.hidden = (p.id !== tab.getAttribute('aria-controls'));
+      });
+    });
+  });
+
+  /* ── Демо 1: показания ── */
+  var meterData = {
+    cold: [
+      { flat: 1, prev: 412.6 }, { flat: 2, prev: 233.1 }, { flat: 3, prev: 587.4 },
+      { flat: 4, prev: 154.9 }, { flat: 5, prev: 321.0 }
+    ],
+    hot: [
+      { flat: 1, prev: 286.3 }, { flat: 2, prev: 158.7 }, { flat: 3, prev: 402.2 },
+      { flat: 4, prev: 98.5 }, { flat: 5, prev: 214.6 }
+    ],
+    el: [
+      { flat: 1, prev: 18234 }, { flat: 2, prev: 9412 }, { flat: 3, prev: 25730 },
+      { flat: 4, prev: 6108 }, { flat: 5, prev: 14002 }
+    ]
+  };
+  var meterCurr = { cold: {}, hot: {}, el: {} };
+  var resourceSel = $('#resourceSel');
+
+  function renderMeters() {
+    var res = resourceSel.value;
+    var rows = meterData[res];
+    var tbody = $('#meterTable tbody');
+    tbody.innerHTML = '';
+    var usages = [];
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      var curr = meterCurr[res][r.flat];
+      var usage = (curr !== undefined && curr !== '') ? (Number(curr) - r.prev) : null;
+      if (usage !== null && usage >= 0) usages.push(usage);
+      tr.innerHTML =
+        '<td class="num">' + r.flat + '</td>' +
+        '<td class="num">' + fmt(r.prev, res === 'el' ? 0 : 1) + '</td>' +
+        '<td class="num"><input type="number" inputmode="decimal" step="any" ' +
+          'aria-label="Текущие показания, квартира ' + r.flat + '" data-flat="' + r.flat + '" ' +
+          'value="' + (curr !== undefined ? curr : '') + '" placeholder="' + fmt(r.prev, res === 'el' ? 0 : 1).replace(/ /g, '') + '"></td>' +
+        '<td class="num usage-cell">—</td>' +
+        '<td class="status-cell"></td>';
+      tbody.appendChild(tr);
+    });
+    // средний расход для пометки аномалий
+    var median = 0;
+    if (usages.length) {
+      var sorted = usages.slice().sort(function (a, b) { return a - b; });
+      median = sorted[Math.floor(sorted.length / 2)];
+    }
+    var total = 0;
+    $$('#meterTable tbody tr').forEach(function (tr, i) {
+      var r = rows[i];
+      var curr = meterCurr[res][r.flat];
+      var usageCell = $('.usage-cell', tr), statusCell = $('.status-cell', tr);
+      if (curr === undefined || curr === '') { usageCell.textContent = '—'; statusCell.innerHTML = ''; return; }
+      var usage = Number(curr) - r.prev;
+      if (isNaN(usage)) { usageCell.textContent = '—'; statusCell.innerHTML = ''; return; }
+      usageCell.textContent = fmt(usage, res === 'el' ? 0 : 1);
+      if (usage < 0) {
+        statusCell.innerHTML = '<span class="chip chip-err">меньше прошлых</span>';
+      } else if (median > 0 && usage > median * 2) {
+        statusCell.innerHTML = '<span class="chip chip-warn">проверить</span>';
+        total += usage;
+      } else {
+        statusCell.innerHTML = '<span class="chip chip-ok">принято</span>';
+        total += usage;
+      }
+    });
+    $('#meterTotal').textContent = fmt(total, res === 'el' ? 0 : 1);
+  }
+
+  $('#meterTable').addEventListener('input', function (e) {
+    if (e.target.matches('input[type="number"]')) {
+      var res = resourceSel.value;
+      meterCurr[res][e.target.dataset.flat] = e.target.value;
+      var focused = e.target.dataset.flat;
+      renderMeters();
+      var again = $('#meterTable input[data-flat="' + focused + '"]');
+      if (again) {
+        again.focus();
+        var v = again.value; again.value = ''; again.value = v; // курсор в конец
+      }
+    }
+  });
+  resourceSel.addEventListener('change', renderMeters);
+  $('#addFlat').addEventListener('click', function () {
+    Object.keys(meterData).forEach(function (res) {
+      var rows = meterData[res];
+      var nextFlat = rows[rows.length - 1].flat + 1;
+      var base = res === 'el' ? 8000 + Math.round(Math.random() * 12000) : Math.round((80 + Math.random() * 400) * 10) / 10;
+      rows.push({ flat: nextFlat, prev: base });
+    });
+    renderMeters();
+    toast('Квартира добавлена во все три ресурса');
+  });
+  $('#resetMeters').addEventListener('click', function () {
+    meterCurr = { cold: {}, hot: {}, el: {} };
+    Object.keys(meterData).forEach(function (res) { meterData[res] = meterData[res].slice(0, 5); });
+    renderMeters();
+    toast('Показания очищены');
+  });
+  renderMeters();
+
+  /* ── Демо 2: голоса ── */
+  var flats = [
+    { n: 1,  area: 33.4 }, { n: 2,  area: 45.2 }, { n: 3,  area: 45.8 },
+    { n: 4,  area: 60.1 }, { n: 5,  area: 33.6 }, { n: 6,  area: 45.0 },
+    { n: 7,  area: 60.3 }, { n: 8,  area: 74.8 }, { n: 9,  area: 33.2 },
+    { n: 10, area: 45.5 }, { n: 11, area: 60.0 }, { n: 12, area: 74.6 }
+  ];
+  var votes = { 1: 'for', 2: 'for', 4: 'for', 7: 'for', 8: 'against', 11: 'abstain' };
+  var totalArea = flats.reduce(function (s, f) { return s + f.area; }, 0);
+
+  function renderVotes() {
+    var tbody = $('#voteTable tbody');
+    tbody.innerHTML = '';
+    flats.forEach(function (f) {
+      var tr = document.createElement('tr');
+      var v = votes[f.n];
+      tr.innerHTML =
+        '<td class="num">' + f.n + '</td>' +
+        '<td class="num">' + fmt(f.area, 1) + '</td>' +
+        '<td class="num">' + fmt(f.area / totalArea * 100, 2) + '%</td>' +
+        '<td><span class="seg" role="group" aria-label="Голос квартиры ' + f.n + '">' +
+          '<button type="button" class="v-for" data-flat="' + f.n + '" data-vote="for" aria-pressed="' + (v === 'for') + '">За</button>' +
+          '<button type="button" class="v-against" data-flat="' + f.n + '" data-vote="against" aria-pressed="' + (v === 'against') + '">Против</button>' +
+          '<button type="button" class="v-abstain" data-flat="' + f.n + '" data-vote="abstain" aria-pressed="' + (v === 'abstain') + '">Возд.</button>' +
+        '</span></td>';
+      tbody.appendChild(tr);
+    });
+    updateVoteSummary();
+  }
+
+  function updateVoteSummary() {
+    var forA = 0, againstA = 0, abstainA = 0;
+    flats.forEach(function (f) {
+      if (votes[f.n] === 'for') forA += f.area;
+      else if (votes[f.n] === 'against') againstA += f.area;
+      else if (votes[f.n] === 'abstain') abstainA += f.area;
+    });
+    var voted = forA + againstA + abstainA;
+    var quorumPct = voted / totalArea * 100;
+    var hasQuorum = quorumPct > 50;
+    $('#vQuorum').textContent = fmt(quorumPct, 1) + '%';
+    var legal = $('#vLegal');
+    legal.textContent = hasQuorum ? 'Да' : 'Нет';
+    legal.className = 'value ' + (hasQuorum ? 'ok' : 'no');
+
+    var type = $('#questionType').value;
+    var forPct, passed, forLabel;
+    if (type === 'simple') {
+      forPct = voted > 0 ? forA / voted * 100 : 0;
+      forLabel = fmt(forPct, 1) + '%';
+      passed = hasQuorum && forPct > 50;
+    } else {
+      forPct = forA / totalArea * 100;
+      forLabel = fmt(forPct, 1) + '%';
+      passed = hasQuorum && forA >= totalArea * 2 / 3;
+    }
+    $('#vFor').textContent = forLabel;
+    var dec = $('#vDecision');
+    dec.textContent = !hasQuorum ? 'Нет кворума' : (passed ? 'Принято' : 'Не принято');
+    dec.className = 'value ' + (passed && hasQuorum ? 'ok' : 'no');
+
+    $('#barFor').style.width = (forA / totalArea * 100) + '%';
+    $('#barAgainst').style.width = (againstA / totalArea * 100) + '%';
+    $('#barAbstain').style.width = (abstainA / totalArea * 100) + '%';
+  }
+
+  $('#voteTable').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-vote]');
+    if (!b) return;
+    var flat = Number(b.dataset.flat);
+    votes[flat] = (votes[flat] === b.dataset.vote) ? undefined : b.dataset.vote;
+    $$('#voteTable button[data-flat="' + flat + '"]').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', String(votes[flat] === btn.dataset.vote));
+    });
+    updateVoteSummary();
+  });
+  $('#questionType').addEventListener('change', updateVoteSummary);
+  $('#allFor').addEventListener('click', function () {
+    flats.forEach(function (f) { votes[f.n] = 'for'; });
+    renderVotes();
+    toast('Все квартиры проголосовали «за»');
+  });
+  $('#clearVotes').addEventListener('click', function () {
+    votes = {};
+    renderVotes();
+    toast('Бюллетени очищены');
+  });
+  renderVotes();
+
+  /* ── Демо 3: протокол ── */
+  var monthsRu = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  function renderProto() {
+    var addr = $('#pAddr').value || '__________';
+    var num = $('#pNum').value || '____';
+    var dateVal = $('#pDate').value;
+    var dateStr = '«___» ________ 20__ г.';
+    if (dateVal) {
+      var d = new Date(dateVal + 'T00:00:00');
+      dateStr = '«' + d.getDate() + '» ' + monthsRu[d.getMonth()] + ' ' + d.getFullYear() + ' г.';
+    }
+    var form = $('#pForm').value;
+    var agenda = $('#pAgenda').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+    var html =
+      '<h4>ПРОТОКОЛ № ' + esc(num) + '</h4>' +
+      '<p class="center">внеочередного общего собрания собственников помещений<br>в многоквартирном доме по адресу:<br><strong>' + esc(addr) + '</strong></p>' +
+      '<div class="meta"><span>' + esc(addr.split(',')[0] || '') + '</span><span>' + dateStr + '</span></div>' +
+      '<p>Форма проведения собрания: <strong>' + esc(form) + '</strong>.</p>' +
+      '<p>Общая площадь жилых и нежилых помещений дома: <span class="num">6 418,3 м²</span>. ' +
+      'В собрании приняли участие собственники, обладающие <span class="num">4 729,1 м²</span> (<span class="num">73,7%</span> голосов). Кворум имеется.</p>' +
+      '<p><strong>Повестка дня:</strong></p><ol>' +
+      agenda.map(function (q) { return '<li>' + esc(q) + '</li>'; }).join('') +
+      '</ol>' +
+      agenda.map(function (q, i) {
+        return '<p class="resolved"><strong>По вопросу ' + (i + 1) + ':</strong> СЛУШАЛИ, ПОСТАНОВИЛИ — ' + esc(q.toLowerCase()) +
+          '. Итоги: «за» — <span class="num">89,2%</span>, «против» — <span class="num">6,6%</span>, «воздержались» — <span class="num">4,2%</span>. Решение принято.</p>';
+      }).join('') +
+      '<div class="sign"><span>Председатель собрания ________________ /____________/</span>' +
+      '<span>Секретарь собрания ________________ /____________/</span></div>';
+    $('#protoPreview').innerHTML = html;
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  ['pAddr', 'pNum', 'pDate', 'pForm', 'pAgenda'].forEach(function (id) {
+    $('#' + id).addEventListener('input', renderProto);
+    $('#' + id).addEventListener('change', renderProto);
+  });
+  $('#fillProto').addEventListener('click', function () {
+    $('#pAddr').value = 'г. Казань, пр-т Победы, д. 42, корп. 1';
+    $('#pNum').value = '3/2026';
+    $('#pDate').value = '2026-08-14';
+    $('#pForm').value = 'заочная';
+    $('#pAgenda').value = 'Выбор совета многоквартирного дома\nЗаключение договора на обслуживание домофонов\nБлагоустройство двора: установка ограждений газонов';
+    renderProto();
+    toast('Подставлен пример');
+  });
+  $('#copyProto').addEventListener('click', function () {
+    var text = $('#protoPreview').innerText;
+    function done() { toast('Текст протокола скопирован'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+    } else { fallbackCopy(text); done(); }
+  });
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  renderProto();
+
+  /* ── Модалки ── */
+  function openModal(id) {
+    $('#' + id).hidden = false;
+    var first = $('#' + id + ' input');
+    if (first) first.focus();
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(id) {
+    $('#' + id).hidden = true;
+    document.body.style.overflow = '';
+  }
+  $$('.modal-overlay').forEach(function (ov) {
+    ov.addEventListener('click', function (e) { if (e.target === ov) closeModal(ov.id); });
+  });
+  $$('[data-close]').forEach(function (b) {
+    b.addEventListener('click', function () { closeModal(b.dataset.close); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') $$('.modal-overlay').forEach(function (ov) { if (!ov.hidden) closeModal(ov.id); });
+  });
+
+  /* Покупка */
+  $$('[data-buy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      $('#orderTitle').textContent = b.dataset.buy;
+      $('#orderSub').textContent = 'Стоимость ' + b.dataset.cost + '. Файл и видеоинструкция придут на почту после оплаты.';
+      $('#orderForm').reset();
+      openModal('orderOverlay');
+    });
+  });
+  $('#orderForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!this.reportValidity()) return;
+    closeModal('orderOverlay');
+    toast('Заявка принята — в рабочей версии здесь откроется оплата');
+  });
+
+  /* Вопрос по услуге */
+  $$('[data-consult]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      $('#consultSub').textContent = 'Тема: ' + b.dataset.consult + '. Отвечу в течение рабочего дня.';
+      $('#consultForm').reset();
+      openModal('consultOverlay');
+    });
+  });
+  $('#consultForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!this.reportValidity()) return;
+    closeModal('consultOverlay');
+    toast('Вопрос отправлен — отвечу в течение рабочего дня');
+  });
+
+  /* Форма заявки */
+  $('#contactForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!this.reportValidity()) return;
+    this.reset();
+    toast('Заявка отправлена — отвечу в течение рабочего дня');
+  });
+})();
+</script>
