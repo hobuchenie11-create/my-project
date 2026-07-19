@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Аналитика — сайт-визитка</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    color-scheme: light;
+    --page:           #f9f9f7;
+    --surface:        #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --muted:          #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,.10);
+    --series-1:       #2a78d6;
+    --ramp-1: #86b6ef; --ramp-2: #5598e7; --ramp-3: #2a78d6; --ramp-4: #1c5cab; --ramp-5: #184f95;
+    --good-text:      #006300;
+    --ghost:          rgba(42,120,214,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface:        #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted:          #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,.10);
+      --series-1:       #3987e5;
+      --ramp-1: #9ec5f4; --ramp-2: #6da7ec; --ramp-3: #3987e5; --ramp-4: #256abf; --ramp-5: #1c5cab;
+      --good-text:      #0ca30c;
+      --ghost:          rgba(57,135,229,.12);
+    }
+  }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding: 32px 24px 64px;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  header h1 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+  header .sub { color: var(--text-secondary); font-size: 14px; }
+
+  /* ── Панель управления ── */
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin: 16px 0 24px;
+  }
+  .seg { display: flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); }
+  .seg button {
+    border: none; background: transparent; color: var(--text-secondary);
+    font: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; cursor: pointer;
+  }
+  .seg button:hover { background: var(--ghost); }
+  .seg button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
+  .toolbar .spacer { flex: 1; }
+  .tbtn {
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary);
+    font: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 10px; cursor: pointer;
+  }
+  .tbtn:hover { background: var(--ghost); color: var(--text-primary); }
+  .tbtn.danger:hover { color: #d03b3b; }
+
+  /* ── KPI-плитки ── */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .tile {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .tile .label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .tile .value { font-size: 30px; font-weight: 700; margin-top: 4px; }
+  .tile .hint  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ── Карточки графиков ── */
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .charts { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px 20px; min-width: 0;
+  }
+  .panel.wide { grid-column: 1 / -1; }
+  .panel h2 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .panel .desc { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 12px; }
+  .panel svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .empty-note { color: var(--muted); font-size: 13px; padding: 24px 0; text-align: center; }
+
+  svg text { font-family: inherit; }
+  .axis-label { font-size: 11px; fill: var(--muted); }
+  .bar-label  { font-size: 12px; fill: var(--text-secondary); }
+  .bar-value  { font-size: 12px; font-weight: 600; fill: var(--text-primary); }
+  .gridline   { stroke: var(--grid); stroke-width: 1; }
+  .baseline   { stroke: var(--baseline); stroke-width: 1; }
+  .hit { fill: transparent; cursor: default; }
+  .hit:hover + .mark, .mark:hover { opacity: .85; }
+
+  /* ── Тултип ── */
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 50; display: none;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    padding: 8px 12px; font-size: 12.5px; max-width: 260px;
+  }
+  #tooltip .t-title { font-weight: 700; }
+  #tooltip .t-row   { color: var(--text-secondary); }
+  #tooltip .t-row b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+  /* ── Таблица событий ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; font-weight: 600; }
+  td.num { font-variant-numeric: tabular-nums; }
+  td .pill {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px;
+    border-radius: 99px; background: var(--ghost); color: var(--series-1);
+  }
+
+  footer { margin-top: 32px; color: var(--muted); font-size: 12.5px; text-align: center; }
+  footer code { font-family: ui-monospace, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>📊 Аналитика сайта</h1>
+    <span class="sub" id="data-source">данные из localStorage этого браузера</span>
+  </header>
+
+  <div class="toolbar">
+    <div class="seg" role="group" aria-label="Период">
+      <button data-days="7"  aria-pressed="false">7 дней</button>
+      <button data-days="30" aria-pressed="true">30 дней</button>
+      <button data-days="0"  aria-pressed="false">Всё время</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="tbtn" id="btn-demo">Демо-данные</button>
+    <button class="tbtn" id="btn-import">Импорт JSON</button>
+    <button class="tbtn" id="btn-json">Экспорт JSON</button>
+    <button class="tbtn" id="btn-csv">Экспорт CSV</button>
+    <button class="tbtn danger" id="btn-clear">Очистить</button>
+    <input type="file" id="file-input" accept=".json,application/json" hidden>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="charts">
+    <div class="panel wide">
+      <h2>Визиты по дням</h2>
+      <p class="desc">Число сессий за каждый день выбранного периода</p>
+      <div id="chart-visits"></div>
+    </div>
+    <div class="panel">
+      <h2>Просмотры секций</h2>
+      <p class="desc">Сколько сессий доскроллило до каждой секции</p>
+      <div id="chart-sections"></div>
+    </div>
+    <div class="panel">
+      <h2>Глубина прокрутки</h2>
+      <p class="desc">Доля сессий, достигших отметки прокрутки</p>
+      <div id="chart-scroll"></div>
+    </div>
+    <div class="panel">
+      <h2>Клики</h2>
+      <p class="desc">Самые нажимаемые элементы страницы</p>
+      <div id="chart-clicks"></div>
+    </div>
+    <div class="panel">
+      <h2>Устройства</h2>
+      <p class="desc">Сессии по типу устройства</p>
+      <div id="chart-devices"></div>
+    </div>
+    <div class="panel wide">
+      <h2>Последние события</h2>
+      <p class="desc">50 последних событий выбранного периода</p>
+      <div class="table-wrap"><table id="events-table"></table></div>
+    </div>
+  </div>
+
+  <footer>
+    Сбор метрик: <code>analytics.js</code> на главной странице · без cookies и внешних сервисов ·
+    отключить для себя: <code>analytics.optOut()</code> в консоли
+  </footer>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+'use strict';
+
+// ═══ Данные ═══════════════════════════════════════════════════
+const STORAGE_KEY = 'bc_analytics_events';
+let allEvents = [];
+let periodDays = 30;
+let importedMode = false;
+
+function loadEvents() {
+  if (importedMode) return;
+  try { allEvents = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch (e) { allEvents = []; }
+}
+
+function filteredEvents() {
+  if (!periodDays) return allEvents;
+  const from = Date.now() - periodDays * 86400000;
+  return allEvents.filter(e => e.ts >= from);
+}
+
+// ═══ Агрегация ════════════════════════════════════════════════
+function aggregate(events) {
+  const sessions = new Map();
+  for (const e of events) {
+    if (!sessions.has(e.sessionId)) sessions.set(e.sessionId, { ts: e.ts, events: [] });
+    const s = sessions.get(e.sessionId);
+    s.ts = Math.min(s.ts, e.ts);
+    s.events.push(e);
+  }
+
+  const visitors = new Set(events.map(e => e.visitorId));
+  const byName = name => events.filter(e => e.name === name);
+
+  // визиты по дням
+  const dayKey = ts => new Date(ts).toISOString().slice(0, 10);
+  const days = new Map();
+  const span = periodDays || Math.max(1, Math.ceil((Date.now() - Math.min(...[...sessions.values()].map(s => s.ts), Date.now())) / 86400000) + 1);
+  for (let i = span - 1; i >= 0; i--) {
+    days.set(dayKey(Date.now() - i * 86400000), 0);
+  }
+  for (const s of sessions.values()) {
+    const k = dayKey(s.ts);
+    if (days.has(k)) days.set(k, days.get(k) + 1);
+  }
+
+  // секции: уникальные сессии на секцию
+  const sectionNames = { hero: 'Главная', about: 'О себе', skills: 'Навыки', work: 'Работы', contacts: 'Контакты' };
+  const sections = new Map();
+  for (const e of byName('section_view')) {
+    const key = e.props.section;
+    if (!sections.has(key)) sections.set(key, new Set());
+    sections.get(key).add(e.sessionId);
+  }
+  const sectionData = [...sections.entries()]
+    .map(([k, set]) => ({ label: sectionNames[k] || k, value: set.size }))
+    .sort((a, b) => b.value - a.value);
+
+  // глубина прокрутки: % сессий на отметку
+  const marks = [25, 50, 75, 90, 100];
+  const scrollSets = new Map(marks.map(m => [m, new Set()]));
+  for (const e of byName('scroll_depth')) {
+    if (scrollSets.has(e.props.depth)) scrollSets.get(e.props.depth).add(e.sessionId);
+  }
+  const nSessions = sessions.size || 1;
+  const scrollData = marks.map(m => ({
+    label: m + '%',
+    value: Math.round(scrollSets.get(m).size / nSessions * 100),
+    raw: scrollSets.get(m).size
+  }));
+
+  // клики
+  const kindNames = { contact: 'контакт', cta: 'кнопка', nav: 'меню', link: 'ссылка' };
+  const clicks = new Map();
+  for (const e of byName('click')) {
+    const key = (kindNames[e.props.kind] || e.props.kind) + ': ' + (e.props.label || e.props.href || '—');
+    clicks.set(key, (clicks.get(key) || 0) + 1);
+  }
+  const clickData = [...clicks.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+
+  // устройства
+  const deviceNames = { mobile: 'Телефон', tablet: 'Планшет', desktop: 'Компьютер' };
+  const devices = new Map();
+  for (const e of byName('session_start')) {
+    const d = deviceNames[e.props.deviceType] || 'Другое';
+    devices.set(d, (devices.get(d) || 0) + 1);
+  }
+  const deviceData = [...devices.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+
+  // KPI
+  const engagements = byName('engagement').map(e => e.props.engagedSec || 0);
+  const avgTime = engagements.length ? Math.round(engagements.reduce((a, b) => a + b, 0) / engagements.length) : 0;
+  const contactSessions = new Set(byName('click').filter(e => e.props.kind === 'contact').map(e => e.sessionId));
+  const errors = byName('error').length;
+
+  return {
+    sessions: sessions.size,
+    visitors: visitors.size,
+    pageviews: byName('pageview').length,
+    avgTime,
+    contactRate: sessions.size ? Math.round(contactSessions.size / sessions.size * 100) : 0,
+    errors,
+    days: [...days.entries()].map(([date, value]) => ({ label: date.slice(5).split('-').reverse().join('.'), date, value })),
+    sectionData, scrollData, clickData, deviceData,
+    events
+  };
+}
+
+// ═══ Тултип ═══════════════════════════════════════════════════
+const tooltip = document.getElementById('tooltip');
+function showTip(evt, html) {
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+  const pad = 14;
+  let x = evt.clientX + pad, y = evt.clientY + pad;
+  const r = tooltip.getBoundingClientRect();
+  if (x + r.width > innerWidth - 8) x = evt.clientX - r.width - pad;
+  if (y + r.height > innerHeight - 8) y = evt.clientY - r.height - pad;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+function hideTip() { tooltip.style.display = 'none'; }
+
+function bindTip(el, htmlFn) {
+  el.addEventListener('mousemove', e => showTip(e, htmlFn()));
+  el.addEventListener('mouseleave', hideTip);
+}
+
+// ═══ Графики (SVG) ════════════════════════════════════════════
+const NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(NS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+function fmtNum(n) { return n.toLocaleString('ru-RU'); }
+function niceMax(v) {
+  if (v <= 5) return 5;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (v <= m * p) return m * p;
+  return 10 * p;
+}
+
+// Столбчатый график (визиты по дням) — одна серия, синий
+function columnChart(container, data, tipFn) {
+  container.innerHTML = '';
+  if (!data.length || data.every(d => !d.value)) {
+    container.innerHTML = '<p class="empty-note">Нет данных за выбранный период</p>';
+    return;
+  }
+  const W = 1000, H = 240, padL = 36, padR = 8, padT = 12, padB = 26;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const max = niceMax(Math.max(...data.map(d => d.value)));
+  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' });
+
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + plotH - (plotH * i / 4);
+    svg.appendChild(svgEl('line', { x1: padL, x2: W - padR, y1: y, y2: y, class: i === 0 ? 'baseline' : 'gridline' }));
+    const lbl = svgEl('text', { x: padL - 8, y: y + 4, 'text-anchor': 'end', class: 'axis-label' });
+    lbl.textContent = fmtNum(max * i / 4);
+    svg.appendChild(lbl);
+  }
+
+  const step = plotW / data.length;
+  const barW = Math.max(3, Math.min(28, step - 2));
+  const labelEvery = Math.ceil(data.length / 12);
+
+  data.forEach((d, i) => {
+    const x = padL + step * i + (step - barW) / 2;
+    const h = max ? (d.value / max) * plotH : 0;
+    const y = padT + plotH - h;
+    if (d.value > 0) {
+      const bar = svgEl('path', {
+        d: `M${x},${padT + plotH} V${y + 4} Q${x},${y} ${x + 4},${y} H${x + barW - 4} Q${x + barW},${y} ${x + barW},${y + 4} V${padT + plotH} Z`,
+        fill: 'var(--series-1)', class: 'mark'
+      });
+      svg.appendChild(bar);
+    }
+    const hit = svgEl('rect', { x: padL + step * i, y: padT, width: step, height: plotH, class: 'hit' });
+    bindTip(hit, () => tipFn(d));
+    svg.appendChild(hit);
+    if (i % labelEvery === 0) {
+      const lbl = svgEl('text', { x: x + barW / 2, y: H - 8, 'text-anchor': 'middle', class: 'axis-label' });
+      lbl.textContent = d.label;
+      svg.appendChild(lbl);
+    }
+  });
+  container.appendChild(svg);
+}
+
+// Горизонтальные полосы — одна серия либо ординальная рампа
+function hBarChart(container, data, opts) {
+  container.innerHTML = '';
+  if (!data.length || data.every(d => !d.value)) {
+    container.innerHTML = '<p class="empty-note">Нет данных за выбранный период</p>';
+    return;
+  }
+  const { ramp = false, suffix = '', tipFn } = opts || {};
+  const W = 480, rowH = 34, labelW = 150, valueW = 46;
+  const H = data.length * rowH + 6;
+  const plotW = W - labelW - valueW;
+  const max = ramp ? 100 : niceMax(Math.max(...data.map(d => d.value)));
+  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' });
+
+  svg.appendChild(svgEl('line', { x1: labelW, x2: labelW, y1: 0, y2: H - 6, class: 'baseline' }));
+
+  data.forEach((d, i) => {
+    const y = i * rowH + 6;
+    const barH = 14;
+    const w = max ? Math.max(d.value > 0 ? 6 : 0, (d.value / max) * plotW) : 0;
+
+    const lbl = svgEl('text', { x: labelW - 10, y: y + barH - 2, 'text-anchor': 'end', class: 'bar-label' });
+    lbl.textContent = d.label.length > 22 ? d.label.slice(0, 21) + '…' : d.label;
+    svg.appendChild(lbl);
+
+    if (w > 0) {
+      const fill = ramp ? `var(--ramp-${Math.min(i + 1, 5)})` : 'var(--series-1)';
+      svg.appendChild(svgEl('path', {
+        d: `M${labelW},${y} H${labelW + w - 4} Q${labelW + w},${y} ${labelW + w},${y + 4} V${y + barH - 4} Q${labelW + w},${y + barH} ${labelW + w - 4},${y + barH} H${labelW} Z`,
+        fill, class: 'mark'
+      }));
+    }
+    const val = svgEl('text', { x: labelW + w + 8, y: y + barH - 2, class: 'bar-value' });
+    val.textContent = fmtNum(d.value) + suffix;
+    svg.appendChild(val);
+
+    const hit = svgEl('rect', { x: 0, y: y - 3, width: W, height: rowH, class: 'hit' });
+    bindTip(hit, () => tipFn(d));
+    svg.appendChild(hit);
+  });
+  container.appendChild(svg);
+}
+
+// ═══ Рендер ═══════════════════════════════════════════════════
+function kpiTile(label, value, hint) {
+  return `<div class="tile"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></div>`;
+}
+
+function fmtDuration(sec) {
+  if (sec < 60) return sec + ' с';
+  return Math.floor(sec / 60) + ' мин ' + (sec % 60) + ' с';
+}
+
+function render() {
+  loadEvents();
+  const agg = aggregate(filteredEvents());
+
+  document.getElementById('kpis').innerHTML =
+    kpiTile('Визиты', fmtNum(agg.sessions), 'сессий за период') +
+    kpiTile('Посетители', fmtNum(agg.visitors), 'уникальных браузеров') +
+    kpiTile('Просмотры', fmtNum(agg.pageviews), 'открытий страницы') +
+    kpiTile('Ср. время', fmtDuration(agg.avgTime), 'активного чтения') +
+    kpiTile('До контакта', agg.contactRate + '%', 'сессий кликнули контакт') +
+    kpiTile('Ошибки JS', fmtNum(agg.errors), 'событий error');
+
+  columnChart(document.getElementById('chart-visits'), agg.days, d =>
+    `<div class="t-title">${d.label}</div><div class="t-row">Визитов: <b>${fmtNum(d.value)}</b></div>`);
+
+  hBarChart(document.getElementById('chart-sections'), agg.sectionData, {
+    tipFn: d => `<div class="t-title">${d.label}</div><div class="t-row">Сессий с просмотром: <b>${fmtNum(d.value)}</b></div>`
+  });
+
+  hBarChart(document.getElementById('chart-scroll'), agg.scrollData, {
+    ramp: true, suffix: '%',
+    tipFn: d => `<div class="t-title">Прокрутка до ${d.label}</div><div class="t-row">Доля сессий: <b>${d.value}%</b> (${fmtNum(d.raw)})</div>`
+  });
+
+  hBarChart(document.getElementById('chart-clicks'), agg.clickData, {
+    tipFn: d => `<div class="t-title">${d.label}</div><div class="t-row">Кликов: <b>${fmtNum(d.value)}</b></div>`
+  });
+
+  hBarChart(document.getElementById('chart-devices'), agg.deviceData, {
+    tipFn: d => `<div class="t-title">${d.label}</div><div class="t-row">Сессий: <b>${fmtNum(d.value)}</b></div>`
+  });
+
+  renderTable(agg.events);
+}
+
+function renderTable(events) {
+  const nameRu = {
+    session_start: 'начало сессии', pageview: 'просмотр', section_view: 'секция',
+    click: 'клик', scroll_depth: 'прокрутка', engagement: 'вовлечённость', error: 'ошибка'
+  };
+  const rows = events.slice(-50).reverse().map(e => {
+    const d = new Date(e.ts);
+    const when = d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU');
+    let detail = '';
+    switch (e.name) {
+      case 'section_view': detail = e.props.section; break;
+      case 'click': detail = (e.props.kind || '') + ' · ' + (e.props.label || e.props.href || ''); break;
+      case 'scroll_depth': detail = e.props.depth + '%'; break;
+      case 'engagement': detail = fmtDuration(e.props.engagedSec || 0); break;
+      case 'session_start': detail = (e.props.newVisitor ? 'новый' : 'повторный') + ' · ' + (e.props.deviceType || ''); break;
+      case 'error': detail = e.props.message || ''; break;
+      default: detail = e.props.url || '';
+    }
+    detail = String(detail).replace(/</g, '&lt;').slice(0, 70);
+    return `<tr><td class="num">${when}</td><td><span class="pill">${nameRu[e.name] || e.name}</span></td>` +
+           `<td>${detail}</td><td class="num">${e.sessionId.slice(-6)}</td></tr>`;
+  }).join('');
+  document.getElementById('events-table').innerHTML =
+    '<thead><tr><th>Время</th><th>Событие</th><th>Детали</th><th>Сессия</th></tr></thead>' +
+    `<tbody>${rows || '<tr><td colspan="4" class="empty-note">Событий пока нет — откройте index.html, чтобы начать сбор</td></tr>'}</tbody>`;
+}
+
+// ═══ Панель управления ════════════════════════════════════════
+document.querySelectorAll('.seg button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    btn.setAttribute('aria-pressed', 'true');
+    periodDays = Number(btn.dataset.days);
+    render();
+  });
+});
+
+function download(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById('btn-json').addEventListener('click', () => {
+  download('analytics-export.json', JSON.stringify(allEvents, null, 2), 'application/json');
+});
+
+document.getElementById('btn-csv').addEventListener('click', () => {
+  const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = allEvents.map(e =>
+    [new Date(e.ts).toISOString(), e.name, e.visitorId, e.sessionId, JSON.stringify(e.props)].map(esc).join(';'));
+  download('analytics-export.csv', '﻿' + ['ts;event;visitor;session;props', ...rows].join('\n'), 'text/csv;charset=utf-8');
+});
+
+document.getElementById('btn-import').addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  file.text().then(text => {
+    const data = JSON.parse(text);
+    if (!Array.isArray(data)) throw new Error('ожидался массив событий');
+    allEvents = data;
+    importedMode = true;
+    document.getElementById('data-source').textContent = 'импортированный файл: ' + file.name;
+    render();
+  }).catch(err => alert('Не удалось прочитать файл: ' + err.message));
+  e.target.value = '';
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  if (!confirm('Удалить все собранные события из localStorage этого браузера?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  importedMode = false;
+  document.getElementById('data-source').textContent = 'данные из localStorage этого браузера';
+  render();
+});
+
+// ═══ Демо-данные ══════════════════════════════════════════════
+document.getElementById('btn-demo').addEventListener('click', () => {
+  const events = [];
+  const sections = ['hero', 'about', 'skills', 'work', 'contacts'];
+  const clickPool = [
+    { kind: 'cta', label: 'Мои работы', href: '#work', w: 4 },
+    { kind: 'cta', label: 'Написать', href: '#contacts', w: 3 },
+    { kind: 'contact', label: 'ivanov@example.com', href: 'mailto:ivanov@example.com', w: 3 },
+    { kind: 'contact', label: '+7 900 123-45-67', href: 'tel:+79001234567', w: 2 },
+    { kind: 'contact', label: 'github.com/ivanov', href: '#', w: 2 },
+    { kind: 'nav', label: 'Контакты', href: '#contacts', w: 2 },
+    { kind: 'nav', label: 'Работы', href: '#work', w: 1 }
+  ];
+  const pick = pool => {
+    const total = pool.reduce((a, c) => a + c.w, 0);
+    let r = Math.random() * total;
+    return pool.find(c => (r -= c.w) < 0) || pool[0];
+  };
+  const uid = () => Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+
+  for (let day = 34; day >= 0; day--) {
+    const weekend = [0, 6].includes(new Date(Date.now() - day * 86400000).getDay());
+    const nVisits = Math.max(0, Math.round((weekend ? 3 : 7) + Math.random() * 6 - 2));
+    for (let v = 0; v < nVisits; v++) {
+      const visitorId = 'demo-' + Math.floor(Math.random() * 400);
+      const sessionId = uid();
+      let t = Date.now() - day * 86400000 - Math.floor(Math.random() * 12 * 3600000);
+      const deviceType = Math.random() < 0.55 ? 'mobile' : (Math.random() < 0.15 ? 'tablet' : 'desktop');
+      const add = (name, props) => events.push({ id: uid(), name, ts: (t += 500 + Math.random() * 8000), visitorId, sessionId, props });
+
+      add('session_start', { newVisitor: Math.random() < 0.6, deviceType, lang: 'ru-RU', referrer: Math.random() < 0.4 ? 'https://google.com/' : null });
+      add('pageview', { url: '/', deviceType });
+      add('section_view', { section: 'hero' });
+
+      let depth = 0;
+      const reached = Math.random();
+      for (const [i, mark] of [25, 50, 75, 90, 100].entries()) {
+        if (reached < 0.15 + i * 0.17) break;
+        depth = mark;
+        add('scroll_depth', { depth: mark });
+        if (sections[i + 1]) add('section_view', { section: sections[i + 1] });
+      }
+      const nClicks = depth >= 75 ? Math.floor(Math.random() * 3) : (Math.random() < 0.3 ? 1 : 0);
+      for (let c = 0; c < nClicks; c++) {
+        const cl = pick(clickPool);
+        add('click', { kind: cl.kind, label: cl.label, href: cl.href });
+      }
+      add('engagement', { engagedSec: Math.round(10 + depth * 1.4 + Math.random() * 60), maxScroll: depth });
+    }
+  }
+  allEvents = events;
+  importedMode = true;
+  document.getElementById('data-source').textContent = 'демо-данные (не сохраняются)';
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
