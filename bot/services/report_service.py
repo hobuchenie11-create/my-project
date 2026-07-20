@@ -56,17 +56,20 @@ def build_statement(conn: sqlite3.Connection, period: str) -> Statement:
         row = StatementRow(number=apt["number"], submitted=bool(values),
                            note=apt["note"])
         row.electricity = values.get("electricity")
-        if apt["layout"] == "full":
-            # 3-комнатные: раздельный учет, «ГВС сумма» = кухня + ванна
+        # Раскладку определяют фактические приборы квартиры (учтен и смешанный
+        # случай: раздельный ХВС + один ГВС и наоборот).
+        if "cws_kitchen" in values or "cws_bathroom" in values:
             row.cws_kitchen = values.get("cws_kitchen")
             row.cws_bathroom = values.get("cws_bathroom")
+        elif "cws" in values:
+            # Один ХВС -> колонка «ХВС кухня»
+            row.cws_kitchen = values.get("cws")
+        if "hws_kitchen" in values or "hws_bathroom" in values:
             row.hws_kitchen = values.get("hws_kitchen")
             row.hws_bathroom = values.get("hws_bathroom")
-            if row.hws_kitchen is not None or row.hws_bathroom is not None:
-                row.hws_sum = (row.hws_kitchen or 0) + (row.hws_bathroom or 0)
-        else:
-            # 1-2-комнатные и нежилые: один ХВС -> «ХВС кухня», один ГВС -> «ГВС сумма»
-            row.cws_kitchen = values.get("cws")
+            row.hws_sum = (row.hws_kitchen or 0) + (row.hws_bathroom or 0)
+        elif "hws" in values:
+            # Один ГВС -> колонка «ГВС сумма»
             row.hws_sum = values.get("hws")
         statement.rows.append(row)
         if row.submitted:

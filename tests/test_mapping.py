@@ -5,6 +5,7 @@ from bot.services.parser import parse_message
 from bot.services.reading_service import save_parsed_readings
 from database import repository
 from database.init_db import init_db
+from database.models import apartment_meters
 
 
 @pytest.fixture()
@@ -12,10 +13,9 @@ def conn(tmp_path):
     db = tmp_path / "test.db"
     init_db(db, apartments_count=2, nonresidential_count=1)
     conn = repository.connect(db)
-    # кв. 1 — полная (3-комн, по умолчанию), кв. 2 — compact (1-2 комн)
-    apt2 = repository.get_apartment_by_number(conn, "2")
-    repository.upsert_apartment(conn, "2", "residential", 2, layout="compact")
-    repository.set_meters(conn, apt2["id"], ["electricity", "cws", "hws"])
+    # кв. 1 — раздельный учет (2 ХВС + 2 ГВС), кв. 2 — один ХВС/ГВС (по умолчанию)
+    apt1 = repository.get_apartment_by_number(conn, "1")
+    repository.set_meters(conn, apt1["id"], apartment_meters(2, 2))
     conn.commit()
     yield conn
     conn.close()

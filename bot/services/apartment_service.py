@@ -14,7 +14,8 @@ def registry_summary(conn: sqlite3.Connection, period: str) -> str:
     lines = [f"📋 Реестр квартир — {period}", ""]
     for apt in repository.list_apartments(conn):
         mark = "✅" if apt["number"] in submitted else "▫️"
-        lines.append(f"{mark} {_display_number(apt)}")
+        layout = f" · {apt['layout']}" if apt["layout"] else ""
+        lines.append(f"{mark} {_display_number(apt)}{layout}")
     lines.append("")
     lines.append(f"Сдали: {len(submitted)} из {len(repository.list_apartments(conn))}")
     return "\n".join(lines)

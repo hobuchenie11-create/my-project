@@ -11,14 +11,26 @@ METER_KINDS: dict[str, str] = {
     "hws": "ГВС",
 }
 
-# Наборы приборов по типу/планировке квартиры (порядок = порядок опроса в боте).
-#   full    — 3-комнатные: раздельный учет ХВС/ГВС по кухне и санузлу
-#   compact — 1-2-комнатные: один ХВС и один ГВС на квартиру
-LAYOUT_METERS: dict[str, list[str]] = {
-    "full": ["electricity", "cws_kitchen", "cws_bathroom", "hws_kitchen", "hws_bathroom"],
-    "compact": ["electricity", "cws", "hws"],
-}
-DEFAULT_LAYOUT = "full"
+# Набор приборов квартиры определяется количеством счётчиков ХВС и ГВС —
+# они независимы. Один счётчик -> общий прибор (cws/hws), два -> раздельно по
+# кухне и санузлу. Электросчётчик у всех один. Встречается и смешанный случай
+# (1 ХВС + 2 ГВС), поэтому ХВС и ГВС считаются отдельно.
+def apartment_meters(cws_count: int, hws_count: int) -> list[str]:
+    """Список приборов квартиры в порядке опроса в боте."""
+    meters = ["electricity"]
+    meters += ["cws_kitchen", "cws_bathroom"] if cws_count >= 2 else ["cws"]
+    meters += ["hws_kitchen", "hws_bathroom"] if hws_count >= 2 else ["hws"]
+    return meters
+
+
+def layout_label(cws_count: int, hws_count: int) -> str:
+    """Короткая подпись планировки для реестра, например «ХВС×2 · ГВС×2»."""
+    return f"ХВС×{min(cws_count, 2)} · ГВС×{min(hws_count, 2)}"
+
+
+# Набор приборов по умолчанию для жилой квартиры (пока не загружен справочник)
+DEFAULT_CWS_COUNT = 1
+DEFAULT_HWS_COUNT = 1
 
 # Набор приборов для нежилого помещения
 NONRESIDENTIAL_METERS = ["cws", "hws"]
@@ -37,7 +49,7 @@ CREATE TABLE IF NOT EXISTS apartments (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     number      TEXT NOT NULL UNIQUE,
     type        TEXT NOT NULL DEFAULT 'residential',  -- residential | nonresidential
-    layout      TEXT NOT NULL DEFAULT 'full',         -- full | compact (для жилых)
+    layout      TEXT NOT NULL DEFAULT '',             -- подпись планировки (ХВС×.. · ГВС×..)
     sort_order  INTEGER NOT NULL DEFAULT 0,
     note        TEXT NOT NULL DEFAULT ''
 );

@@ -16,6 +16,14 @@ from database.init_db import init_db
 logger = logging.getLogger(__name__)
 
 
+def _apply_registry_if_present() -> None:
+    """Если есть заполненный справочник квартир — применяем его к реестру."""
+    from excel.import_registry import REGISTRY_PATH, import_registry
+    if REGISTRY_PATH.exists():
+        count = import_registry(REGISTRY_PATH)
+        logger.info("Справочник квартир применен: %s квартир", count)
+
+
 async def main() -> None:
     setup_logging()
 
@@ -25,6 +33,7 @@ async def main() -> None:
         )
 
     init_db()
+    _apply_registry_if_present()
     logger.info("База данных готова: %s", config.db_path)
 
     bot = Bot(token=config.bot_token,

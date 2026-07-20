@@ -3,16 +3,18 @@
 Запускается автоматически при старте бота, можно запустить и вручную:
     python -m database.init_db
 
-По умолчанию все жилые квартиры создаются с раздельным учетом (full).
-Какие квартиры 1-2-комнатные (один ХВС/ГВС) — председатель отмечает через
-импорт реестра (см. excel/import_registry.py).
+Здесь создается базовый реестр из одинаковых квартир (по одному счетчику
+ХВС и ГВС). Реальные данные по количеству счетчиков применяются отдельно —
+импортом справочника data/apartments.xlsx (см. excel/import_registry.py),
+который бот выполняет при старте, если файл есть.
 """
 import sqlite3
 from pathlib import Path
 
 from bot.config import config
 from database import repository
-from database.models import DEFAULT_LAYOUT, LAYOUT_METERS, NONRESIDENTIAL_METERS
+from database.models import (DEFAULT_CWS_COUNT, DEFAULT_HWS_COUNT,
+                             NONRESIDENTIAL_METERS, apartment_meters, layout_label)
 
 
 def init_db(db_path: Path | str | None = None,
@@ -26,23 +28,28 @@ def init_db(db_path: Path | str | None = None,
     conn = repository.connect(db_path)
     try:
         repository.create_schema(conn)
-        _seed_apartments(conn, apartments_count, nonresidential_count)
+        _seed_residential(conn, apartments_count)
+        _seed_nonresidential(conn, apartments_count, nonresidential_count)
         conn.commit()
     finally:
         conn.close()
 
 
-def _seed_apartments(conn: sqlite3.Connection, apartments_count: int,
-                     nonresidential_count: int) -> None:
+def _seed_residential(conn: sqlite3.Connection, apartments_count: int) -> None:
+    default_meters = apartment_meters(DEFAULT_CWS_COUNT, DEFAULT_HWS_COUNT)
+    default_label = layout_label(DEFAULT_CWS_COUNT, DEFAULT_HWS_COUNT)
     for i in range(1, apartments_count + 1):
         apt_id = repository.upsert_apartment(conn, str(i), "residential", i,
-                                             layout=DEFAULT_LAYOUT)
-        repository.set_meters(conn, apt_id, LAYOUT_METERS[DEFAULT_LAYOUT])
+                                             layout=default_label)
+        repository.set_meters(conn, apt_id, default_meters)
 
+
+def _seed_nonresidential(conn: sqlite3.Connection, apartments_count: int,
+                         nonresidential_count: int) -> None:
     for i in range(1, nonresidential_count + 1):
         number = f"Нежилое помещение №{i}"
         apt_id = repository.upsert_apartment(conn, number, "nonresidential",
-                                             apartments_count + i, layout="compact")
+                                             apartments_count + i, layout="нежилое")
         repository.set_meters(conn, apt_id, NONRESIDENTIAL_METERS)
 
 

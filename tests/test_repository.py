@@ -4,6 +4,7 @@ from bot.services.reading_service import save_reading
 from bot.services.report_service import build_statement
 from database import repository
 from database.init_db import init_db
+from database.models import apartment_meters
 
 
 @pytest.fixture()
@@ -20,7 +21,8 @@ def test_seed(conn):
     assert len(apartments) == 4
     assert apartments[0]["number"] == "1"
     assert apartments[3]["number"] == "Нежилое помещение №1"
-    assert len(repository.meters_for_apartment(conn, apartments[0]["id"])) == 5
+    # По умолчанию квартира — один ХВС и один ГВС (+ электро)
+    assert len(repository.meters_for_apartment(conn, apartments[0]["id"])) == 3
     assert len(repository.meters_for_apartment(conn, apartments[3]["id"])) == 2
 
 
@@ -36,15 +38,16 @@ def test_save_and_last_reading(conn):
     assert result.ok
 
 
-def test_statement(conn):
+def test_statement_split_apartment(conn):
+    # Делаем кв. 2 с раздельным учетом (2 ХВС + 2 ГВС)
     apt = repository.get_apartment_by_number(conn, "2")
+    repository.set_meters(conn, apt["id"], apartment_meters(2, 2))
     save_reading(conn, apt["id"], "electricity", 500, None, period="2026-07")
     save_reading(conn, apt["id"], "hws_kitchen", 10, None, period="2026-07")
     save_reading(conn, apt["id"], "hws_bathroom", 20, None, period="2026-07")
 
     statement = build_statement(conn, "2026-07")
-    # 4 помещения + строка общедомового прибора
-    assert len(statement.rows) == 5
+    assert len(statement.rows) == 5  # 4 помещения + общедомовой прибор
     assert statement.rows[-1].number == "Общедомовой прибор учета"
 
     row = next(r for r in statement.rows if r.number == "2")
@@ -55,7 +58,18 @@ def test_statement(conn):
     assert statement.total_count == 4
 
 
+def test_statement_single_apartment(conn):
+    # Квартира с одним ХВС/ГВС: значения идут в «ХВС кухня» и «ГВС сумма»
+    apt = repository.get_apartment_by_number(conn, "3")
+    save_reading(conn, apt["id"], "cws", 40, None, period="2026-07")
+    save_reading(conn, apt["id"], "hws", 55, None, period="2026-07")
+
+    row = next(r for r in build_statement(conn, "2026-07").rows if r.number == "3")
+    assert row.cws_kitchen == 40
+    assert row.hws_sum == 55
+
+
 def test_submitted_set(conn):
     apt = repository.get_apartment_by_number(conn, "3")
-    save_reading(conn, apt["id"], "cws_kitchen", 5, None, period="2026-07")
+    save_reading(conn, apt["id"], "cws", 5, None, period="2026-07")
     assert repository.apartments_submitted(conn, "2026-07") == {"3"}
