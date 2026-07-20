@@ -1,7 +1,9 @@
 """Сохранение и просмотр показаний."""
 import sqlite3
-from datetime import date
+from dataclasses import dataclass, field
+from datetime import date, datetime
 
+from bot.services.parser import ParsedReadings
 from bot.services.validation import CheckResult, check_reading
 from database import repository
 from database.models import DEFAULT_UNIT, METER_KINDS, METER_UNITS
@@ -37,6 +39,101 @@ def save_reading(conn: sqlite3.Connection, apartment_id: int, kind: str, value: 
         repository.add_reading(conn, meter["id"], user_id,
                                period or current_period(), value, source)
     return result
+
+
+@dataclass
+class SaveOutcome:
+    """Итог записи показаний из одного сообщения (общий чат)."""
+    saved: dict[str, float] = field(default_factory=dict)  # kind -> value
+    warnings: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def anything_saved(self) -> bool:
+        return bool(self.saved)
+
+
+def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
+                         parsed: ParsedReadings, user_id: int | None,
+                         source: str = "chat", period: str | None = None) -> SaveOutcome:
+    """Раскладывает распознанные показания на приборы конкретной квартиры.
+
+    Один ХВС/ГВС (compact-планировка, нежилое) и раздельный учет (full-планировка)
+    поддерживаются одновременно — исходя из набора приборов квартиры.
+    «Сумма/итого ГВС» для 3-комнатных не хранится отдельно (она выводится как
+    кухня + ванна), но используется для сверки.
+    """
+    outcome = SaveOutcome()
+    available = {m["kind"] for m in repository.meters_for_apartment(conn, apartment["id"])}
+    values = dict(parsed.values)
+
+    hws_total = values.pop("hws_total", None)
+
+    for kind, value in values.items():
+        target = _resolve_meter_kind(kind, available)
+        if target is None:
+            outcome.errors.append(
+                f"«{METER_KINDS.get(kind, kind)}»: у {_display(apartment)} нет такого прибора"
+            )
+            continue
+        result = save_reading(conn, apartment["id"], target, value, user_id,
+                              source=source, period=period)
+        if result.ok:
+            outcome.saved[target] = value
+            if result.warning:
+                outcome.warnings.append(f"{METER_KINDS[target]}: {result.warning}")
+        else:
+            outcome.errors.append(result.error)
+
+    _check_hws_total(outcome, hws_total, values, available)
+    return outcome
+
+
+def _resolve_meter_kind(kind: str, available: set[str]) -> str | None:
+    if kind in available:
+        return kind
+    # Один ГВС на квартиру, а прислали раздельно (или наоборот) — не сходится
+    if kind == "cws" and "cws" not in available:
+        return None
+    if kind == "hws" and "hws" not in available:
+        return None
+    return None
+
+
+def _check_hws_total(outcome: SaveOutcome, hws_total: float | None,
+                     values: dict[str, float], available: set[str]) -> None:
+    if hws_total is None:
+        return
+    if "hws_kitchen" in available:
+        parts = [values.get("hws_kitchen"), values.get("hws_bathroom")]
+        if all(p is not None for p in parts):
+            calc = sum(parts)
+            if abs(calc - hws_total) > 0.001:
+                outcome.warnings.append(
+                    f"Сумма ГВС ({hws_total:g}) не сходится с кухня+ванна ({calc:g}) — проверьте"
+                )
+    elif "hws" in available and "hws" not in outcome.saved:
+        # compact-квартира прислала только «сумму ГВС» — засчитываем как ГВС
+        outcome.warnings.append("Сумма ГВС записана как показание ГВС")
+
+
+def _display(apartment: sqlite3.Row) -> str:
+    if apartment["type"] == "nonresidential":
+        return apartment["number"]
+    return f"кв. {apartment['number']}"
+
+
+def receipt_text(conn: sqlite3.Connection, apartment: sqlite3.Row,
+                 saved: dict[str, float], when: datetime | None = None) -> str:
+    """Квитанция-подтверждение после передачи показаний (Этап 5)."""
+    when = when or datetime.now()
+    lines = [f"✅ {_display(apartment)} — показания приняты", ""]
+    for meter in repository.meters_for_apartment(conn, apartment["id"]):
+        if meter["kind"] in saved:
+            lines.append(f"{METER_KINDS[meter['kind']]}: {saved[meter['kind']]:g}")
+    lines.append("")
+    lines.append(f"Передано: {when.strftime('%d.%m.%Y %H:%M')}")
+    return "\n".join(lines)
 
 
 def last_reading_value(conn: sqlite3.Connection, apartment_id: int, kind: str) -> float | None:

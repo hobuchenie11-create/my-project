@@ -24,12 +24,13 @@ def test_reading_below_previous_rejected():
 
 
 def test_huge_delta_warns_but_accepts():
-    result = check_reading("cws_kitchen", 200, 100)
+    # Расход ХВС более 100 м³ за месяц — повод уточнить (Этап 4)
+    result = check_reading("cws_kitchen", 250, 100)
     assert result.ok
     assert result.warning
 
 
 def test_normal_delta_no_warning():
-    result = check_reading("cws_kitchen", 105, 100)
+    result = check_reading("cws_kitchen", 150, 100)
     assert result.ok
     assert not result.warning

@@ -1,4 +1,5 @@
 """Сборка и запуск Telegram-бота DH OS."""
+import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
@@ -8,6 +9,7 @@ from aiogram.types import BotCommand
 
 from bot.config import config
 from bot.handlers import admin, group, readings, registration, reports, start
+from bot.scheduler import run_reminder_scheduler
 from bot.utils.logger import setup_logging
 from database.init_db import init_db
 
@@ -40,6 +42,9 @@ async def main() -> None:
     await bot.set_my_commands([
         BotCommand(command="start", description="Запуск / главное меню"),
     ])
+
+    # Фоновая рассылка напоминаний (Этап 7)
+    asyncio.create_task(run_reminder_scheduler(bot))
 
     logger.info("DH OS запущен")
     await dp.start_polling(bot)

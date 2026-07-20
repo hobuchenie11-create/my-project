@@ -5,7 +5,8 @@ from aiogram.types import Message
 
 from bot.config import config
 from bot.keyboards.menu import BTN_SUBMIT, cancel_keyboard, main_menu
-from bot.services.reading_service import current_period, save_reading, unit_for
+from bot.services.reading_service import (current_period, receipt_text,
+                                          save_reading, unit_for)
 from bot.services.validation import parse_value
 from bot.states.readings import SubmitReadings
 from database import repository
@@ -42,17 +43,20 @@ async def _finish(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     saved: dict[str, float] = data.get("saved", {})
     warnings: list[str] = data.get("warnings", [])
+    apartment_id = data["apartment_id"]
     await state.clear()
 
-    lines = ["✅ Показания приняты, спасибо!", ""]
-    for kind, value in saved.items():
-        lines.append(f"{METER_KINDS[kind]}: {value:g}")
+    conn = repository.connect()
+    try:
+        apartment = repository.get_apartment_by_id(conn, apartment_id)
+        text = receipt_text(conn, apartment, saved)
+    finally:
+        conn.close()
     if warnings:
-        lines.append("")
-        lines.extend(f"⚠️ {w}" for w in warnings)
+        text += "\n\n" + "\n".join(f"⚠️ {w}" for w in warnings)
 
     is_admin = message.from_user.id in config.admin_ids
-    await message.answer("\n".join(lines), reply_markup=main_menu(is_admin))
+    await message.answer(text, reply_markup=main_menu(is_admin))
 
 
 @router.message(F.text == BTN_SUBMIT)

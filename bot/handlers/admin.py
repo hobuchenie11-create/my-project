@@ -3,12 +3,14 @@ from aiogram import F, Router
 from aiogram.types import FSInputFile, Message
 
 from bot.config import config
-from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_REGISTRY,
-                                      BTN_SETTINGS, BTN_STATEMENT, BTN_STATS,
-                                      BTN_USERS, admin_menu)
+from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTORS,
+                                      BTN_REGISTRY, BTN_REMIND, BTN_SETTINGS,
+                                      BTN_STATEMENT, BTN_STATS, BTN_USERS, admin_menu)
 from bot.keyboards.menu import main_menu
+from bot.scheduler import send_reminders
 from bot.services.apartment_service import registry_summary
 from bot.services.reading_service import current_period, period_title
+from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
 from database import repository
 from database.backup import make_backup
@@ -56,6 +58,26 @@ async def show_stats(message: Message) -> None:
         await message.answer(stats_text(conn, period, period_title(period)))
     finally:
         conn.close()
+
+
+@router.message(F.text == BTN_DEBTORS)
+async def show_debtors(message: Message) -> None:
+    period = current_period()
+    conn = repository.connect()
+    try:
+        await message.answer(debtors_text(conn, period, period_title(period)))
+    finally:
+        conn.close()
+
+
+@router.message(F.text == BTN_REMIND)
+async def remind_debtors(message: Message) -> None:
+    sent = await send_reminders(message.bot)
+    if sent:
+        await message.answer(f"🔔 Напоминания отправлены: {sent}.")
+    else:
+        await message.answer("Напоминать некому — либо все сдали, либо должники "
+                             "не зарегистрированы в боте.")
 
 
 @router.message(F.text == BTN_USERS)

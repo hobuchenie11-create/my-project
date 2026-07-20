@@ -55,8 +55,9 @@ def build_statement(conn: sqlite3.Connection, period: str) -> Statement:
         values = readings.get(apt["number"], {})
         row = StatementRow(number=apt["number"], submitted=bool(values),
                            note=apt["note"])
-        if apt["type"] == "residential":
-            row.electricity = values.get("electricity")
+        row.electricity = values.get("electricity")
+        if apt["layout"] == "full":
+            # 3-комнатные: раздельный учет, «ГВС сумма» = кухня + ванна
             row.cws_kitchen = values.get("cws_kitchen")
             row.cws_bathroom = values.get("cws_bathroom")
             row.hws_kitchen = values.get("hws_kitchen")
@@ -64,10 +65,9 @@ def build_statement(conn: sqlite3.Connection, period: str) -> Statement:
             if row.hws_kitchen is not None or row.hws_bathroom is not None:
                 row.hws_sum = (row.hws_kitchen or 0) + (row.hws_bathroom or 0)
         else:
-            # Нежилые: ХВС в колонке «ХВС кухня», ГВС в колонке «ГВС кухня»
+            # 1-2-комнатные и нежилые: один ХВС -> «ХВС кухня», один ГВС -> «ГВС сумма»
             row.cws_kitchen = values.get("cws")
-            row.hws_kitchen = values.get("hws")
-            row.electricity = values.get("electricity")
+            row.hws_sum = values.get("hws")
         statement.rows.append(row)
         if row.submitted:
             statement.submitted_count += 1

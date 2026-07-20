@@ -1,8 +1,12 @@
 """Загрузка реестра квартир из data/apartments.xlsx.
 
 Формат файла (первая строка — заголовки):
-    Номер | Тип | Примечание
-Тип: «жилое» или «нежилое» (по умолчанию — жилое).
+    Номер | Тип | Комнат | Примечание
+
+Тип:    «жилое» или «нежилое» (по умолчанию — жилое).
+Комнат: число комнат. 1-2 → один ХВС и один ГВС (compact);
+        3 и больше → раздельный учет ХВС/ГВС по кухне и санузлу (full).
+        Можно вместо числа написать «compact»/«full» напрямую.
 
 Создать шаблон файла:      python -m excel.import_registry --template
 Импортировать реестр в БД: python -m excel.import_registry
@@ -14,20 +18,30 @@ from openpyxl import Workbook, load_workbook
 
 from bot.config import config
 from database import repository
-from database.models import NONRESIDENTIAL_METERS, RESIDENTIAL_METERS
+from database.models import LAYOUT_METERS, NONRESIDENTIAL_METERS
 
 REGISTRY_PATH = config.data_dir / "apartments.xlsx"
+
+
+def _layout_from_cell(value) -> str:
+    text = str(value or "").strip().lower()
+    if text in ("compact", "full"):
+        return text
+    digits = "".join(c for c in text if c.isdigit())
+    if digits and int(digits) <= 2:
+        return "compact"
+    return "full"
 
 
 def generate_template(path: Path = REGISTRY_PATH) -> Path:
     wb = Workbook()
     ws = wb.active
     ws.title = "Реестр"
-    ws.append(["Номер", "Тип", "Примечание"])
+    ws.append(["Номер", "Тип", "Комнат", "Примечание"])
     for i in range(1, config.apartments_count + 1):
-        ws.append([str(i), "жилое", ""])
+        ws.append([str(i), "жилое", 3, ""])
     for i in range(1, config.nonresidential_count + 1):
-        ws.append([f"Нежилое помещение №{i}", "нежилое", ""])
+        ws.append([f"Нежилое помещение №{i}", "нежилое", "", ""])
     path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(path)
     return path
@@ -45,12 +59,18 @@ def import_registry(path: Path = REGISTRY_PATH) -> int:
                 continue
             number = str(row[0]).strip()
             type_raw = str(row[1] or "жилое").strip().lower()
-            note = str(row[2] or "").strip()
-            type_ = "nonresidential" if type_raw.startswith("нежил") else "residential"
-            apt_id = repository.upsert_apartment(conn, number, type_, order, note)
-            kinds = RESIDENTIAL_METERS if type_ == "residential" else NONRESIDENTIAL_METERS
-            for kind in kinds:
-                repository.ensure_meter(conn, apt_id, kind)
+            rooms = row[2] if len(row) > 2 else None
+            note = str(row[3] or "").strip() if len(row) > 3 else ""
+
+            if type_raw.startswith("нежил"):
+                type_, layout, kinds = "nonresidential", "compact", NONRESIDENTIAL_METERS
+            else:
+                type_ = "residential"
+                layout = _layout_from_cell(rooms)
+                kinds = LAYOUT_METERS[layout]
+
+            apt_id = repository.upsert_apartment(conn, number, type_, order, note, layout)
+            repository.set_meters(conn, apt_id, kinds)
             count += 1
         conn.commit()
     finally:

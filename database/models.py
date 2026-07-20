@@ -11,8 +11,14 @@ METER_KINDS: dict[str, str] = {
     "hws": "ГВС",
 }
 
-# Набор приборов для жилой квартиры (порядок = порядок опроса в боте)
-RESIDENTIAL_METERS = ["electricity", "cws_kitchen", "cws_bathroom", "hws_kitchen", "hws_bathroom"]
+# Наборы приборов по типу/планировке квартиры (порядок = порядок опроса в боте).
+#   full    — 3-комнатные: раздельный учет ХВС/ГВС по кухне и санузлу
+#   compact — 1-2-комнатные: один ХВС и один ГВС на квартиру
+LAYOUT_METERS: dict[str, list[str]] = {
+    "full": ["electricity", "cws_kitchen", "cws_bathroom", "hws_kitchen", "hws_bathroom"],
+    "compact": ["electricity", "cws", "hws"],
+}
+DEFAULT_LAYOUT = "full"
 
 # Набор приборов для нежилого помещения
 NONRESIDENTIAL_METERS = ["cws", "hws"]
@@ -21,15 +27,17 @@ NONRESIDENTIAL_METERS = ["cws", "hws"]
 METER_UNITS = {"electricity": "кВт·ч"}
 DEFAULT_UNIT = "м³"
 
-# Пороги «подозрительно большого» расхода за месяц (для предупреждений)
+# Пороги «подозрительно большого» расхода за месяц (для предупреждений).
+# ХВС/ГВС: расход > 100 м³ за месяц — повод уточнить (Этап 4).
 DELTA_WARN_LIMITS = {"electricity": 1500.0}
-DELTA_WARN_DEFAULT = 30.0
+DELTA_WARN_DEFAULT = 100.0
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS apartments (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     number      TEXT NOT NULL UNIQUE,
     type        TEXT NOT NULL DEFAULT 'residential',  -- residential | nonresidential
+    layout      TEXT NOT NULL DEFAULT 'full',         -- full | compact (для жилых)
     sort_order  INTEGER NOT NULL DEFAULT 0,
     note        TEXT NOT NULL DEFAULT ''
 );

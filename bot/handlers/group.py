@@ -1,10 +1,10 @@
 """Прием показаний из общего чата дома.
 
-Бот разбирает сообщения вида:
+Бот разбирает сообщения по шаблонам жителей (см. bot/services/parser.py):
 
     Кв. 12
-    Свет: 15230
-    ХВС кухня: 123,45
+    Эл.эн 15230
+    хвс (кухня) 123,45
     ...
 
 и записывает показания. Если в сообщении нет номера квартиры, берется
@@ -15,9 +15,9 @@ from aiogram.types import Message
 
 from bot.config import config
 from bot.services.parser import parse_message
-from bot.services.reading_service import current_period, save_reading
+from bot.services.reading_service import (current_period, receipt_text,
+                                          save_parsed_readings)
 from database import repository
-from database.models import METER_KINDS
 
 router = Router()
 router.message.filter(F.chat.type.in_({"group", "supergroup"}))
@@ -29,8 +29,8 @@ async def handle_group_message(message: Message) -> None:
         return
 
     parsed = parse_message(message.text)
-    if parsed.is_empty:
-        return  # обычное сообщение в чате, показаний нет — не мешаем
+    if parsed.is_empty and not parsed.apartment_number:
+        return  # обычное сообщение в чате — не мешаем
 
     conn = repository.connect()
     try:
@@ -40,43 +40,44 @@ async def handle_group_message(message: Message) -> None:
         if parsed.apartment_number:
             apartment = repository.get_apartment_by_number(conn, parsed.apartment_number)
         elif user and user["apartment_id"]:
-            apartment = conn.execute(
-                "SELECT * FROM apartments WHERE id = ?", (user["apartment_id"],)
-            ).fetchone()
+            apartment = repository.get_apartment_by_id(conn, user["apartment_id"])
 
         if apartment is None:
+            if parsed.is_empty:
+                return
             await message.reply(
-                "Не понял, к какой квартире относятся показания. "
-                "Добавьте в сообщение строку «Кв. <номер>» или зарегистрируйтесь "
-                "в личных сообщениях бота."
+                "Не понял, к какой квартире относятся показания. Укажите в первой "
+                "строке «Кв. <номер>»."
             )
             return
 
-        accepted: list[str] = []
-        problems: list[str] = list(parsed.errors)
-        for kind, value in parsed.values.items():
-            result = save_reading(conn, apartment["id"], kind, value,
-                                  user["id"] if user else None, source="chat")
-            if result.ok:
-                accepted.append(f"{METER_KINDS[kind]}: {value:g}")
-                if result.warning:
-                    problems.append(f"{METER_KINDS[kind]}: {result.warning}")
-            else:
-                problems.append(f"{METER_KINDS[kind]}: {result.error}")
+        if parsed.is_empty:
+            await message.reply(
+                "Вижу номер квартиры, но не разобрал показания. Пришлите по шаблону, "
+                "например: «Эл.эн 15230», «хвс кухня 123,45»."
+            )
+            return
 
+        outcome = save_parsed_readings(conn, apartment, parsed,
+                                       user["id"] if user else None, source="chat")
         repository.log_event(conn, message.from_user.id, "reading_chat",
-                             f"{apartment['number']}: принято {len(accepted)} "
+                             f"{apartment['number']}: принято {len(outcome.saved)} "
                              f"за {current_period()}")
+        reply = _build_reply(conn, apartment, outcome, parsed)
     finally:
         conn.close()
 
-    display = (apartment["number"] if apartment["type"] == "nonresidential"
-               else f"кв. {apartment['number']}")
-    lines = []
-    if accepted:
-        lines.append(f"✅ {display} — показания записаны:")
-        lines.extend(accepted)
-    if problems:
-        lines.append("")
-        lines.extend(f"⚠️ {p}" for p in problems)
-    await message.reply("\n".join(lines))
+    await message.reply(reply)
+
+
+def _build_reply(conn, apartment, outcome, parsed) -> str:
+    if outcome.anything_saved:
+        text = receipt_text(conn, apartment, outcome.saved)
+    else:
+        text = "Показания не записаны."
+    extras = list(outcome.warnings) + list(outcome.errors)
+    if parsed.ignored:
+        extras.append("Не учитывается: " + ", ".join(parsed.ignored))
+    if extras:
+        text += "\n\n" + "\n".join(f"⚠️ {e}" for e in extras)
+    return text

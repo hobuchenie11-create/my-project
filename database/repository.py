@@ -30,13 +30,21 @@ def list_apartments(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM apartments ORDER BY sort_order, id").fetchall()
 
 
+def get_apartment_by_id(conn: sqlite3.Connection, apartment_id: int) -> sqlite3.Row | None:
+    return conn.execute(
+        "SELECT * FROM apartments WHERE id = ?", (apartment_id,)
+    ).fetchone()
+
+
 def upsert_apartment(conn: sqlite3.Connection, number: str, type_: str,
-                     sort_order: int, note: str = "") -> int:
+                     sort_order: int, note: str = "", layout: str = "full") -> int:
     conn.execute(
-        """INSERT INTO apartments (number, type, sort_order, note) VALUES (?, ?, ?, ?)
+        """INSERT INTO apartments (number, type, layout, sort_order, note)
+           VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(number) DO UPDATE SET type = excluded.type,
-               sort_order = excluded.sort_order, note = excluded.note""",
-        (number, type_, sort_order, note),
+               layout = excluded.layout, sort_order = excluded.sort_order,
+               note = excluded.note""",
+        (number, type_, layout, sort_order, note),
     )
     return conn.execute(
         "SELECT id FROM apartments WHERE number = ?", (number,)
@@ -49,6 +57,23 @@ def ensure_meter(conn: sqlite3.Connection, apartment_id: int, kind: str) -> None
     conn.execute(
         "INSERT OR IGNORE INTO meters (apartment_id, kind) VALUES (?, ?)",
         (apartment_id, kind),
+    )
+
+
+def set_meters(conn: sqlite3.Connection, apartment_id: int, kinds: list[str]) -> None:
+    """Приводит набор приборов квартиры к заданному: нужные — активны, лишние — нет."""
+    for kind in kinds:
+        ensure_meter(conn, apartment_id, kind)
+    placeholders = ",".join("?" * len(kinds)) or "''"
+    conn.execute(
+        f"UPDATE meters SET is_active = 0 WHERE apartment_id = ? "
+        f"AND kind NOT IN ({placeholders})",
+        (apartment_id, *kinds),
+    )
+    conn.execute(
+        f"UPDATE meters SET is_active = 1 WHERE apartment_id = ? "
+        f"AND kind IN ({placeholders})",
+        (apartment_id, *kinds),
     )
 
 
@@ -147,6 +172,22 @@ def apartments_submitted(conn: sqlite3.Connection, period: str) -> set[str]:
 
 
 # ---------- reports / events ----------
+
+def debtors(conn: sqlite3.Connection, period: str) -> list[sqlite3.Row]:
+    """Квартиры, не сдавшие показания за период, с зарегистрированным жителем."""
+    return conn.execute(
+        """SELECT a.number, a.id AS apartment_id, u.tg_id, u.full_name
+           FROM apartments a
+           LEFT JOIN users u ON u.apartment_id = a.id
+           WHERE a.number NOT IN (
+               SELECT DISTINCT a2.number FROM readings r
+               JOIN meters m ON m.id = r.meter_id
+               JOIN apartments a2 ON a2.id = m.apartment_id
+               WHERE r.period = ?)
+           ORDER BY a.sort_order, a.id""",
+        (period,),
+    ).fetchall()
+
 
 def save_report(conn: sqlite3.Connection, period: str, file_path: str) -> None:
     conn.execute("INSERT INTO reports (period, file_path) VALUES (?, ?)", (period, file_path))
