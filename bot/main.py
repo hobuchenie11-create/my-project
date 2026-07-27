@@ -56,6 +56,9 @@ async def main() -> None:
     dp.include_router(start.router)
     dp.include_router(group.router)
 
+    # Сбрасываем возможный вебхук — иначе getUpdates выдает Conflict
+    await bot.delete_webhook(drop_pending_updates=True)
+
     await bot.set_my_commands([
         BotCommand(command="start", description="Запуск / главное меню"),
     ])
