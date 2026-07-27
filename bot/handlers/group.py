@@ -10,6 +10,8 @@
 и записывает показания. Если в сообщении нет номера квартиры, берется
 квартира отправителя (если он зарегистрирован в боте).
 """
+import logging
+
 from aiogram import F, Router
 from aiogram.types import Message
 
@@ -19,14 +21,24 @@ from bot.services.reading_service import (current_period, receipt_text,
                                           save_parsed_readings)
 from database import repository
 
+logger = logging.getLogger(__name__)
 router = Router()
 router.message.filter(F.chat.type.in_({"group", "supergroup"}))
+
+# Чтобы не засорять лог, ID чата подсказываем один раз за запуск
+_hinted_chats: set[int] = set()
 
 
 @router.message(F.text)
 async def handle_group_message(message: Message) -> None:
     if config.group_chat_id and message.chat.id != config.group_chat_id:
         return
+
+    # Пока GROUP_CHAT_ID не задан — подсказываем его в терминале (без сообщений в чат)
+    if config.group_chat_id is None and message.chat.id not in _hinted_chats:
+        _hinted_chats.add(message.chat.id)
+        logger.info("Чат «%s»: GROUP_CHAT_ID=%s (впишите в .env, чтобы собирать "
+                    "показания только отсюда)", message.chat.title, message.chat.id)
 
     parsed = parse_message(message.text)
     if parsed.is_empty and not parsed.apartment_number:
