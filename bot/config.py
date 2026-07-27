@@ -20,6 +20,7 @@ class Config:
     apartments_count: int = int(os.getenv("APARTMENTS_COUNT", "80"))
     nonresidential_count: int = int(os.getenv("NONRESIDENTIAL_COUNT", "2"))
     group_chat_id: int | None = int(os.getenv("GROUP_CHAT_ID")) if os.getenv("GROUP_CHAT_ID") else None
+    proxy_url: str | None = os.getenv("PROXY_URL") or None
     readings_day_start: int = int(os.getenv("READINGS_DAY_START", "20"))
     readings_day_end: int = int(os.getenv("READINGS_DAY_END", "25"))
     reminder_days: tuple[int, ...] = field(

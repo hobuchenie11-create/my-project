@@ -4,6 +4,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
@@ -36,7 +37,13 @@ async def main() -> None:
     _apply_registry_if_present()
     logger.info("База данных готова: %s", config.db_path)
 
-    bot = Bot(token=config.bot_token,
+    # Если задан PROXY_URL — весь трафик бота идет через прокси (например,
+    # локальный порт Nekobox), т.к. Python сам системный VPN не использует.
+    session = AiohttpSession(proxy=config.proxy_url) if config.proxy_url else None
+    if config.proxy_url:
+        logger.info("Бот подключается через прокси: %s", config.proxy_url)
+
+    bot = Bot(token=config.bot_token, session=session,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
 
