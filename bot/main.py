@@ -4,12 +4,12 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
-from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
 from bot.config import config
 from bot.handlers import admin, common, group, readings, registration, reports, start
+from bot.proxy import make_session
 from bot.scheduler import run_reminder_scheduler
 from bot.utils.logger import setup_logging
 from database.init_db import init_db
@@ -39,7 +39,7 @@ async def main() -> None:
 
     # Если задан PROXY_URL — весь трафик бота идет через прокси (например,
     # локальный порт Nekobox), т.к. Python сам системный VPN не использует.
-    session = AiohttpSession(proxy=config.proxy_url) if config.proxy_url else None
+    session = make_session(config.proxy_url)
     if config.proxy_url:
         logger.info("Бот подключается через прокси: %s", config.proxy_url)
 

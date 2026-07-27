@@ -37,12 +37,12 @@ async def check() -> None:
     proxy = None
     if config.proxy_url and config.proxy_url.startswith("socks"):
         try:
-            from aiohttp_socks import ProxyConnector
+            from bot.proxy import build_socks_connector
         except ImportError:
             print("[ОШИБКА] Не установлен пакет aiohttp-socks.")
             print("         -> Выполните: python -m pip install -r requirements.txt")
             return
-        connector = ProxyConnector.from_url(config.proxy_url)
+        connector = build_socks_connector(config.proxy_url)  # с удаленным DNS (rdns)
     elif config.proxy_url:  # http/https-прокси
         proxy = config.proxy_url
 
