@@ -444,7 +444,10 @@ function loadCart() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
   catch { return {}; }
 }
-function saveCart() { localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)); }
+function saveCart() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)); }
+  catch { /* storage unavailable (private mode / sandbox) — cart stays in memory */ }
+}
 
 /* ─────────────────────────────────────────────────────────
    CART OPS
