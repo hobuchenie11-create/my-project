@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#DC2626" />
+<title>Тёплая печь — заказ выпечки и шаурмы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@300;400;500;600;700&family=Playfair+Display+SC:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  /* ─────────────────────────────────────────────────────────
+     Design system (ui-ux-pro-max): appetizing red + warm gold
+     ───────────────────────────────────────────────────────── */
+  :root {
+    --primary: #DC2626;
+    --primary-hover: #B91C1C;
+    --on-primary: #FFFFFF;
+    --secondary: #F87171;
+    --accent: #A16207;
+    --accent-hover: #854D0E;
+    --bg: #FEF2F2;
+    --surface: #FFFFFF;
+    --fg: #450A0A;
+    --muted-fg: #7A5C5C;
+    --muted: #F5EDED;
+    --border: #FCD9D9;
+    --destructive: #DC2626;
+    --ring: #DC2626;
+
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow-sm: 0 1px 3px rgba(69,10,10,.08);
+    --shadow: 0 8px 30px rgba(69,10,10,.10);
+    --shadow-lg: 0 20px 50px rgba(69,10,10,.18);
+
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+    --space-5: 24px; --space-6: 32px; --space-8: 48px; --space-10: 64px;
+
+    --font-head: 'Playfair Display SC', Georgia, 'Times New Roman', serif;
+    --font-body: 'Karla', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --dur: 220ms;
+    --ease: cubic-bezier(.22,.61,.36,1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1A0B0B;
+      --surface: #2A1414;
+      --fg: #FDECEC;
+      --muted-fg: #C8A6A6;
+      --muted: #351B1B;
+      --border: #4A2020;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
+      --shadow: 0 8px 30px rgba(0,0,0,.45);
+      --shadow-lg: 0 20px 50px rgba(0,0,0,.55);
+      --secondary: #FCA5A5;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3 { font-family: var(--font-head); font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
+
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; border-radius: 6px; }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 var(--space-5); }
+
+  /* ── Header ── */
+  header {
+    position: sticky; top: 0; z-index: 40;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: var(--space-4); }
+  .brand { display: flex; align-items: center; gap: var(--space-3); font-family: var(--font-head); font-size: 20px; color: var(--fg); text-decoration: none; }
+  .brand .logo { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; flex: none; }
+  .brand small { display: block; font-family: var(--font-body); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted-fg); font-weight: 600; }
+
+  .cart-btn {
+    position: relative; display: inline-flex; align-items: center; gap: var(--space-2);
+    min-height: 44px; padding: 0 var(--space-4); border-radius: 999px;
+    background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 15px;
+    transition: background var(--dur) var(--ease), transform var(--dur) var(--ease);
+  }
+  .cart-btn:hover { background: var(--primary-hover); }
+  .cart-btn:active { transform: scale(.97); }
+  .cart-btn .count {
+    position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px;
+    border-radius: 999px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700;
+    display: grid; place-items: center; border: 2px solid var(--surface); transform: scale(0); transition: transform var(--dur) var(--ease);
+  }
+  .cart-btn.has-items .count { transform: scale(1); }
+  .cart-btn .label-total { font-variant-numeric: tabular-nums; }
+
+  /* ── Hero ── */
+  .hero { position: relative; padding: var(--space-10) 0 var(--space-8); overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background:
+      radial-gradient(60% 80% at 15% 10%, color-mix(in srgb, var(--secondary) 45%, transparent), transparent 60%),
+      radial-gradient(50% 70% at 95% 20%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 55%);
+  }
+  .hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: var(--space-8); align-items: center; }
+  .hero .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); padding: 6px 14px; border-radius: 999px; }
+  .hero h1 { font-size: clamp(38px, 6vw, 62px); margin: var(--space-4) 0 var(--space-3); }
+  .hero p.lead { font-size: clamp(17px, 2.2vw, 20px); color: var(--muted-fg); max-width: 46ch; }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+  .btn-primary, .btn-ghost {
+    display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 var(--space-6);
+    border-radius: 999px; font-weight: 700; font-size: 16px; transition: all var(--dur) var(--ease);
+  }
+  .btn-primary { background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow); }
+  .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .btn-ghost { background: var(--surface); color: var(--fg); border: 2px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+
+  .hero-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: var(--space-6);
+    box-shadow: var(--shadow-lg);
+  }
+  .hero-card .tile { aspect-ratio: 16/10; border-radius: 16px; background: linear-gradient(135deg, #FCA5A5, #DC2626 60%, #A16207); display: grid; place-items: center; font-size: 82px; }
+  .hero-features { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--space-3); margin-top: var(--space-5); }
+  .hero-features div { text-align: center; }
+  .hero-features .k { font-family: var(--font-head); font-size: 22px; color: var(--primary); }
+  .hero-features .v { font-size: 12.5px; color: var(--muted-fg); }
+
+  /* ── Menu ── */
+  section.menu { padding: var(--space-10) 0; }
+  .section-head { text-align: center; max-width: 640px; margin: 0 auto var(--space-6); }
+  .section-head h2 { font-size: clamp(28px, 4vw, 40px); }
+  .section-head p { color: var(--muted-fg); margin-top: var(--space-2); }
+
+  .filters { display: flex; gap: var(--space-2); justify-content: center; flex-wrap: wrap; margin-bottom: var(--space-6); position: sticky; top: 76px; z-index: 20; }
+  .chip {
+    min-height: 44px; padding: 0 var(--space-5); border-radius: 999px; font-weight: 600; font-size: 15px;
+    background: var(--surface); color: var(--fg); border: 2px solid var(--border);
+    transition: all var(--dur) var(--ease); display: inline-flex; align-items: center; gap: 8px;
+  }
+  .chip:hover { border-color: var(--secondary); }
+  .chip[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: var(--space-5); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+    display: flex; flex-direction: column; transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+  .card .thumb { aspect-ratio: 4/3; display: grid; place-items: center; font-size: 64px; position: relative; }
+  .card .thumb.buns { background: linear-gradient(135deg, #FDE68A, #F59E0B); }
+  .card .thumb.shawarma { background: linear-gradient(135deg, #FCA5A5, #DC2626); }
+  .card .thumb.drinks { background: linear-gradient(135deg, #FBCFE8, #A16207); }
+  .badge { position: absolute; top: 12px; left: 12px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; backdrop-filter: blur(4px); }
+  .card .body { padding: var(--space-4); display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .card h3 { font-family: var(--font-body); font-weight: 700; font-size: 18px; }
+  .card .desc { font-size: 14px; color: var(--muted-fg); flex: 1; }
+  .card .row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-2); }
+  .price { font-family: var(--font-head); font-size: 22px; color: var(--fg); font-variant-numeric: tabular-nums; }
+  .add-btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 var(--space-4);
+    border-radius: 999px; background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 15px;
+    transition: background var(--dur) var(--ease), transform var(--dur) var(--ease);
+  }
+  .add-btn:hover { background: var(--primary-hover); }
+  .add-btn:active { transform: scale(.95); }
+
+  .stepper { display: inline-flex; align-items: center; gap: 2px; background: var(--muted); border-radius: 999px; padding: 4px; }
+  .stepper button { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; color: var(--primary); background: var(--surface); box-shadow: var(--shadow-sm); transition: transform var(--dur) var(--ease); }
+  .stepper button:active { transform: scale(.9); }
+  .stepper .qty { min-width: 28px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ── Cart drawer ── */
+  .overlay { position: fixed; inset: 0; background: rgba(30,5,5,.5); opacity: 0; visibility: hidden; transition: opacity var(--dur) var(--ease); z-index: 50; backdrop-filter: blur(2px); }
+  .overlay.open { opacity: 1; visibility: visible; }
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100dvh; width: min(440px, 100vw); background: var(--surface);
+    z-index: 60; transform: translateX(100%); transition: transform var(--dur) var(--ease);
+    display: flex; flex-direction: column; box-shadow: var(--shadow-lg);
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: var(--space-5); border-bottom: 1px solid var(--border); }
+  .drawer-head h2 { font-size: 24px; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 999px; display: grid; place-items: center; color: var(--fg); transition: background var(--dur) var(--ease); }
+  .icon-btn:hover { background: var(--muted); }
+  .drawer-body { flex: 1; overflow-y: auto; padding: var(--space-4) var(--space-5); }
+  .drawer-foot { padding: var(--space-5); border-top: 1px solid var(--border); background: var(--surface); }
+
+  .line { display: flex; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
+  .line .li-thumb { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; font-size: 30px; flex: none; }
+  .line .li-main { flex: 1; min-width: 0; }
+  .line .li-name { font-weight: 700; font-size: 15px; }
+  .line .li-price { font-size: 13px; color: var(--muted-fg); }
+  .line .li-controls { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .remove { font-size: 13px; color: var(--destructive); font-weight: 600; }
+
+  .empty { text-align: center; color: var(--muted-fg); padding: var(--space-10) var(--space-4); }
+  .empty .big { font-size: 56px; margin-bottom: var(--space-3); }
+
+  .totals { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-4); }
+  .totals .t-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted-fg); }
+  .totals .t-row.grand { font-size: 20px; color: var(--fg); font-weight: 700; font-family: var(--font-head); }
+  .totals .t-row.grand span:last-child { font-variant-numeric: tabular-nums; }
+
+  .full-btn { width: 100%; min-height: 54px; border-radius: var(--radius); background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 17px; transition: background var(--dur) var(--ease), transform var(--dur) var(--ease); display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+  .full-btn:hover { background: var(--primary-hover); }
+  .full-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* ── Checkout form ── */
+  .field { margin-bottom: var(--space-4); }
+  .field label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+  .field label .req { color: var(--destructive); }
+  .field input, .field textarea, .field select {
+    width: 100%; min-height: 48px; padding: 12px 14px; border-radius: var(--radius-sm);
+    border: 2px solid var(--border); background: var(--surface); color: var(--fg); font: inherit; font-size: 15px;
+    transition: border-color var(--dur) var(--ease);
+  }
+  .field textarea { min-height: 80px; resize: vertical; }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--primary); }
+  .field.invalid input, .field.invalid textarea, .field.invalid select { border-color: var(--destructive); }
+  .field .err { display: none; color: var(--destructive); font-size: 13px; margin-top: 5px; font-weight: 600; }
+  .field.invalid .err { display: block; }
+
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+  .seg label { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border-radius: var(--radius-sm); border: 2px solid var(--border); font-weight: 600; cursor: pointer; transition: all var(--dur) var(--ease); }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label:has(input:checked) { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); }
+
+  /* ── Success ── */
+  .success { text-align: center; padding: var(--space-6) var(--space-4); }
+  .success .check { width: 84px; height: 84px; border-radius: 999px; background: color-mix(in srgb, #16A34A 15%, transparent); color: #16A34A; display: grid; place-items: center; margin: 0 auto var(--space-4); }
+  .success h2 { font-size: 28px; margin-bottom: var(--space-2); }
+  .success p { color: var(--muted-fg); margin-bottom: var(--space-5); }
+  .success .order-code { font-family: var(--font-head); font-size: 20px; color: var(--primary); background: var(--muted); border-radius: 12px; padding: 10px 18px; display: inline-block; margin-bottom: var(--space-5); }
+  .success .send-row { display: flex; flex-direction: column; gap: var(--space-2); }
+  .send-wa { background: #25D366; color: #fff; }
+  .send-wa:hover { background: #1EBE5B; }
+  .send-tg { background: #229ED9; color: #fff; }
+  .send-tg:hover { background: #1B8CC2; }
+  .send-copy { background: var(--surface); color: var(--fg); border: 2px solid var(--border); }
+  .send-copy:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* ── Toast ── */
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 120%); background: var(--fg); color: var(--bg); padding: 14px 22px; border-radius: 999px; font-weight: 600; z-index: 80; box-shadow: var(--shadow-lg); transition: transform var(--dur) var(--ease); max-width: 90vw; }
+  .toast.show { transform: translate(-50%, 0); }
+
+  footer { border-top: 1px solid var(--border); padding: var(--space-6) 0; color: var(--muted-fg); font-size: 14px; text-align: center; }
+
+  @media (max-width: 860px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-card { order: -1; }
+    .filters { top: 68px; }
+  }
+  @media (max-width: 520px) {
+    .container { padding: 0 var(--space-4); }
+    .brand .name-full { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container header-inner">
+    <a class="brand" href="#top">
+      <span class="logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 16 0"/><path d="M2 11h20l-1.5 8.5a2 2 0 0 1-2 1.5H5.5a2 2 0 0 1-2-1.5Z"/></svg>
+      </span>
+      <span>
+        <span class="name-full">Тёплая печь</span>
+        <small>выпечка &amp; шаурма</small>
+      </span>
+    </a>
+    <button class="cart-btn" id="cartBtn" aria-label="Открыть корзину">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="label-total" id="cartTotalLabel">0 ₽</span>
+      <span class="count" id="cartCount">0</span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">Свежее каждый день</span>
+        <h1>Булочки из печи и сочная шаурма — на заказ</h1>
+        <p class="lead">Домашняя выпечка от кондитера и шаурма на свежем лаваше. Соберите заказ за пару минут — заберёте сами или привезём.</p>
+        <div class="hero-cta">
+          <a class="btn-primary" href="#menu">
+            Смотреть меню
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn-ghost" href="#how">Как заказать</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="tile" aria-hidden="true">🥐</div>
+        <div class="hero-features">
+          <div><div class="k">30<span style="font-size:14px">мин</span></div><div class="v">готовим заказ</div></div>
+          <div><div class="k">18+</div><div class="v">позиций в меню</div></div>
+          <div><div class="k">★ 4.9</div><div class="v">оценка гостей</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU -->
+  <section class="menu" id="menu">
+    <div class="container">
+      <div class="section-head">
+        <h2>Меню</h2>
+        <p>Нажмите «В корзину», отрегулируйте количество и оформите заказ.</p>
+      </div>
+      <div class="filters" id="filters" role="group" aria-label="Категории меню"></div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="menu" id="how" style="padding-top:0">
+    <div class="container">
+      <div class="section-head">
+        <h2>Как оформить заказ</h2>
+        <p>Три простых шага — и ваша выпечка уже готовится.</p>
+      </div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+        <div class="card" style="padding:var(--space-5)">
+          <div class="price">1</div><h3>Выберите блюда</h3>
+          <p class="desc">Добавьте булочки, шаурму и напитки в корзину.</p>
+        </div>
+        <div class="card" style="padding:var(--space-5)">
+          <div class="price">2</div><h3>Заполните контакты</h3>
+          <p class="desc">Имя, телефон, самовывоз или доставка и удобное время.</p>
+        </div>
+        <div class="card" style="padding:var(--space-5)">
+          <div class="price">3</div><h3>Отправьте заказ</h3>
+          <p class="desc">Одна кнопка — заказ уходит в WhatsApp или Telegram кондитеру.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <p>«Тёплая печь» — домашняя пекарня. Работаем ежедневно 8:00–21:00.</p>
+    <p style="margin-top:6px">Демо-приложение приёма заказов · оформлено с помощью ui-ux-pro-max</p>
+  </div>
+</footer>
+
+<!-- CART DRAWER -->
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer" aria-label="Корзина и оформление заказа" aria-hidden="true">
+  <div class="drawer-head">
+    <h2 id="drawerTitle">Ваш заказ</h2>
+    <button class="icon-btn" id="closeDrawer" aria-label="Закрыть">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawerBody"><!-- rendered --></div>
+  <div class="drawer-foot" id="drawerFoot"><!-- rendered --></div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ─────────────────────────────────────────────────────────
+   CONFIG — кондитер настраивает под себя
+   ───────────────────────────────────────────────────────── */
+const CONFIG = {
+  currency: "₽",
+  deliveryFee: 200,          // стоимость доставки
+  freeDeliveryFrom: 1500,    // бесплатная доставка от суммы
+  // Укажите номера кондитера (без + и пробелов для WhatsApp), либо оставьте пусто.
+  whatsappPhone: "",         // напр. "79001234567"
+  telegramUser: "",          // напр. "teplaya_pech" (без @)
+  businessName: "Тёплая печь",
+};
+
+/* ─────────────────────────────────────────────────────────
+   МЕНЮ
+   ───────────────────────────────────────────────────────── */
+const CATEGORIES = [
+  { id: "all",      name: "Всё" },
+  { id: "buns",     name: "Булочки и выпечка" },
+  { id: "shawarma", name: "Шаурма" },
+  { id: "drinks",   name: "Напитки" },
+];
+
+const MENU = [
+  { id: "b1", cat: "buns", emoji: "🥐", name: "Круассан классический", desc: "Слоёное масляное тесто, хрустящая корочка.", price: 140, badge: "Хит" },
+  { id: "b2", cat: "buns", emoji: "🍫", name: "Круассан с шоколадом", desc: "С бельгийским тёмным шоколадом внутри.", price: 160 },
+  { id: "b3", cat: "buns", emoji: "🌀", name: "Синнабон с кремом", desc: "Мягкая булочка с корицей и сливочным кремом.", price: 180, badge: "Новинка" },
+  { id: "b4", cat: "buns", emoji: "🍥", name: "Булочка с корицей", desc: "Ароматная витая булочка, сахарная глазурь.", price: 120 },
+  { id: "b5", cat: "buns", emoji: "🧀", name: "Ватрушка с творогом", desc: "Нежное дрожжевое тесто, домашний творог.", price: 110 },
+  { id: "b6", cat: "buns", emoji: "🥧", name: "Пирожок с яблоком", desc: "Печёный пирожок с сочной яблочной начинкой.", price: 90 },
+  { id: "b7", cat: "buns", emoji: "🍮", name: "Эклер заварной", desc: "Заварное тесто, ванильный крем, глазурь.", price: 130 },
+  { id: "b8", cat: "buns", emoji: "🥨", name: "Плюшка «Московская»", desc: "Сдобная плюшка-сердечко с сахаром.", price: 95 },
+
+  { id: "s1", cat: "shawarma", emoji: "🌯", name: "Шаурма классическая", desc: "Курица, свежие овощи, фирменный соус, лаваш.", price: 250, badge: "Хит" },
+  { id: "s2", cat: "shawarma", emoji: "🥩", name: "Шаурма с говядиной", desc: "Сочная говядина, овощи, чесночный соус.", price: 320 },
+  { id: "s3", cat: "shawarma", emoji: "🌶️", name: "Шаурма острая", desc: "Курица, острый соус халапеньо, овощи.", price: 270 },
+  { id: "s4", cat: "shawarma", emoji: "🥗", name: "Шаурма вегетарианская", desc: "Фалафель, свежие овощи, соус тахини.", price: 230 },
+  { id: "s5", cat: "shawarma", emoji: "🍖", name: "Шаурма XXL", desc: "Двойная порция мяса для большого голода.", price: 390, badge: "XXL" },
+  { id: "s6", cat: "shawarma", emoji: "🔥", name: "Люля в лаваше", desc: "Люля-кебаб, маринованный лук, зелень.", price: 300 },
+
+  { id: "d1", cat: "drinks", emoji: "☕", name: "Кофе латте", desc: "Эспрессо и вспененное молоко, 300 мл.", price: 150 },
+  { id: "d2", cat: "drinks", emoji: "🥤", name: "Капучино", desc: "Классический, плотная молочная пенка.", price: 140 },
+  { id: "d3", cat: "drinks", emoji: "🍋", name: "Лимонад домашний", desc: "Свежий лимон, мята, газированная вода.", price: 120 },
+  { id: "d4", cat: "drinks", emoji: "🫖", name: "Чай травяной", desc: "Согревающий сбор трав, 400 мл.", price: 80 },
+];
+
+const MENU_BY_ID = Object.fromEntries(MENU.map(m => [m.id, m]));
+const fmt = n => n.toLocaleString("ru-RU") + " " + CONFIG.currency;
+
+/* ─────────────────────────────────────────────────────────
+   STATE
+   ───────────────────────────────────────────────────────── */
+const STORAGE_KEY = "teplaya-pech-cart-v1";
+let cart = loadCart();          // { [id]: qty }
+let activeCat = "all";
+let drawerView = "cart";        // cart | checkout | success
+
+function loadCart() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveCart() { localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)); }
+
+/* ─────────────────────────────────────────────────────────
+   CART OPS
+   ───────────────────────────────────────────────────────── */
+function addToCart(id) { cart[id] = (cart[id] || 0) + 1; saveCart(); renderAll(); }
+function setQty(id, qty) {
+  if (qty <= 0) delete cart[id]; else cart[id] = qty;
+  saveCart(); renderAll();
+}
+function cartItems() { return Object.entries(cart).map(([id, qty]) => ({ item: MENU_BY_ID[id], qty })).filter(x => x.item); }
+function cartCount() { return Object.values(cart).reduce((a, b) => a + b, 0); }
+function subtotal() { return cartItems().reduce((s, { item, qty }) => s + item.price * qty, 0); }
+function deliveryCost(mode) {
+  if (mode !== "delivery") return 0;
+  return subtotal() >= CONFIG.freeDeliveryFrom ? 0 : CONFIG.deliveryFee;
+}
+
+/* ─────────────────────────────────────────────────────────
+   RENDER: menu
+   ───────────────────────────────────────────────────────── */
+function renderFilters() {
+  const el = document.getElementById("filters");
+  el.innerHTML = "";
+  CATEGORIES.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = c.name;
+    b.setAttribute("aria-pressed", String(c.id === activeCat));
+    b.onclick = () => { activeCat = c.id; renderFilters(); renderGrid(); };
+    el.appendChild(b);
+  });
+}
+
+function renderGrid() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  const items = MENU.filter(m => activeCat === "all" || m.cat === activeCat);
+  items.forEach(m => {
+    const qty = cart[m.id] || 0;
+    const card = document.createElement("article");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="thumb ${m.cat}" aria-hidden="true">${m.emoji}${m.badge ? `<span class="badge">${m.badge}</span>` : ""}</div>
+      <div class="body">
+        <h3>${m.name}</h3>
+        <p class="desc">${m.desc}</p>
+        <div class="row">
+          <span class="price">${fmt(m.price)}</span>
+          <span class="control-slot"></span>
+        </div>
+      </div>`;
+    card.querySelector(".control-slot").appendChild(qty > 0 ? stepperEl(m.id, qty) : addBtnEl(m.id));
+    grid.appendChild(card);
+  });
+}
+
+function addBtnEl(id) {
+  const b = document.createElement("button");
+  b.className = "add-btn";
+  b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> В корзину`;
+  b.setAttribute("aria-label", "Добавить в корзину: " + MENU_BY_ID[id].name);
+  b.onclick = () => { addToCart(id); toast(MENU_BY_ID[id].name + " — в корзине"); };
+  return b;
+}
+
+function stepperEl(id, qty) {
+  const wrap = document.createElement("div");
+  wrap.className = "stepper";
+  wrap.setAttribute("role", "group");
+  wrap.setAttribute("aria-label", "Количество: " + MENU_BY_ID[id].name);
+  const minus = document.createElement("button");
+  minus.setAttribute("aria-label", "Убрать одну штуку");
+  minus.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>`;
+  minus.onclick = () => setQty(id, (cart[id] || 0) - 1);
+  const n = document.createElement("span");
+  n.className = "qty"; n.textContent = qty; n.setAttribute("aria-live", "polite");
+  const plus = document.createElement("button");
+  plus.setAttribute("aria-label", "Добавить одну штуку");
+  plus.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
+  plus.onclick = () => setQty(id, (cart[id] || 0) + 1);
+  wrap.append(minus, n, plus);
+  return wrap;
+}
+
+/* ─────────────────────────────────────────────────────────
+   RENDER: header + drawer
+   ───────────────────────────────────────────────────────── */
+function renderHeader() {
+  const count = cartCount();
+  document.getElementById("cartCount").textContent = count;
+  document.getElementById("cartTotalLabel").textContent = fmt(subtotal());
+  document.getElementById("cartBtn").classList.toggle("has-items", count > 0);
+}
+
+function renderDrawer() {
+  const body = document.getElementById("drawerBody");
+  const foot = document.getElementById("drawerFoot");
+  const title = document.getElementById("drawerTitle");
+
+  if (drawerView === "success") { title.textContent = "Заказ оформлен"; return; }
+
+  const items = cartItems();
+  if (items.length === 0) {
+    title.textContent = "Ваш заказ";
+    body.innerHTML = `<div class="empty"><div class="big" aria-hidden="true">🧺</div><p>Корзина пока пустая.<br>Добавьте что-нибудь вкусное из меню.</p></div>`;
+    foot.innerHTML = "";
+    return;
+  }
+
+  if (drawerView === "cart") {
+    title.textContent = "Ваш заказ";
+    body.innerHTML = "";
+    items.forEach(({ item, qty }) => {
+      const line = document.createElement("div");
+      line.className = "line";
+      line.innerHTML = `
+        <div class="li-thumb ${item.cat}" aria-hidden="true">${item.emoji}</div>
+        <div class="li-main">
+          <div class="li-name">${item.name}</div>
+          <div class="li-price">${fmt(item.price)} × ${qty} = <strong>${fmt(item.price * qty)}</strong></div>
+        </div>
+        <div class="li-controls"><span class="stepper-slot"></span><button class="remove" aria-label="Удалить ${item.name}">Удалить</button></div>`;
+      line.querySelector(".stepper-slot").appendChild(stepperEl(item.id, qty));
+      line.querySelector(".remove").onclick = () => setQty(item.id, 0);
+      body.appendChild(line);
+    });
+    foot.innerHTML = `
+      <div class="totals"><div class="t-row grand"><span>Итого</span><span>${fmt(subtotal())}</span></div></div>
+      <button class="full-btn" id="toCheckout">Оформить заказ</button>`;
+    document.getElementById("toCheckout").onclick = () => { drawerView = "checkout"; renderDrawer(); };
+    return;
+  }
+
+  if (drawerView === "checkout") {
+    title.textContent = "Оформление";
+    body.innerHTML = `
+      <form id="orderForm" novalidate>
+        <div class="field" data-field="name">
+          <label for="f-name">Имя <span class="req">*</span></label>
+          <input id="f-name" name="name" type="text" autocomplete="name" placeholder="Как к вам обращаться" />
+          <span class="err">Пожалуйста, укажите имя</span>
+        </div>
+        <div class="field" data-field="phone">
+          <label for="f-phone">Телефон <span class="req">*</span></label>
+          <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 900 123-45-67" />
+          <span class="err">Введите корректный номер (не меньше 10 цифр)</span>
+        </div>
+        <div class="field">
+          <label>Способ получения</label>
+          <div class="seg" role="radiogroup" aria-label="Способ получения">
+            <label><input type="radio" name="mode" value="pickup" checked /> Самовывоз</label>
+            <label><input type="radio" name="mode" value="delivery" /> Доставка</label>
+          </div>
+        </div>
+        <div class="field" data-field="address" id="addrField" hidden>
+          <label for="f-addr">Адрес доставки <span class="req">*</span></label>
+          <input id="f-addr" name="address" type="text" autocomplete="street-address" placeholder="Улица, дом, квартира" />
+          <span class="err">Укажите адрес доставки</span>
+        </div>
+        <div class="field">
+          <label for="f-time">Желаемое время</label>
+          <input id="f-time" name="time" type="text" placeholder="Например: сегодня к 18:30" />
+        </div>
+        <div class="field">
+          <label for="f-comment">Комментарий</label>
+          <textarea id="f-comment" name="comment" placeholder="Пожелания к заказу, соусы, без лука и т.п."></textarea>
+        </div>
+      </form>`;
+
+    const modeRadios = body.querySelectorAll('input[name="mode"]');
+    const addrField = body.querySelector("#addrField");
+    const updateMode = () => {
+      const mode = body.querySelector('input[name="mode"]:checked').value;
+      addrField.hidden = mode !== "delivery";
+      renderCheckoutFoot();
+    };
+    modeRadios.forEach(r => r.addEventListener("change", updateMode));
+
+    // inline validation on blur (UX guideline)
+    ["name", "phone", "address"].forEach(f => {
+      const input = body.querySelector(`[name="${f}"]`);
+      if (input) input.addEventListener("blur", () => validateField(f));
+      if (input) input.addEventListener("input", () => {
+        const fld = body.querySelector(`[data-field="${f}"]`);
+        if (fld.classList.contains("invalid")) validateField(f);
+      });
+    });
+
+    renderCheckoutFoot();
+    return;
+  }
+}
+
+function renderCheckoutFoot() {
+  const foot = document.getElementById("drawerFoot");
+  const mode = document.querySelector('input[name="mode"]:checked')?.value || "pickup";
+  const del = deliveryCost(mode);
+  const grand = subtotal() + del;
+  foot.innerHTML = `
+    <div class="totals">
+      <div class="t-row"><span>Сумма заказа</span><span>${fmt(subtotal())}</span></div>
+      <div class="t-row"><span>${mode === "delivery" ? "Доставка" : "Самовывоз"}</span><span>${del === 0 ? (mode === "delivery" ? "бесплатно" : "0 ₽") : fmt(del)}</span></div>
+      <div class="t-row grand"><span>К оплате</span><span>${fmt(grand)}</span></div>
+    </div>
+    <button class="full-btn" id="placeOrder">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+      Подтвердить заказ
+    </button>
+    <button class="full-btn" id="backToCart" style="background:transparent;color:var(--muted-fg);box-shadow:none;min-height:44px;margin-top:8px">← Назад к корзине</button>`;
+  document.getElementById("placeOrder").onclick = placeOrder;
+  document.getElementById("backToCart").onclick = () => { drawerView = "cart"; renderDrawer(); };
+}
+
+/* ─────────────────────────────────────────────────────────
+   VALIDATION
+   ───────────────────────────────────────────────────────── */
+function validateField(name) {
+  const fld = document.querySelector(`[data-field="${name}"]`);
+  if (!fld || fld.hidden) return true;
+  const input = fld.querySelector("input,textarea");
+  let ok = true;
+  const v = input.value.trim();
+  if (name === "name") ok = v.length >= 2;
+  else if (name === "phone") ok = (v.replace(/\D/g, "").length >= 10);
+  else if (name === "address") ok = v.length >= 5;
+  fld.classList.toggle("invalid", !ok);
+  return ok;
+}
+
+/* ─────────────────────────────────────────────────────────
+   PLACE ORDER
+   ───────────────────────────────────────────────────────── */
+let lastOrder = null;
+
+function placeOrder() {
+  const form = document.getElementById("orderForm");
+  const mode = form.mode.value;
+  const fields = ["name", "phone"];
+  if (mode === "delivery") fields.push("address");
+  const allOk = fields.map(validateField).every(Boolean);
+  if (!allOk) { toast("Проверьте выделенные поля"); return; }
+
+  const btn = document.getElementById("placeOrder");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner" aria-hidden="true"></span> Оформляем…`;
+
+  // simulate submit feedback (loading -> success), UX guideline
+  setTimeout(() => {
+    const data = {
+      code: "TP-" + Math.random().toString(36).slice(2, 6).toUpperCase(),
+      name: form.name.value.trim(),
+      phone: form.phone.value.trim(),
+      mode,
+      address: mode === "delivery" ? form.address.value.trim() : "",
+      time: form.time.value.trim(),
+      comment: form.comment.value.trim(),
+      items: cartItems().map(({ item, qty }) => ({ name: item.name, qty, price: item.price, sum: item.price * qty })),
+      subtotal: subtotal(),
+      delivery: deliveryCost(mode),
+      total: subtotal() + deliveryCost(mode),
+      at: new Date().toISOString(),
+    };
+    lastOrder = data;
+    // persist a lightweight order log locally (for the baker/demo)
+    try {
+      const log = JSON.parse(localStorage.getItem("teplaya-pech-orders") || "[]");
+      log.push(data); localStorage.setItem("teplaya-pech-orders", JSON.stringify(log));
+    } catch {}
+    cart = {}; saveCart();
+    drawerView = "success";
+    renderSuccess(data);
+    renderHeader(); renderGrid(); renderFilters();
+  }, 700);
+}
+
+function orderText(o) {
+  const lines = [];
+  lines.push(`🧾 Новый заказ · ${CONFIG.businessName}`);
+  lines.push(`№ ${o.code}`);
+  lines.push("");
+  o.items.forEach(i => lines.push(`• ${i.name} × ${i.qty} — ${fmt(i.sum)}`));
+  lines.push("");
+  lines.push(`Сумма: ${fmt(o.subtotal)}`);
+  lines.push(o.mode === "delivery" ? `Доставка: ${o.delivery === 0 ? "бесплатно" : fmt(o.delivery)}` : "Самовывоз");
+  lines.push(`Итого: ${fmt(o.total)}`);
+  lines.push("");
+  lines.push(`Имя: ${o.name}`);
+  lines.push(`Телефон: ${o.phone}`);
+  lines.push(`Получение: ${o.mode === "delivery" ? "Доставка" : "Самовывоз"}`);
+  if (o.address) lines.push(`Адрес: ${o.address}`);
+  if (o.time) lines.push(`Время: ${o.time}`);
+  if (o.comment) lines.push(`Комментарий: ${o.comment}`);
+  return lines.join("\n");
+}
+
+function renderSuccess(o) {
+  const body = document.getElementById("drawerBody");
+  const foot = document.getElementById("drawerFoot");
+  const text = orderText(o);
+  const enc = encodeURIComponent(text);
+  const waHref = CONFIG.whatsappPhone ? `https://wa.me/${CONFIG.whatsappPhone}?text=${enc}` : `https://wa.me/?text=${enc}`;
+  const tgHref = CONFIG.telegramUser ? `https://t.me/${CONFIG.telegramUser}` : `https://t.me/share/url?url=&text=${enc}`;
+
+  body.innerHTML = `
+    <div class="success">
+      <div class="check" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h2>Спасибо, ${o.name.split(" ")[0] || "друг"}!</h2>
+      <p>Заказ собран. Отправьте его кондитеру любым удобным способом — так мы примем его в работу.</p>
+      <div class="order-code">Заказ ${o.code} · ${fmt(o.total)}</div>
+      <div class="send-row">
+        <a class="full-btn send-wa" href="${waHref}" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15l-1.4 5 5.1-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.8.9.8 1.7 1 2 1.2.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.6-.1l1.9.9c.2.1.4.2.5.3.1.3.1.7-.1 1.3Z"/></svg>
+          Отправить в WhatsApp
+        </a>
+        <a class="full-btn send-tg" href="${tgHref}" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3 18.7 19.5c-.2 1-.9 1.3-1.8.8l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.7 13.2 1.8 11.7c-1-.3-1.1-1 .2-1.5L20.5 2.9c.9-.3 1.6.2 1.4 1.4Z"/></svg>
+          Отправить в Telegram
+        </a>
+        <button class="full-btn send-copy" id="copyOrder">Скопировать текст заказа</button>
+      </div>
+    </div>`;
+  foot.innerHTML = `<button class="full-btn" id="newOrder">Сделать новый заказ</button>`;
+  document.getElementById("copyOrder").onclick = async () => {
+    try { await navigator.clipboard.writeText(text); toast("Текст заказа скопирован"); }
+    catch { toast("Скопируйте вручную из окна"); }
+  };
+  document.getElementById("newOrder").onclick = () => { drawerView = "cart"; closeDrawer(); renderDrawer(); };
+}
+
+/* ─────────────────────────────────────────────────────────
+   DRAWER open/close
+   ───────────────────────────────────────────────────────── */
+const overlay = document.getElementById("overlay");
+const drawer = document.getElementById("drawer");
+let lastFocused = null;
+
+function openDrawer() {
+  if (drawerView === "success") { /* keep */ } else { drawerView = cartItems().length ? "cart" : "cart"; }
+  lastFocused = document.activeElement;
+  overlay.classList.add("open");
+  drawer.classList.add("open");
+  drawer.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  renderDrawer();
+  document.getElementById("closeDrawer").focus();
+}
+function closeDrawer() {
+  overlay.classList.remove("open");
+  drawer.classList.remove("open");
+  drawer.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  if (lastFocused) lastFocused.focus();
+}
+document.getElementById("cartBtn").onclick = openDrawer;
+document.getElementById("closeDrawer").onclick = closeDrawer;
+overlay.onclick = closeDrawer;
+document.addEventListener("keydown", e => { if (e.key === "Escape" && drawer.classList.contains("open")) closeDrawer(); });
+
+/* ─────────────────────────────────────────────────────────
+   TOAST
+   ───────────────────────────────────────────────────────── */
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* spinner style injected */
+const style = document.createElement("style");
+style.textContent = `.spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}`;
+document.head.appendChild(style);
+
+/* ─────────────────────────────────────────────────────────
+   INIT
+   ───────────────────────────────────────────────────────── */
+function renderAll() { renderHeader(); renderGrid(); renderDrawer(); }
+renderFilters();
+renderGrid();
+renderHeader();
+renderDrawer();
+</script>
+</body>
+</html>
