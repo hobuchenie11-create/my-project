@@ -165,10 +165,13 @@
     display: flex; flex-direction: column; transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
   }
   .card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
-  .card .thumb { aspect-ratio: 4/3; display: grid; place-items: center; font-size: 64px; position: relative; }
+  .card .thumb { aspect-ratio: 4/3; display: grid; place-items: center; font-size: 64px; position: relative; overflow: hidden; }
+  .card .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .card .thumb.buns { background: linear-gradient(135deg, #FDE68A, #F59E0B); }
   .card .thumb.shawarma { background: linear-gradient(135deg, #FCA5A5, #DC2626); }
-  .card .thumb.drinks { background: linear-gradient(135deg, #FBCFE8, #A16207); }
+  .card .thumb.pastry { background: linear-gradient(135deg, #FBCFE8, #DB2777); }
+  .card .thumb.cakes { background: linear-gradient(135deg, #DDD6FE, #7C3AED); }
+  .empty-cat { grid-column: 1 / -1; text-align: center; color: var(--muted-fg); padding: var(--space-6) var(--space-4); font-size: 15px; }
   .badge { position: absolute; top: 12px; left: 12px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; backdrop-filter: blur(4px); }
   .card .body { padding: var(--space-4); display: flex; flex-direction: column; gap: 6px; flex: 1; }
   .card h3 { font-family: var(--font-body); font-weight: 700; font-size: 18px; }
@@ -205,7 +208,8 @@
   .drawer-foot { padding: var(--space-5); border-top: 1px solid var(--border); background: var(--surface); }
 
   .line { display: flex; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
-  .line .li-thumb { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; font-size: 30px; flex: none; }
+  .line .li-thumb { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; font-size: 30px; flex: none; position: relative; overflow: hidden; }
+  .line .li-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .line .li-main { flex: 1; min-width: 0; }
   .line .li-name { font-weight: 700; font-size: 15px; }
   .line .li-price { font-size: 13px; color: var(--muted-fg); }
@@ -345,7 +349,7 @@
       <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
         <div class="card" style="padding:var(--space-5)">
           <div class="price">1</div><h3>Выберите блюда</h3>
-          <p class="desc">Добавьте булочки, шаурму и напитки в корзину.</p>
+          <p class="desc">Добавьте выпечку и шаурму в корзину.</p>
         </div>
         <div class="card" style="padding:var(--space-5)">
           <div class="price">2</div><h3>Заполните контакты</h3>
@@ -401,32 +405,46 @@ const CONFIG = {
    ───────────────────────────────────────────────────────── */
 const CATEGORIES = [
   { id: "all",      name: "Всё" },
-  { id: "buns",     name: "Булочки и выпечка" },
+  { id: "buns",     name: "Выпечка" },
   { id: "shawarma", name: "Шаурма" },
-  { id: "drinks",   name: "Напитки" },
+  { id: "pastry",   name: "Пирожное" },
+  { id: "cakes",    name: "Торты" },
 ];
 
+// Фото для шаурмы. Впишите сюда путь к файлу (напр. "assets/shawarma.jpg")
+// или data-URI ("data:image/jpeg;base64,..."). Пока пусто — показывается
+// эмодзи-заглушка, без битых запросов.
+const SHAWARMA_IMG = "";
+
 const MENU = [
-  { id: "b1", cat: "buns", emoji: "🥐", name: "Круассан классический", desc: "Слоёное масляное тесто, хрустящая корочка.", price: 140, badge: "Хит" },
-  { id: "b2", cat: "buns", emoji: "🍫", name: "Круассан с шоколадом", desc: "С бельгийским тёмным шоколадом внутри.", price: 160 },
-  { id: "b3", cat: "buns", emoji: "🌀", name: "Синнабон с кремом", desc: "Мягкая булочка с корицей и сливочным кремом.", price: 180, badge: "Новинка" },
-  { id: "b4", cat: "buns", emoji: "🍥", name: "Булочка с корицей", desc: "Ароматная витая булочка, сахарная глазурь.", price: 120 },
-  { id: "b5", cat: "buns", emoji: "🧀", name: "Ватрушка с творогом", desc: "Нежное дрожжевое тесто, домашний творог.", price: 110 },
-  { id: "b6", cat: "buns", emoji: "🥧", name: "Пирожок с яблоком", desc: "Печёный пирожок с сочной яблочной начинкой.", price: 90 },
-  { id: "b7", cat: "buns", emoji: "🍮", name: "Эклер заварной", desc: "Заварное тесто, ванильный крем, глазурь.", price: 130 },
-  { id: "b8", cat: "buns", emoji: "🥨", name: "Плюшка «Московская»", desc: "Сдобная плюшка-сердечко с сахаром.", price: 95 },
+  // ── Булочки ─────────────────────────────────────────────
+  { id: "b1", cat: "buns", emoji: "🥯", name: "Булочка «Московская»", desc: "Сдобная булочка, 80 г.", price: 30 },
+  { id: "b2", cat: "buns", emoji: "🥐", name: "Булочка с маком", desc: "Сдобная булочка с маком, 85 г.", price: 35 },
+  { id: "b3", cat: "buns", emoji: "🌀", name: "Булочка с корицей", desc: "Ароматная булочка с корицей, 85 г.", price: 35 },
+  { id: "b4", cat: "buns", emoji: "🍩", name: "Булочка с изюмом в глазури", desc: "С изюмом, в сахарной глазури, 95 г.", price: 40 },
 
-  { id: "s1", cat: "shawarma", emoji: "🌯", name: "Шаурма классическая", desc: "Курица, свежие овощи, фирменный соус, лаваш.", price: 250, badge: "Хит" },
-  { id: "s2", cat: "shawarma", emoji: "🥩", name: "Шаурма с говядиной", desc: "Сочная говядина, овощи, чесночный соус.", price: 320 },
-  { id: "s3", cat: "shawarma", emoji: "🌶️", name: "Шаурма острая", desc: "Курица, острый соус халапеньо, овощи.", price: 270 },
-  { id: "s4", cat: "shawarma", emoji: "🥗", name: "Шаурма вегетарианская", desc: "Фалафель, свежие овощи, соус тахини.", price: 230 },
-  { id: "s5", cat: "shawarma", emoji: "🍖", name: "Шаурма XXL", desc: "Двойная порция мяса для большого голода.", price: 390, badge: "XXL" },
-  { id: "s6", cat: "shawarma", emoji: "🔥", name: "Люля в лаваше", desc: "Люля-кебаб, маринованный лук, зелень.", price: 300 },
+  // ── Пирожки в духовке · 120–130 г ──────────────────────
+  { id: "p1", cat: "buns", emoji: "🥧", name: "Пирожок со свёклой и изюмом", desc: "Печёный пирожок, 120–130 г.", price: 45 },
+  { id: "p2", cat: "buns", emoji: "🥧", name: "Пирожок с морковью", desc: "Печёный пирожок, 120–130 г.", price: 45 },
+  { id: "p3", cat: "buns", emoji: "🥧", name: "Пирожок с яблоком", desc: "Печёный пирожок, 120–130 г.", price: 45 },
+  { id: "p4", cat: "buns", emoji: "🥧", name: "Пирожок с яблоком и курагой", desc: "Печёный пирожок, 120–130 г.", price: 45 },
 
-  { id: "d1", cat: "drinks", emoji: "☕", name: "Кофе латте", desc: "Эспрессо и вспененное молоко, 300 мл.", price: 150 },
-  { id: "d2", cat: "drinks", emoji: "🥤", name: "Капучино", desc: "Классический, плотная молочная пенка.", price: 140 },
-  { id: "d3", cat: "drinks", emoji: "🍋", name: "Лимонад домашний", desc: "Свежий лимон, мята, газированная вода.", price: 120 },
-  { id: "d4", cat: "drinks", emoji: "🫖", name: "Чай травяной", desc: "Согревающий сбор трав, 400 мл.", price: 80 },
+  // ── Ватрушки · 120–130 г ───────────────────────────────
+  { id: "v1", cat: "buns", emoji: "🧀", name: "Ватрушка с творогом", desc: "Дрожжевое тесто, творог, 120–130 г.", price: 45 },
+  { id: "v2", cat: "buns", emoji: "🍓", name: "Ватрушка с клубникой", desc: "Дрожжевое тесто, начинка, 120–130 г.", price: 45 },
+  { id: "v3", cat: "buns", emoji: "🍒", name: "Ватрушка с вишней", desc: "Дрожжевое тесто, начинка, 120–130 г.", price: 45 },
+  { id: "v4", cat: "buns", emoji: "🫐", name: "Ватрушка с малиной", desc: "Дрожжевое тесто, начинка, 120–130 г.", price: 45 },
+
+  // ── Колоски · 120–130 г ────────────────────────────────
+  { id: "k1", cat: "buns", emoji: "🍌", name: "Колосок с бананом", desc: "Слоёный колосок, 120–130 г.", price: 45 },
+  { id: "k2", cat: "buns", emoji: "🧀", name: "Колосок с творогом", desc: "Слоёный колосок, 120–130 г.", price: 45 },
+
+  // ── Прочая выпечка ─────────────────────────────────────
+  { id: "c1", cat: "buns", emoji: "🥟", name: "Чебурек большой", desc: "Большой чебурек с сочной начинкой.", price: 85 },
+  { id: "c2", cat: "buns", emoji: "🫓", name: "Беляш", desc: "Жареный беляш с мясом, 100 г.", price: 60 },
+
+  // ── Шаурма ─────────────────────────────────────────────
+  { id: "s1", cat: "shawarma", emoji: "🌯", img: SHAWARMA_IMG, name: "Шаурма", desc: "Сочная начинка, свежие овощи, фирменный соус в лаваше.", price: 220, badge: "Хит" },
 ];
 
 const MENU_BY_ID = Object.fromEntries(MENU.map(m => [m.id, m]));
@@ -485,12 +503,17 @@ function renderGrid() {
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
   const items = MENU.filter(m => activeCat === "all" || m.cat === activeCat);
+  if (items.length === 0) {
+    grid.innerHTML = `<p class="empty-cat">Позиции этой категории добавим по согласованию с кондитером — уточните наличие при заказе.</p>`;
+    return;
+  }
   items.forEach(m => {
     const qty = cart[m.id] || 0;
     const card = document.createElement("article");
     card.className = "card";
+    const thumbImg = m.img ? `<img src="${m.img}" alt="${m.name}" loading="lazy" onerror="this.remove()">` : "";
     card.innerHTML = `
-      <div class="thumb ${m.cat}" aria-hidden="true">${m.emoji}${m.badge ? `<span class="badge">${m.badge}</span>` : ""}</div>
+      <div class="thumb ${m.cat}" aria-hidden="true">${m.emoji}${thumbImg}${m.badge ? `<span class="badge">${m.badge}</span>` : ""}</div>
       <div class="body">
         <h3>${m.name}</h3>
         <p class="desc">${m.desc}</p>
@@ -564,7 +587,7 @@ function renderDrawer() {
       const line = document.createElement("div");
       line.className = "line";
       line.innerHTML = `
-        <div class="li-thumb ${item.cat}" aria-hidden="true">${item.emoji}</div>
+        <div class="li-thumb ${item.cat}" aria-hidden="true">${item.emoji}${item.img ? `<img src="${item.img}" alt="" loading="lazy" onerror="this.remove()">` : ""}</div>
         <div class="li-main">
           <div class="li-name">${item.name}</div>
           <div class="li-price">${fmt(item.price)} × ${qty} = <strong>${fmt(item.price * qty)}</strong></div>
