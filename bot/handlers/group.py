@@ -7,13 +7,16 @@
     хвс (кухня) 123,45
     ...
 
-и записывает показания. Если в сообщении нет номера квартиры, берется
-квартира отправителя (если он зарегистрирован в боте).
+Подтверждение о приёме бот присылает жителю в личные сообщения, а в общем
+чате лишь ставит тихую отметку 👍, чтобы не засорять чат. Текст в чат
+попадает только при проблеме, когда в личку написать не удалось (например,
+житель ещё ни разу не запускал бота командой /start).
 """
 import logging
 
 from aiogram import F, Router
-from aiogram.types import Message
+from aiogram.exceptions import TelegramAPIError
+from aiogram.types import Message, ReactionTypeEmoji
 
 from bot.config import config
 from bot.services.parser import parse_message
@@ -27,6 +30,27 @@ router.message.filter(F.chat.type.in_({"group", "supergroup"}))
 
 # Чтобы не засорять лог, ID чата подсказываем один раз за запуск
 _hinted_chats: set[int] = set()
+
+_START_HINT = "\n\n(Чтобы получать подтверждения лично, напишите боту в личку — команда /start.)"
+
+
+async def _dm(message: Message, text: str) -> bool:
+    """Пробует отправить сообщение отправителю в личку. True, если получилось."""
+    try:
+        await message.bot.send_message(message.from_user.id, text)
+        return True
+    except TelegramAPIError:
+        return False  # житель не запускал бота в личке — написать нельзя
+
+
+async def _react_ok(message: Message) -> None:
+    """Тихая отметка в чате, что показание принято (без текстового сообщения)."""
+    try:
+        await message.bot.set_message_reaction(
+            chat_id=message.chat.id, message_id=message.message_id,
+            reaction=[ReactionTypeEmoji(emoji="👍")])
+    except TelegramAPIError:
+        pass  # в чате запрещены реакции — не критично
 
 
 @router.message(F.text)
@@ -57,17 +81,14 @@ async def handle_group_message(message: Message) -> None:
         if apartment is None:
             if parsed.is_empty:
                 return
-            await message.reply(
-                "Не понял, к какой квартире относятся показания. Укажите в первой "
-                "строке «Кв. <номер>»."
-            )
+            await _guidance(message, "Не понял, к какой квартире относятся показания. "
+                                     "Укажите в первой строке «Кв. <номер>».")
             return
 
         if parsed.is_empty:
-            await message.reply(
-                "Вижу номер квартиры, но не разобрал показания. Пришлите по шаблону, "
-                "например: «Эл.эн 15230», «хвс кухня 123,45»."
-            )
+            await _guidance(message, "Вижу номер квартиры, но не разобрал показания. "
+                                     "Пришлите по шаблону, например: «Эл.эн 15230», "
+                                     "«хвс кухня 123,45».")
             return
 
         outcome = save_parsed_readings(conn, apartment, parsed,
@@ -75,21 +96,31 @@ async def handle_group_message(message: Message) -> None:
         repository.log_event(conn, message.from_user.id, "reading_chat",
                              f"{apartment['number']}: принято {len(outcome.saved)} "
                              f"за {current_period()}")
-        reply = _build_reply(conn, apartment, outcome, parsed)
+
+        receipt = (receipt_text(conn, apartment, outcome.saved)
+                   if outcome.anything_saved else "Показания не записаны.")
     finally:
         conn.close()
 
-    await message.reply(reply)
-
-
-def _build_reply(conn, apartment, outcome, parsed) -> str:
-    if outcome.anything_saved:
-        text = receipt_text(conn, apartment, outcome.saved)
-    else:
-        text = "Показания не записаны."
-    extras = list(outcome.warnings) + list(outcome.errors)
+    problems = list(outcome.warnings) + list(outcome.errors)
     if parsed.ignored:
-        extras.append("Не учитывается: " + ", ".join(parsed.ignored))
-    if extras:
-        text += "\n\n" + "\n".join(f"⚠️ {e}" for e in extras)
-    return text
+        problems.append("Не учитывается: " + ", ".join(parsed.ignored))
+    problems_text = "\n".join(f"⚠️ {p}" for p in problems)
+
+    # Тихая отметка в чате, если что-то записали
+    if outcome.anything_saved:
+        await _react_ok(message)
+
+    # Подтверждение — в личку жителю
+    dm_text = receipt + ("\n\n" + problems_text if problems else "")
+    delivered = await _dm(message, dm_text)
+
+    # В чат пишем только если в личку не дошло И есть о чём предупредить
+    if not delivered and problems:
+        await message.reply(problems_text + _START_HINT)
+
+
+async def _guidance(message: Message, text: str) -> None:
+    """Подсказку шлём в личку; если не дошла — отвечаем в чате (житель должен её увидеть)."""
+    if not await _dm(message, text):
+        await message.reply(text + _START_HINT)
