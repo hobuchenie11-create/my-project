@@ -1,17 +1,20 @@
 """Меню председателя: реестр, ведомость, статистика, пользователи, бэкап."""
 from aiogram import F, Router
+from aiogram.exceptions import TelegramAPIError
 from aiogram.types import FSInputFile, Message
 
 from bot.config import config
 from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTORS,
-                                      BTN_REGISTRY, BTN_REMIND, BTN_SETTINGS,
-                                      BTN_STATEMENT, BTN_STATS, BTN_USERS, admin_menu)
+                                      BTN_INVITE, BTN_REGISTRY, BTN_REMIND,
+                                      BTN_SETTINGS, BTN_STATEMENT, BTN_STATS,
+                                      BTN_USERS, admin_menu)
 from bot.keyboards.menu import main_menu
 from bot.scheduler import send_reminders
 from bot.services.apartment_service import registry_summary
 from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
+from bot.texts import welcome_residents_text
 from database import repository
 from database.backup import make_backup
 from reports.monthly_statement import generate_statement
@@ -78,6 +81,26 @@ async def remind_debtors(message: Message) -> None:
     else:
         await message.answer("Напоминать некому — либо все сдали, либо должники "
                              "не зарегистрированы в боте.")
+
+
+@router.message(F.text == BTN_INVITE)
+async def send_invite(message: Message) -> None:
+    me = await message.bot.get_me()
+    text = welcome_residents_text(me.username)
+    if config.group_chat_id:
+        try:
+            await message.bot.send_message(config.group_chat_id, text)
+            await message.answer("📣 Памятка отправлена в общий чат. Рекомендую "
+                                 "закрепить её в чате (в Telegram: удерживать сообщение "
+                                 "→ «Закрепить»).")
+            return
+        except TelegramAPIError as exc:
+            await message.answer(f"Не удалось отправить в чат ({exc}). "
+                                 "Вот текст — скопируйте и отправьте в чат вручную:")
+    else:
+        await message.answer("Общий чат не подключён (GROUP_CHAT_ID пуст). "
+                             "Вот готовый текст — скопируйте и отправьте в чат:")
+    await message.answer(text)
 
 
 @router.message(F.text == BTN_USERS)
