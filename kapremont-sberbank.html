@@ -1,0 +1,861 @@
+<title>Взнос на капремонт — оплата через Сбербанк Онлайн</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root{
+    --paper:#EDF1EC;
+    --card:#FFFFFF;
+    --ink:#121B15;
+    --ink-2:#4B584F;
+    --ink-3:#77857B;
+    --line:#D2DAD1;
+    --line-soft:#E3E9E2;
+    --marker:#D93C1C;
+    --marker-soft:#FBE7E1;
+    --pine:#14473A;
+    --shadow:0 22px 50px -28px rgba(12,40,28,.45);
+    --sans:"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --serif:Georgia, "Iowan Old Style", "Times New Roman", serif;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#0E1512;
+      --card:#161E19;
+      --ink:#E8EEE8;
+      --ink-2:#A6B4AA;
+      --ink-3:#7C8B81;
+      --line:#293430;
+      --line-soft:#212B26;
+      --marker:#FF6A47;
+      --marker-soft:#33201B;
+      --pine:#8FD9B8;
+      --shadow:0 22px 50px -28px rgba(0,0,0,.75);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E1512; --card:#161E19; --ink:#E8EEE8; --ink-2:#A6B4AA; --ink-3:#7C8B81;
+    --line:#293430; --line-soft:#212B26; --marker:#FF6A47; --marker-soft:#33201B;
+    --pine:#8FD9B8; --shadow:0 22px 50px -28px rgba(0,0,0,.75);
+  }
+  :root[data-theme="light"]{
+    --paper:#EDF1EC; --card:#FFFFFF; --ink:#121B15; --ink-2:#4B584F; --ink-3:#77857B;
+    --line:#D2DAD1; --line-soft:#E3E9E2; --marker:#D93C1C; --marker-soft:#FBE7E1;
+    --pine:#14473A; --shadow:0 22px 50px -28px rgba(12,40,28,.45);
+  }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{
+    max-width:1120px;
+    margin:0 auto;
+    padding:clamp(24px,4vw,52px) clamp(16px,4vw,40px) 56px;
+    display:flex;
+    flex-direction:column;
+    gap:clamp(22px,3vw,34px);
+  }
+
+  /* ── Шапка ─────────────────────────────── */
+  .masthead{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px 32px;
+    padding-bottom:clamp(18px,2.4vw,26px);
+    border-bottom:2px solid var(--ink);
+  }
+  .eyebrow{
+    margin:0 0 10px;
+    font-size:.72rem;
+    font-weight:700;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--marker);
+  }
+  .masthead h1{
+    margin:0;
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:clamp(1.65rem,3.6vw,2.5rem);
+    line-height:1.12;
+    letter-spacing:-.01em;
+    text-wrap:balance;
+    max-width:18ch;
+  }
+  .masthead .sub{
+    margin:12px 0 0;
+    color:var(--ink-2);
+    font-size:.98rem;
+    max-width:44ch;
+  }
+
+  .account{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px 4px 4px 16px;
+    padding:14px 18px 16px;
+    box-shadow:var(--shadow);
+    min-width:260px;
+  }
+  .account .lab{
+    font-size:.68rem;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+    font-weight:700;
+  }
+  .account .num{
+    display:block;
+    margin:6px 0 10px;
+    font-family:var(--serif);
+    font-size:clamp(1.1rem,2.3vw,1.4rem);
+    letter-spacing:.04em;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+  }
+  .account .foot{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    font-size:.82rem;
+    color:var(--ink-3);
+  }
+  .copy{
+    font:inherit;
+    font-size:.82rem;
+    font-weight:600;
+    color:var(--card);
+    background:var(--ink);
+    border:0;
+    border-radius:99px;
+    padding:6px 14px;
+    cursor:pointer;
+  }
+  .copy:hover{ background:var(--pine); color:var(--paper); }
+  .copy:focus-visible, .navbtn:focus-visible, .dot:focus-visible{
+    outline:2px solid var(--marker);
+    outline-offset:3px;
+  }
+
+  /* ── Карусель ──────────────────────────── */
+  .deck{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:6px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .slide{ display:none; }
+  .slide.is-active{
+    display:grid;
+    grid-template-columns:minmax(0,auto) minmax(0,1fr);
+    gap:clamp(22px,4vw,54px);
+    align-items:center;
+    padding:clamp(24px,3.6vw,46px);
+    animation:rise .38s ease both;
+  }
+  @keyframes rise{ from{ opacity:0; transform:translateY(10px);} }
+
+  .say{ min-width:0; }
+  .stepline{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    margin-bottom:6px;
+  }
+  .stepno{
+    font-family:var(--serif);
+    font-size:clamp(2.2rem,5vw,3.1rem);
+    line-height:1;
+    color:var(--marker);
+  }
+  .steplab{
+    font-size:.7rem;
+    font-weight:700;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  .say h2{
+    margin:0 0 12px;
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:clamp(1.35rem,2.8vw,1.95rem);
+    line-height:1.2;
+    text-wrap:balance;
+  }
+  .say p{
+    margin:0 0 14px;
+    max-width:46ch;
+    color:var(--ink-2);
+    font-size:1.02rem;
+  }
+  .say p strong{ color:var(--ink); font-weight:600; }
+
+  .callout{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    max-width:46ch;
+    margin-top:18px;
+    padding:14px 16px;
+    background:var(--marker-soft);
+    border-left:3px solid var(--marker);
+    border-radius:0 8px 8px 0;
+  }
+  .callout .bang{
+    flex:none;
+    font-family:var(--serif);
+    font-size:1.15rem;
+    line-height:1.2;
+    color:var(--marker);
+  }
+  .callout p{ margin:0; color:var(--ink); font-size:.95rem; }
+
+  .bignum{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px 14px;
+    margin:4px 0 4px;
+    padding:14px 16px;
+    background:var(--paper);
+    border:1px dashed var(--line);
+    border-radius:8px;
+  }
+  .bignum b{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:clamp(1.15rem,2.6vw,1.5rem);
+    letter-spacing:.05em;
+    font-variant-numeric:tabular-nums;
+  }
+  .bignum small{ color:var(--ink-3); font-size:.82rem; }
+
+  /* ── Телефон ───────────────────────────── */
+  .shot{ display:flex; justify-content:center; }
+  .phone{
+    width:clamp(232px,30vw,278px);
+    background:#0C100E;
+    border-radius:32px;
+    padding:9px;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06) inset;
+  }
+  .screen{
+    position:relative;
+    background:#FFFFFF;
+    border-radius:25px;
+    overflow:hidden;
+    color:#17201A;
+    font-size:12.5px;
+    line-height:1.35;
+    min-height:452px;
+    display:flex;
+    flex-direction:column;
+  }
+  .statusbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:8px 14px 4px;
+    font-size:9.5px;
+    color:#6C7770;
+    letter-spacing:.02em;
+  }
+  .topbar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:4px 12px 12px;
+  }
+  .avatar{ width:26px;height:26px;border-radius:8px;background:#DCE6DF;flex:none; }
+  .searchpill{
+    flex:1;
+    background:#F1F3F1;
+    border-radius:99px;
+    padding:7px 12px;
+    color:#8A948C;
+    font-size:11px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .sqbtn{ width:26px;height:26px;border-radius:8px;background:#E8E1F5;flex:none; }
+  .back{ width:16px;height:16px;flex:none;color:#1E9E4A; }
+
+  .sheet{
+    flex:1;
+    background:#fff;
+    padding:2px 0 0;
+    overflow:hidden;
+  }
+  .sheet.pad{ padding:0 14px; }
+  .sheet h4{
+    margin:6px 0 8px;
+    padding:0 14px;
+    font-size:19px;
+    font-weight:700;
+    letter-spacing:-.01em;
+  }
+  .rows{ display:flex; flex-direction:column; }
+  .row{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:9px 14px;
+    border-bottom:1px solid #EEF1EE;
+  }
+  .row:last-child{ border-bottom:0; }
+  .row .ic{ width:19px;height:19px;flex:none;color:#1E9E4A; }
+  .row .tx{ min-width:0; }
+  .row .tx b{ display:block; font-weight:400; font-size:12.5px; }
+  .row .tx span{ display:block; color:#8A948C; font-size:11px; line-height:1.25; }
+  .row.big .tx b{ font-weight:600; font-size:13px; }
+  .logo{
+    width:26px;height:26px;flex:none;border-radius:50%;
+    background:#DFF0FF;border:1px solid #BFDFF5;
+  }
+
+  .chips{ display:flex; gap:7px; padding:10px 14px 4px; flex-wrap:wrap; }
+  .chip{
+    background:#F1F3F1; border-radius:99px; padding:5px 12px; font-size:11px; color:#3D473F;
+  }
+  .chip.sm{ padding:3px 11px; font-size:10.5px; color:#6C7770; }
+
+  .field{
+    position:relative;
+    margin:14px 14px 6px;
+    background:#F4F6F4;
+    border-radius:10px;
+    padding:9px 12px;
+  }
+  .field .fl{ font-size:10px; color:#8A948C; }
+  .field .fv{ font-size:13.5px; letter-spacing:.02em; font-variant-numeric:tabular-nums; }
+  .field.empty .fv{ color:#A9B2AB; }
+  .hint{ padding:0 16px; font-size:10.5px; color:#8A948C; }
+
+  .cta{
+    margin:auto 12px 12px;
+    background:#1E9E4A;
+    color:#fff;
+    text-align:center;
+    border-radius:10px;
+    padding:11px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .tabbar{
+    display:flex;
+    justify-content:space-between;
+    padding:8px 10px 10px;
+    border-top:1px solid #EEF1EE;
+    background:#fff;
+  }
+  .tab{ flex:1; text-align:center; font-size:8.5px; color:#8A948C; }
+  .tab i{ display:block; width:15px;height:15px;margin:0 auto 3px; background:#D8DFDA; border-radius:4px; }
+  .tab.on{ color:#1E9E4A; font-weight:600; }
+  .tab.on i{ background:#1E9E4A; }
+
+  .kv{ display:flex; justify-content:space-between; gap:10px; padding:9px 14px; border-bottom:1px solid #EEF1EE; font-size:12px; }
+  .kv span{ color:#8A948C; }
+  .kv b{ font-weight:600; text-align:right; }
+
+  /* ── Красная разметка ──────────────────── */
+  .mark{
+    position:absolute;
+    inset:-7px -5px;
+    pointer-events:none;
+    overflow:visible;
+  }
+  .mark svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .mark path{
+    fill:none;
+    stroke:#D93C1C;
+    stroke-width:3;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    vector-effect:non-scaling-stroke;
+    stroke-dasharray:1;
+    stroke-dashoffset:1;
+    opacity:.92;
+  }
+  .slide.is-active .mark path{ animation:draw .75s cubic-bezier(.45,.05,.2,1) .3s forwards; }
+  .slide.is-active .mark path:nth-child(2){ animation-delay:.62s; }
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+
+  @media (prefers-reduced-motion: reduce){
+    .slide.is-active{ animation:none; }
+    .mark path{ stroke-dashoffset:0; }
+    .slide.is-active .mark path{ animation:none; }
+  }
+
+  /* ── Управление ────────────────────────── */
+  .controls{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:14px clamp(18px,3vw,28px);
+    border-top:1px solid var(--line-soft);
+    background:var(--paper);
+  }
+  .dots{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .dot{
+    width:30px; height:30px;
+    border:1px solid var(--line);
+    background:transparent;
+    border-radius:50%;
+    color:var(--ink-3);
+    font:inherit;
+    font-size:.78rem;
+    font-weight:600;
+    cursor:pointer;
+    font-variant-numeric:tabular-nums;
+  }
+  .dot[aria-current="true"]{ background:var(--ink); border-color:var(--ink); color:var(--card); }
+  .navbtn{
+    font:inherit;
+    font-size:.88rem;
+    font-weight:600;
+    padding:9px 18px;
+    border-radius:99px;
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .navbtn:hover:not(:disabled){ border-color:var(--ink); }
+  .navbtn:disabled{ opacity:.35; cursor:default; }
+  .navpair{ display:flex; gap:8px; }
+
+  /* ── Итоговая памятка ──────────────────── */
+  .recap{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:14px;
+  }
+  .recap article{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-top:3px solid var(--marker);
+    border-radius:2px 2px 10px 10px;
+    padding:16px 18px 18px;
+  }
+  .recap h3{
+    margin:0 0 6px;
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:1.05rem;
+  }
+  .recap p{ margin:0; font-size:.92rem; color:var(--ink-2); }
+  .recap b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+
+  .fineprint{
+    font-size:.82rem;
+    color:var(--ink-3);
+    max-width:70ch;
+    margin:0;
+  }
+
+  @media (max-width: 780px){
+    .slide.is-active{ grid-template-columns:1fr; justify-items:center; }
+    .say{ width:100%; }
+    .masthead{ align-items:flex-start; }
+    .account{ width:100%; }
+  }
+  @media (max-width: 460px){
+    .controls{ flex-direction:column-reverse; align-items:stretch; }
+    .navpair{ justify-content:space-between; }
+    .dots{ justify-content:center; }
+  }
+
+  @media print{
+    .controls{ display:none; }
+    .slide{ display:grid !important; grid-template-columns:auto 1fr; gap:24px; padding:18px 0; break-inside:avoid; border-bottom:1px solid #ccc; }
+    .deck{ box-shadow:none; border:0; }
+    .mark path{ stroke-dashoffset:0; }
+  }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="i-net"><rect x="2.5" y="5" width="14" height="9" rx="1.4"/><path d="M1 17h17"/><path d="M18.5 5.5a4 4 0 0 1 3.5 4M18.5 8.5a2 2 0 0 1 1.5 2"/></g>
+    <g id="i-home"><path d="M3.5 10.5 12 4l8.5 6.5V20h-17z"/><rect x="9" y="12" width="6" height="5" rx="1"/></g>
+    <g id="i-bus"><rect x="4" y="4" width="16" height="12" rx="2"/><path d="M4 11h16M7 20v-2M17 20v-2"/></g>
+    <g id="i-gov"><path d="M12 3.5c2 2 4 2.6 6 2.6-.4 6-2.6 10-6 12.4C8.6 16.1 6.4 12.1 6 6.1c2 0 4-.6 6-2.6z"/></g>
+    <g id="i-fun"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V19M10 21h4"/></g>
+    <g id="i-edu"><path d="M2.5 8.5 12 4.5l9.5 4-9.5 4z"/><path d="M6.5 10.5v5c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5v-5"/></g>
+    <g id="i-work"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></g>
+    <g id="i-med"><path d="M9.5 3.5h5V9h5.5v5H14.5v5.5h-5V14H4V9h5.5z"/></g>
+    <g id="i-doc"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></g>
+    <g id="i-bolt"><path d="M13.5 3 6 13h5l-1.5 8L18 11h-5.2z"/></g>
+    <g id="i-gas"><path d="M12 3.5c4 3.5 5.5 6 5.5 9a5.5 5.5 0 0 1-11 0c0-1.7.8-3.2 2.2-4.6.4 1.4 1.2 2.2 2.3 2.4-.4-2.6-.1-4.8 1-6.8z"/></g>
+    <g id="i-drop"><path d="M12 3.5c3.4 4 5.5 6.7 5.5 9.4A5.5 5.5 0 0 1 6.5 13c0-2.7 2.1-5.4 5.5-9.4z"/></g>
+    <g id="i-trash"><path d="M6 7h12l-1 13H7z"/><path d="M9.5 7V4.5h5V7"/></g>
+    <g id="i-hammer"><path d="M4 20 13 11"/><path d="M11.5 5.5 9 8l4.5 4.5L16 10z"/><path d="M14 3.5 21 10l-2 2-7-6.5z"/></g>
+    <g id="i-heat"><path d="M8 20c-1.6-2.2-1.6-4 0-6s1.6-3.8 0-6M12 20c-1.6-2.2-1.6-4 0-6s1.6-3.8 0-6M16 20c-1.6-2.2-1.6-4 0-6s1.6-3.8 0-6"/></g>
+    <g id="i-lock"><rect x="4" y="9" width="16" height="11" rx="2"/><path d="M8 9V6.5a4 4 0 0 1 8 0V9"/></g>
+    <g id="i-percent"><circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="16" r="2.5"/><path d="M18 6 6 18"/></g>
+    <g id="i-back"><path d="M14 5 7 12l7 7"/></g>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">Памятка для собственников</p>
+      <h1>Взнос на капремонт — оплата на спецсчёт дома</h1>
+      <p class="sub">Дом <strong>Магистральная, 2</strong>. Пять шагов в мобильном приложении Сбербанк Онлайн — красным отмечено, куда нажимать на каждом экране.</p>
+    </div>
+
+    <div class="account">
+      <div class="lab">Расчётный счёт дома</div>
+      <span class="num">4060 4810 8090 0000 0154</span>
+      <div class="foot">
+        <button class="copy" id="copyBtn" type="button">Скопировать</button>
+        <span id="copyNote">20 цифр, вводить без пробелов</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="deck">
+
+    <!-- ШАГ 1 ─────────────────────────────── -->
+    <article class="slide is-active" aria-label="Шаг 1">
+      <div class="shot">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>2:36</span><span>VPN &nbsp;•ıll&nbsp; 84</span></div>
+            <div class="topbar">
+              <div class="avatar"></div>
+              <div class="searchpill">Поиск с GigaChat</div>
+              <div class="sqbtn"></div>
+            </div>
+            <div class="sheet">
+              <h4>Каталог</h4>
+              <div class="rows">
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-net"/></svg><div class="tx"><b>Интернет, ТВ и телефония</b></div></div>
+                <div class="row">
+                  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-home"/></svg>
+                  <div class="tx"><b>ЖКХ</b></div>
+                  <span class="mark">
+                    <svg viewBox="0 0 240 46" preserveAspectRatio="none" aria-hidden="true">
+                      <path pathLength="1" d="M8 39C58 33 132 36 231 31"/>
+                      <path pathLength="1" d="M14 43C70 39 148 41 226 36"/>
+                    </svg>
+                  </span>
+                </div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-bus"/></svg><div class="tx"><b>Транспорт</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-gov"/></svg><div class="tx"><b>Государство</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-fun"/></svg><div class="tx"><b>Отдых и развлечения</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-edu"/></svg><div class="tx"><b>Образование</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-work"/></svg><div class="tx"><b>Работа и финансы</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-doc"/></svg><div class="tx"><b>Оплата по реквизитам</b></div></div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tab"><i></i>Главный</div>
+              <div class="tab"><i></i>Накопления</div>
+              <div class="tab"><i></i>Для жизни</div>
+              <div class="tab on"><i></i>Платежи</div>
+              <div class="tab"><i></i>Кредиты</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="say">
+        <div class="stepline"><span class="stepno">1</span><span class="steplab">Шаг 1 из 5 · Каталог платежей</span></div>
+        <h2>Откройте раздел «ЖКХ»</h2>
+        <p>Войдите в приложение <strong>Сбербанк Онлайн</strong> и нажмите вкладку <strong>«Платежи»</strong> в нижнем меню.</p>
+        <p>В блоке <strong>«Каталог»</strong> выберите вторую строку — <strong>«ЖКХ»</strong>.</p>
+      </div>
+    </article>
+
+    <!-- ШАГ 2 ─────────────────────────────── -->
+    <article class="slide" aria-label="Шаг 2">
+      <div class="shot">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>2:36</span><span>VPN &nbsp;•ıll&nbsp; 84</span></div>
+            <div class="topbar">
+              <svg class="back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-back"/></svg>
+              <div class="searchpill">Название, ИНН или Р/С</div>
+            </div>
+            <div class="sheet">
+              <div class="rows">
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-net"/></svg><div class="tx"><b>Интернет, ТВ и телефония</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-home"/></svg><div class="tx"><b>Квартплата</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-bolt"/></svg><div class="tx"><b>Электроэнергия</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-gas"/></svg><div class="tx"><b>Газ</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-drop"/></svg><div class="tx"><b>Водоснабжение</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-trash"/></svg><div class="tx"><b>Твердые отходы</b></div></div>
+                <div class="row">
+                  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-hammer"/></svg>
+                  <div class="tx"><b>Капремонт</b></div>
+                  <span class="mark">
+                    <svg viewBox="0 0 240 46" preserveAspectRatio="none" aria-hidden="true">
+                      <path pathLength="1" d="M150 6C96 2 34 3 18 9 4 15 5 33 20 39c22 8 96 8 132 3 18-3 22-9 20-19-2-8-8-13-24-16"/>
+                    </svg>
+                  </span>
+                </div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-heat"/></svg><div class="tx"><b>Теплоснабжение</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-lock"/></svg><div class="tx"><b>Охрана и домофон</b></div></div>
+                <div class="row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#i-percent"/></svg><div class="tx"><b>Налоги</b></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="say">
+        <div class="stepline"><span class="stepno">2</span><span class="steplab">Шаг 2 из 5 · Услуги ЖКХ</span></div>
+        <h2>В списке услуг нажмите «Капремонт»</h2>
+        <p>Откроется перечень услуг ЖКХ: квартплата, электроэнергия, газ, вода. Нужная строка — <strong>«Капремонт»</strong>, седьмая сверху, со значком молотка.</p>
+        <div class="callout">
+          <span class="bang">!</span>
+          <p>Не выбирайте «Квартплата» — взнос на капремонт по спецсчёту дома оплачивается отдельно.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ШАГ 3 ─────────────────────────────── -->
+    <article class="slide" aria-label="Шаг 3">
+      <div class="shot">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>2:37</span><span>VPN &nbsp;•ıll&nbsp; 84</span></div>
+            <div class="topbar">
+              <svg class="back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-back"/></svg>
+              <div class="searchpill">Название, ИНН или Р/С</div>
+            </div>
+            <div class="chips">
+              <span class="chip">Все регионы ⌄</span>
+              <span class="chip">Капремонт ⌄</span>
+            </div>
+            <div class="chips">
+              <span class="chip sm">ИНН</span>
+              <span class="chip sm">Р/С</span>
+            </div>
+            <div class="sheet" style="margin-top:6px">
+              <div class="rows">
+                <div class="row big">
+                  <span class="logo"></span>
+                  <div class="tx"><b>РФКР МКД</b><span>капремонт оплата по лицевому счету</span></div>
+                </div>
+                <div class="row big">
+                  <span class="logo"></span>
+                  <div class="tx"><b>РФКР МКД</b><span>капремонт оплата по расчетному счету</span></div>
+                  <span class="mark">
+                    <svg viewBox="0 0 240 58" preserveAspectRatio="none" aria-hidden="true">
+                      <path pathLength="1" d="M196 6C120 0 40 2 20 8 4 14 4 44 22 50c30 10 140 8 190 1 22-3 26-13 22-24-4-10-14-15-34-18"/>
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="say">
+        <div class="stepline"><span class="stepno">3</span><span class="steplab">Шаг 3 из 5 · Выбор получателя</span></div>
+        <h2>Выберите «РФКР МКД — оплата по расчетному счету»</h2>
+        <p>В списке будут <strong>две одинаковые строки «РФКР МКД»</strong>. Различаются они подписью снизу.</p>
+        <p>Нажмите <strong>вторую</strong> — «капремонт оплата <strong>по расчетному счету</strong>».</p>
+        <div class="callout">
+          <span class="bang">!</span>
+          <p>Первая строка — «по лицевому счету» — для домов, которые копят взносы у регионального оператора. Наш дом собирает средства на собственном спецсчёте, поэтому платёж идёт <strong>по расчётному счёту</strong>.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ШАГ 4 ─────────────────────────────── -->
+    <article class="slide" aria-label="Шаг 4">
+      <div class="shot">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>2:37</span><span>VPN &nbsp;•ıll&nbsp; 84</span></div>
+            <div class="topbar">
+              <svg class="back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-back"/></svg>
+              <div style="font-weight:600;font-size:13px">РФКР МКД</div>
+            </div>
+            <div class="field">
+              <div class="fl">Расчетный счет (20 знаков)</div>
+              <div class="fv">40604810809000000154</div>
+              <span class="mark" style="inset:-9px -7px">
+                <svg viewBox="0 0 240 60" preserveAspectRatio="none" aria-hidden="true">
+                  <path pathLength="1" d="M206 5C130 0 44 1 20 7 6 12 4 46 20 52c28 10 150 8 198 2 20-3 22-14 18-26-3-9-12-14-30-17"/>
+                </svg>
+              </span>
+            </div>
+            <div class="hint">Введите Расчетный счет (20 знаков)</div>
+            <div class="cta">Продолжить</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="say">
+        <div class="stepline"><span class="stepno">4</span><span class="steplab">Шаг 4 из 5 · Реквизиты</span></div>
+        <h2>Введите расчётный счёт дома</h2>
+        <p>В единственное поле <strong>«Расчетный счет (20 знаков)»</strong> введите номер спецсчёта дома Магистральная, 2:</p>
+        <div class="bignum">
+          <b>40604810809000000154</b>
+          <small>20 цифр подряд, без пробелов</small>
+        </div>
+        <p>Проверьте цифры и нажмите зелёную кнопку <strong>«Продолжить»</strong>.</p>
+      </div>
+    </article>
+
+    <!-- ШАГ 5 ─────────────────────────────── -->
+    <article class="slide" aria-label="Шаг 5">
+      <div class="shot">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>2:38</span><span>VPN &nbsp;•ıll&nbsp; 84</span></div>
+            <div class="topbar">
+              <svg class="back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-back"/></svg>
+              <div style="font-weight:600;font-size:13px">РФКР МКД</div>
+            </div>
+            <div class="sheet">
+              <div class="kv"><span>Получатель</span><b>РФКР МКД</b></div>
+              <div class="kv"><span>Расчётный счёт</span><b>4060 4810 8090<br>0000 0154</b></div>
+              <div class="kv" style="position:relative">
+                <span>Дом</span><b>Магистральная, 2</b>
+                <span class="mark" style="inset:-4px -6px">
+                  <svg viewBox="0 0 240 44" preserveAspectRatio="none" aria-hidden="true">
+                    <path pathLength="1" d="M200 5C150 0 60 1 30 6 10 10 8 34 26 39c30 8 140 6 186 0 20-3 22-11 18-21-3-8-12-12-30-14"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="kv"><span>Период оплаты</span><b>месяц, год</b></div>
+              <div class="kv"><span>Сумма</span><b>по квитанции</b></div>
+            </div>
+            <div class="cta">Продолжить</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="say">
+        <div class="stepline"><span class="stepno">5</span><span class="steplab">Шаг 5 из 5 · Проверка и оплата</span></div>
+        <h2>Убедитесь, что появился дом «Магистральная, 2»</h2>
+        <p>После ввода счёта приложение подтягивает данные получателя. <strong>Обязательно проверьте:</strong> на экране оформления платежа должно появиться название дома — <strong>Магистральная, 2</strong>.</p>
+        <p>Если название дома другое или не появилось — вернитесь назад и проверьте номер расчётного счёта. Если всё верно, укажите период и сумму по квитанции и подтвердите платёж.</p>
+        <div class="callout">
+          <span class="bang">✓</span>
+          <p>Название дома на экране — главный признак того, что деньги уйдут на спецсчёт именно вашего дома.</p>
+        </div>
+      </div>
+    </article>
+
+    <div class="controls">
+      <div class="dots" id="dots" role="tablist" aria-label="Шаги инструкции"></div>
+      <div class="navpair">
+        <button class="navbtn" id="prev" type="button">← Назад</button>
+        <button class="navbtn" id="next" type="button">Далее →</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="recap" aria-label="Коротко">
+    <article>
+      <h3>Путь в приложении</h3>
+      <p>Платежи → Каталог → <b>ЖКХ</b> → <b>Капремонт</b> → <b>РФКР МКД</b> (оплата по расчетному счету)</p>
+    </article>
+    <article>
+      <h3>Расчётный счёт</h3>
+      <p><b>40604810809000000154</b><br>20 знаков, вводится без пробелов</p>
+    </article>
+    <article>
+      <h3>Контроль перед оплатой</h3>
+      <p>На экране оформления должно появиться название дома <b>Магистральная, 2</b></p>
+    </article>
+  </section>
+
+  <p class="fineprint">Экраны перерисованы по скриншотам приложения Сбербанк Онлайн и служат ориентиром: расположение пунктов может немного отличаться в зависимости от версии приложения. Экран шага 5 показан схематично — важен сам факт появления названия дома.</p>
+</div>
+
+<script>
+  (function(){
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var dots = document.getElementById('dots');
+    var prev = document.getElementById('prev');
+    var next = document.getElementById('next');
+    var i = 0;
+
+    slides.forEach(function(_, n){
+      var b = document.createElement('button');
+      b.className = 'dot';
+      b.type = 'button';
+      b.textContent = n + 1;
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-label', 'Шаг ' + (n + 1));
+      b.addEventListener('click', function(){ go(n); });
+      dots.appendChild(b);
+    });
+    var dotEls = Array.prototype.slice.call(dots.children);
+
+    function go(n){
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach(function(s, k){ s.classList.toggle('is-active', k === i); });
+      dotEls.forEach(function(d, k){ d.setAttribute('aria-current', k === i ? 'true' : 'false'); });
+      prev.disabled = i === 0;
+      next.disabled = i === slides.length - 1;
+    }
+
+    prev.addEventListener('click', function(){ go(i - 1); });
+    next.addEventListener('click', function(){ go(i + 1); });
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'ArrowRight') go(i + 1);
+      if (e.key === 'ArrowLeft') go(i - 1);
+    });
+
+    var x0 = null;
+    var deck = document.querySelector('.deck');
+    deck.addEventListener('touchstart', function(e){ x0 = e.changedTouches[0].clientX; }, {passive:true});
+    deck.addEventListener('touchend', function(e){
+      if (x0 === null) return;
+      var dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 45) go(dx < 0 ? i + 1 : i - 1);
+      x0 = null;
+    }, {passive:true});
+
+    go(0);
+
+    var acc = '40604810809000000154';
+    var btn = document.getElementById('copyBtn');
+    var note = document.getElementById('copyNote');
+    btn.addEventListener('click', function(){
+      var done = function(){
+        note.textContent = 'Номер счёта скопирован';
+        setTimeout(function(){ note.textContent = '20 цифр, вводить без пробелов'; }, 2500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(acc).then(done, fallback);
+      } else { fallback(); }
+      function fallback(){
+        var t = document.createElement('textarea');
+        t.value = acc;
+        t.style.position = 'fixed';
+        t.style.opacity = '0';
+        document.body.appendChild(t);
+        t.select();
+        try { document.execCommand('copy'); done(); }
+        catch (err) { note.textContent = 'Скопируйте номер вручную'; }
+        document.body.removeChild(t);
+      }
+    });
+  })();
+</script>
