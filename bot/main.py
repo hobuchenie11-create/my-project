@@ -56,8 +56,11 @@ async def main() -> None:
     dp.include_router(start.router)
     dp.include_router(group.router)
 
-    # Сбрасываем возможный вебхук — иначе getUpdates выдает Conflict
-    await bot.delete_webhook(drop_pending_updates=True)
+    # Сбрасываем возможный вебхук — иначе getUpdates выдает Conflict.
+    # Накопившиеся сообщения НЕ отбрасываем: пока бот был выключен, жители
+    # могли присылать показания — Telegram хранит их около суток, и после
+    # запуска бот их обработает.
+    await bot.delete_webhook(drop_pending_updates=False)
 
     await bot.set_my_commands([
         BotCommand(command="start", description="Запуск / главное меню"),
