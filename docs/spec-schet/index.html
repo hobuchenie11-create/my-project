@@ -414,11 +414,12 @@
   .tabbar{
     display:flex;
     justify-content:space-between;
-    padding:8px 10px 10px;
+    gap:3px;
+    padding:8px 8px 10px;
     border-top:1px solid #EEF1EE;
     background:#fff;
   }
-  .tab{ flex:1; text-align:center; font-size:8.5px; color:#8A948C; }
+  .tab{ flex:1; text-align:center; font-size:7.5px; line-height:1.2; color:#8A948C; }
   .tab i{ display:block; width:15px;height:15px;margin:0 auto 3px; background:#D8DFDA; border-radius:4px; }
   .tab.on{ color:#1E9E4A; font-weight:600; }
   .tab.on i{ background:#1E9E4A; }
@@ -537,7 +538,7 @@
   }
 
   @media print{
-    .controls{ display:none; }
+    .controls, .copy{ display:none; }
     .slide{ display:grid !important; grid-template-columns:auto 1fr; gap:24px; padding:18px 0; break-inside:avoid; border-bottom:1px solid #ccc; }
     .deck{ box-shadow:none; border:0; }
     .mark path{ stroke-dashoffset:0; }
