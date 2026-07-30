@@ -5,38 +5,45 @@
 
 ## Как включить публикацию (один раз)
 
+Сайт живёт в отдельном публичном репозитории `magistralnaya-2` — содержимое этой
+папки лежит в его корне.
+
 1. Настройки репозитория → **Settings → Pages**
 2. **Source**: `Deploy from a branch`
-3. **Branch**: `main`, папка **`/docs`** → *Save*
+3. **Branch**: `main`, папка **`/ (root)`** → *Save*
 4. Через 1–2 минуты сайт доступен по адресу
-   `https://hobuchenie11-create.github.io/my-project/`
+   `https://hobuchenie11-create.github.io/magistralnaya-2/`
 
 Адреса страниц:
 
 | Страница | Ссылка |
 |---|---|
-| База знаний (главная) | `https://hobuchenie11-create.github.io/my-project/` |
-| Памятка по оплате капремонта | `https://hobuchenie11-create.github.io/my-project/spec-schet/` |
+| База знаний (главная) | `https://hobuchenie11-create.github.io/magistralnaya-2/` |
+| Памятка по оплате капремонта | `https://hobuchenie11-create.github.io/magistralnaya-2/spec-schet/` |
 
 ## Что где лежит
 
 ```
-docs/
-├── index.html            — главная: разделы + частые вопросы
-├── spec-schet/
-│   └── index.html        — памятка «Оплата капремонта через Сбербанк Онлайн» (5 шагов)
-├── og-kapremont.png      — картинка-превью для WhatsApp и Telegram (1200×630)
-└── .nojekyll             — отключает обработку Jekyll на GitHub Pages
+index.html            — главная: разделы + частые вопросы
+spec-schet/
+└── index.html        — памятка «Оплата капремонта через Сбербанк Онлайн» (5 шагов)
+og-kapremont.png      — картинка-превью для WhatsApp и Telegram (1200×630)
+robots.txt            — запрет индексации: страницы работают только по прямой ссылке
+.nojekyll             — отключает обработку Jekyll на GitHub Pages
 ```
+
+Индексация закрыта в двух местах: в `robots.txt` и тегом
+`<meta name="robots" content="noindex, nofollow">` в каждой странице. Если однажды
+захотите, чтобы памятку находили через поиск, — уберите оба.
 
 Каждая страница — один самодостаточный HTML-файл: стили и скрипты внутри, внешних
 зависимостей нет. Правится в любом текстовом редакторе.
 
 ## Как добавить новый раздел
 
-1. Создайте папку с понятным именем, например `docs/sobranie/`, и файл `index.html`
+1. Создайте папку с понятным именем, например `sobranie/`, и файл `index.html`
    внутри (проще всего скопировать `spec-schet/index.html` и заменить содержимое).
-2. В `docs/index.html` добавьте вкладку в блок `<nav class="tabs">`:
+2. В `index.html` добавьте вкладку в блок `<nav class="tabs">`:
    ```html
    <a class="tab" href="sobranie/">Общее собрание</a>
    ```
@@ -46,7 +53,7 @@ docs/
 
 ## Как добавить вопрос-ответ
 
-В `docs/index.html`, внутри `<div class="qa">`:
+В `index.html`, внутри `<div class="qa">`:
 
 ```html
 <details>
