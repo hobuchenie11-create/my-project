@@ -37,6 +37,9 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
     conn = repository.connect()
     try:
         user = repository.get_user_by_tg(conn, message.from_user.id)
+        if user:
+            repository.touch_user(conn, message.from_user.id,
+                                  message.from_user.username or "")
     finally:
         conn.close()
 

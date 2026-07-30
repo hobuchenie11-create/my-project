@@ -44,11 +44,27 @@ DEFAULT_UNIT = "м³"
 DELTA_WARN_LIMITS = {"electricity": 1500.0}
 DELTA_WARN_DEFAULT = 100.0
 
+# Способы передачи показаний (колонка «Источник» в книге Excel)
+SOURCE_LABELS = {
+    "bot": "Telegram (бот)",
+    "chat": "Telegram (чат)",
+    "whatsapp": "WhatsApp",
+    "admin": "Вручную",
+}
+
+# Колонки, добавленные после первой версии схемы: имя таблицы -> (колонка, тип)
+MIGRATIONS = [
+    ("apartments", "rooms", "INTEGER NOT NULL DEFAULT 0"),
+    ("users", "username", "TEXT NOT NULL DEFAULT ''"),
+    ("users", "last_seen", "TEXT NOT NULL DEFAULT ''"),
+]
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS apartments (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     number      TEXT NOT NULL UNIQUE,
     type        TEXT NOT NULL DEFAULT 'residential',  -- residential | nonresidential
+    rooms       INTEGER NOT NULL DEFAULT 0,           -- число комнат (0 — неизвестно)
     layout      TEXT NOT NULL DEFAULT '',             -- подпись планировки (ХВС×.. · ГВС×..)
     sort_order  INTEGER NOT NULL DEFAULT 0,
     note        TEXT NOT NULL DEFAULT ''
@@ -59,9 +75,11 @@ CREATE TABLE IF NOT EXISTS users (
     tg_id        INTEGER NOT NULL UNIQUE,
     full_name    TEXT NOT NULL,
     phone        TEXT NOT NULL DEFAULT '',
+    username     TEXT NOT NULL DEFAULT '',            -- Telegram @username
     apartment_id INTEGER REFERENCES apartments (id),
     role         TEXT NOT NULL DEFAULT 'resident',    -- resident | admin
-    created_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    created_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    last_seen    TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
 CREATE TABLE IF NOT EXISTS meters (

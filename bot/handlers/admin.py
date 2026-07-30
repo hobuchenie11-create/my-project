@@ -7,7 +7,7 @@ from bot.config import config
 from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTORS,
                                       BTN_INVITE, BTN_REGISTRY, BTN_REMIND,
                                       BTN_SETTINGS, BTN_STATEMENT, BTN_STATS,
-                                      BTN_USERS, admin_menu)
+                                      BTN_USERS, BTN_WORKBOOK, admin_menu)
 from bot.keyboards.menu import main_menu
 from bot.scheduler import send_reminders
 from bot.services.apartment_service import registry_summary
@@ -50,6 +50,21 @@ async def send_statement(message: Message) -> None:
     await message.answer_document(
         FSInputFile(path),
         caption=f"📄 Ведомость передачи показаний за {period_title(period)}",
+    )
+
+
+@router.message(F.text == BTN_WORKBOOK)
+async def send_workbook(message: Message) -> None:
+    from excel.workbook import generate_workbook
+    period = current_period()
+    await message.answer("Собираю книгу…")
+    path = generate_workbook(period)
+    await message.answer_document(
+        FSInputFile(path),
+        caption=("📗 DH OS — Модуль «Сбор показаний»\n"
+                 f"Данные на {period_title(period)}.\n\n"
+                 "Листы: Реестр квартир · Переданные показания · "
+                 "Текущие показания · Контроль передачи · Настройки"),
     )
 
 

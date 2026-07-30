@@ -32,10 +32,17 @@ def _to_int(value, default: int) -> int:
         return default
 
 
+def _rooms_from_label(label: str) -> int:
+    """Число комнат из подписи типа: «3-комнатная», «2 комнатная» -> 3, 2."""
+    for ch in str(label or ""):
+        if ch.isdigit():
+            return int(ch)
+    return 0
+
+
 def _counts_from_label(label: str) -> tuple[int, int]:
     """Запасной вариант, если колонки со счетчиками пусты: по типу квартиры."""
-    text = str(label or "").strip().lower()
-    return (2, 2) if text.startswith("3") or "3-" in text or "3 " in text else (1, 1)
+    return (2, 2) if _rooms_from_label(label) >= 3 else (1, 1)
 
 
 def _pick_sheet(wb):
@@ -93,7 +100,7 @@ def import_registry(path: Path = REGISTRY_PATH,
 
             apt_id = repository.upsert_apartment(
                 conn, number, "residential", order,
-                layout=layout_label(cws, hws))
+                layout=layout_label(cws, hws), rooms=_rooms_from_label(label))
             repository.set_meters(conn, apt_id, apartment_meters(cws, hws))
             count += 1
         conn.commit()

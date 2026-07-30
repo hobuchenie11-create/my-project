@@ -63,7 +63,8 @@ async def confirm_registration(message: Message, state: FSMContext) -> None:
     try:
         repository.create_user(conn, message.from_user.id, data["full_name"],
                                data["apartment_id"],
-                               role="admin" if is_admin else "resident")
+                               role="admin" if is_admin else "resident",
+                               username=message.from_user.username or "")
         repository.log_event(conn, message.from_user.id, "registration",
                              f"кв. {data['apartment_number']}, {data['full_name']}")
     finally:
