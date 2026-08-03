@@ -1,565 +1,343 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Алексей Иванов — Full-Stack разработчик</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #f8f9fa;
-      --surface: #ffffff;
-      --accent: #4f46e5;
-      --accent-light: #eef2ff;
-      --text: #111827;
-      --muted: #6b7280;
-      --border: #e5e7eb;
-      --radius: 16px;
-      --shadow: 0 4px 24px rgba(0,0,0,.08);
-    }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    /* ── HERO ── */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 24px;
-      background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
-    }
-
-    .avatar-wrap {
-      position: relative;
-      margin-bottom: 24px;
-    }
-
-    .avatar {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent) 0%, #818cf8 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -2px;
-      box-shadow: 0 8px 32px rgba(79,70,229,.3);
-    }
-
-    .status-dot {
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      width: 18px;
-      height: 18px;
-      background: #22c55e;
-      border-radius: 50%;
-      border: 3px solid #fff;
-    }
-
-    .hero h1 {
-      font-size: clamp(28px, 6vw, 44px);
-      font-weight: 800;
-      letter-spacing: -1px;
-      text-align: center;
-    }
-
-    .hero .role {
-      font-size: 18px;
-      color: var(--accent);
-      font-weight: 600;
-      margin-top: 4px;
-      text-align: center;
-    }
-
-    .hero .tagline {
-      margin-top: 12px;
-      color: var(--muted);
-      font-size: 16px;
-      max-width: 440px;
-      text-align: center;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 28px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border-radius: 50px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform .15s, box-shadow .15s;
-      border: none;
-    }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
-
-    .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,.4); }
-    .btn-outline { background: #fff; color: var(--text); border: 2px solid var(--border); }
-
-    .scroll-hint {
-      margin-top: 48px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .scroll-arrow {
-      width: 28px;
-      height: 28px;
-      border-right: 2px solid var(--muted);
-      border-bottom: 2px solid var(--muted);
-      transform: rotate(45deg);
-      animation: bounce 1.4s infinite;
-    }
-
-    @keyframes bounce {
-      0%, 100% { transform: rotate(45deg) translateY(0); }
-      50%       { transform: rotate(45deg) translateY(6px); }
-    }
-
-    /* ── SECTIONS ── */
-    section {
-      padding: 80px 24px;
-      max-width: 760px;
-      margin: 0 auto;
-    }
-
-    .section-label {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 8px;
-    }
-
-    h2 {
-      font-size: clamp(22px, 4vw, 32px);
-      font-weight: 800;
-      letter-spacing: -.5px;
-      margin-bottom: 32px;
-    }
-
-    /* ── ABOUT ── */
-    .about-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    @media (max-width: 520px) { .about-grid { grid-template-columns: 1fr; } }
-
-    .about-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 24px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
-
-    .about-card .icon {
-      font-size: 28px;
-      margin-bottom: 10px;
-      display: block;
-    }
-
-    .about-card strong { display: block; font-weight: 700; margin-bottom: 4px; }
-    .about-card span   { color: var(--muted); font-size: 14px; }
-
-    /* ── SKILLS ── */
-    .skills-section { background: var(--surface); }
-
-    .skill-list {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .skill-item label {
-      display: flex;
-      justify-content: space-between;
-      font-weight: 600;
-      margin-bottom: 8px;
-      font-size: 15px;
-    }
-
-    .skill-item label span { color: var(--muted); font-weight: 400; }
-
-    .bar-bg {
-      height: 8px;
-      background: var(--border);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 100%;
-      border-radius: 99px;
-      background: linear-gradient(90deg, var(--accent), #818cf8);
-      width: 0;
-      transition: width 1s ease;
-    }
-
-    /* ── PORTFOLIO ── */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      transition: transform .2s, box-shadow .2s;
-    }
-    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.12); }
-
-    .card-thumb {
-      height: 120px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-    }
-
-    .card:nth-child(1) .card-thumb { background: #eef2ff; }
-    .card:nth-child(2) .card-thumb { background: #f0fdf4; }
-    .card:nth-child(3) .card-thumb { background: #fff7ed; }
-
-    .card-body { padding: 16px 18px; }
-    .card-body h3 { font-weight: 700; margin-bottom: 4px; }
-    .card-body p  { font-size: 13px; color: var(--muted); }
-
-    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .tag {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 99px;
-      background: var(--accent-light);
-      color: var(--accent);
-    }
-
-    /* ── CONTACTS ── */
-    .contacts-section {
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-      color: #fff;
-      border-radius: 24px;
-      margin: 0 24px 80px;
-      max-width: 760px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .contacts-section .section-label { color: #a5b4fc; }
-    .contacts-section h2 { color: #fff; }
-
-    .contact-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .contact-item {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      text-decoration: none;
-      color: #fff;
-      background: rgba(255,255,255,.08);
-      border-radius: 12px;
-      padding: 16px 20px;
-      transition: background .2s;
-    }
-    .contact-item:hover { background: rgba(255,255,255,.15); }
-
-    .contact-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: rgba(255,255,255,.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
-    }
-
-    .contact-info strong { display: block; font-weight: 700; }
-    .contact-info span   { font-size: 13px; color: #a5b4fc; }
-
-    /* ── FOOTER ── */
-    footer {
-      text-align: center;
-      padding: 32px 24px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    /* ── NAV ── */
-    nav {
-      position: fixed;
-      top: 20px;
-      right: 24px;
-      z-index: 100;
-      display: flex;
-      gap: 8px;
-      background: rgba(255,255,255,.85);
-      backdrop-filter: blur(12px);
-      padding: 8px 12px;
-      border-radius: 50px;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-    }
-
-    nav a {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-      text-decoration: none;
-      padding: 4px 10px;
-      border-radius: 99px;
-      transition: background .15s, color .15s;
-    }
-    nav a:hover { background: var(--accent-light); color: var(--accent); }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Аистёнок — одежда для новорождённых: комплекты на выписку, ползунки, боди</title>
+  <meta name="description" content="Комплекты на выписку из роддома, ползунки и распашонки, чепчики, комбинезоны и боди для новорождённых. Хлопок, размеры 50–74, доставка по России.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
 
-<nav>
-  <a href="#hero">Главная</a>
-  <a href="#about">О себе</a>
-  <a href="#skills">Навыки</a>
-  <a href="#work">Работы</a>
-  <a href="#contacts">Контакты</a>
-</nav>
+<div class="announce">
+  Бесплатная доставка по городу от <span data-free-from></span> · Обмен размера в течение 14 дней за наш счёт
+</div>
 
-<!-- ── HERO ─────────────────────────────────── -->
-<section class="hero" id="hero">
-  <div class="avatar-wrap">
-    <div class="avatar">АИ</div>
-    <div class="status-dot"></div>
-  </div>
-
-  <h1>Алексей Иванов</h1>
-  <p class="role">Full-Stack разработчик</p>
-  <p class="tagline">Создаю быстрые и красивые веб-приложения. Люблю чистый код и продуманный UX.</p>
-
-  <div class="hero-actions">
-    <a href="#work" class="btn btn-primary">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-      </svg>
-      Мои работы
+<header class="site-header">
+  <div class="shell header-row">
+    <a class="brand" href="#top">
+      <span data-brand-mark></span>
+      <span>
+        <span class="brand__name" data-brand-name></span><br>
+        <span class="brand__tag" data-brand-tag></span>
+      </span>
     </a>
-    <a href="#contacts" class="btn btn-outline">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-        <polyline points="22,6 12,13 2,6"/>
-      </svg>
-      Написать
-    </a>
-  </div>
 
-  <div class="scroll-hint">
-    <span>Листайте вниз</span>
-    <div class="scroll-arrow"></div>
-  </div>
-</section>
+    <nav class="main-nav" aria-label="Основная навигация">
+      <a href="#catalog">Каталог</a>
+      <a href="#vypiska">На выписку</a>
+      <a href="#sizes">Размеры</a>
+      <a href="#delivery">Доставка</a>
+      <a href="#faq">Вопросы</a>
+    </nav>
 
-<!-- ── О СЕБЕ ─────────────────────────────────── -->
-<section id="about">
-  <p class="section-label">О себе</p>
-  <h2>Факты обо мне</h2>
-  <div class="about-grid">
-    <div class="about-card">
-      <span class="icon">📍</span>
-      <strong>Местоположение</strong>
-      <span>Москва, Россия</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">💼</span>
-      <strong>Опыт</strong>
-      <span>5+ лет в разработке</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">🎓</span>
-      <strong>Образование</strong>
-      <span>МГУ, Прикладная математика</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">🌐</span>
-      <strong>Языки</strong>
-      <span>Русский, Английский (B2)</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">🚀</span>
-      <strong>Сейчас</strong>
-      <span>Открыт к новым проектам</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">❤️</span>
-      <strong>Интересы</strong>
-      <span>OSS, дизайн, горы</span>
+    <div class="header-actions">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="Сменить тему"></button>
+      <button class="icon-btn" type="button" data-open-favs aria-label="Избранное">
+        <span data-icon="heart"></span>
+        <span class="badge-count num" data-fav-count>0</span>
+      </button>
+      <button class="icon-btn" type="button" data-open-cart aria-label="Корзина">
+        <span data-icon="cart"></span>
+        <span class="badge-count num" data-cart-count>0</span>
+      </button>
     </div>
   </div>
-</section>
+</header>
 
-<!-- ── НАВЫКИ ─────────────────────────────────── -->
-<section id="skills" class="skills-section" style="background:var(--surface); border-radius:24px; margin:0 0 0; padding:60px 40px;">
-  <p class="section-label">Технологии</p>
-  <h2>Что я умею</h2>
-  <div class="skill-list">
-    <div class="skill-item">
-      <label>React / Next.js <span>95%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="95"></div></div>
-    </div>
-    <div class="skill-item">
-      <label>TypeScript <span>90%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="90"></div></div>
-    </div>
-    <div class="skill-item">
-      <label>Node.js / Python <span>85%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="85"></div></div>
-    </div>
-    <div class="skill-item">
-      <label>PostgreSQL / Redis <span>80%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="80"></div></div>
-    </div>
-    <div class="skill-item">
-      <label>Docker / CI/CD <span>75%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="75"></div></div>
-    </div>
-  </div>
-</section>
+<main id="top">
 
-<!-- ── РАБОТЫ ─────────────────────────────────── -->
-<section id="work">
-  <p class="section-label">Портфолио</p>
-  <h2>Избранные проекты</h2>
-  <div class="cards">
-    <div class="card">
-      <div class="card-thumb">🛒</div>
-      <div class="card-body">
-        <h3>ShopFlow</h3>
-        <p>Интернет-магазин с умным поиском и рекомендациями.</p>
-        <div class="tags">
-          <span class="tag">Next.js</span>
-          <span class="tag">Stripe</span>
-          <span class="tag">PG</span>
+  <!-- ── Первый экран ──────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">Размеры 50–74 · хлопок · швы наружу</p>
+        <h1>Первая одежда, которую малыш даже не заметит</h1>
+        <p class="lead">
+          Комплекты на выписку по сезонам, ползунки и распашонки, чепчики, слипы и боди.
+          Шьём из интерлока и кулирки, плоскими швами наружу — чтобы ничего не натирало
+          в первые недели.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn--primary btn--lg" href="#catalog">Смотреть каталог</a>
+          <a class="btn btn--ghost btn--lg" href="#vypiska">Комплекты на выписку</a>
+        </div>
+      </div>
+
+      <div class="hero-art">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <rect x="18" y="24" width="84" height="76" rx="18" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.6" opacity=".95"/>
+          <path d="M18 42 L60 70 L102 42" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".55"/>
+          <path d="M42 24 Q60 46 78 24" fill="none" stroke="var(--second)" stroke-width="2" opacity=".8"/>
+          <circle cx="60" cy="72" r="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+          <path d="M52 72 Q42 62 40 74 Q45 81 52 72Z M68 72 Q78 62 80 74 Q75 81 68 72Z" fill="var(--accent)" opacity=".5"/>
+          <circle cx="30" cy="36" r="2.4" fill="var(--second)"/>
+          <circle cx="90" cy="36" r="2.4" fill="var(--second)"/>
+        </svg>
+        <div class="hero-note">
+          <strong>Не угадали с размером?</strong>
+          <span>Обменяем бесплатно</span>
         </div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-thumb">📊</div>
-      <div class="card-body">
-        <h3>DataBoard</h3>
-        <p>Дашборд аналитики в реальном времени для SaaS-команд.</p>
-        <div class="tags">
-          <span class="tag">React</span>
-          <span class="tag">WebSocket</span>
-          <span class="tag">D3</span>
+
+    <div class="shell">
+      <div class="trust">
+        <div class="trust-item">
+          <span data-icon="leaf"></span>
+          <span><strong>100% хлопок</strong><span>Интерлок, кулирка, футер. Без синтетики у кожи</span></span>
+        </div>
+        <div class="trust-item">
+          <span data-icon="truck"></span>
+          <span><strong>Доставка 1–5 дней</strong><span>Курьер, СДЭК, Почта России, самовывоз</span></span>
+        </div>
+        <div class="trust-item">
+          <span data-icon="swap"></span>
+          <span><strong>Обмен размера</strong><span>14 дней, доставку обмена берём на себя</span></span>
+        </div>
+        <div class="trust-item">
+          <span data-icon="ruler"></span>
+          <span><strong>Поможем с размером</strong><span>Подберём по росту и весу малыша</span></span>
         </div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-thumb">🤖</div>
-      <div class="card-body">
-        <h3>AI Assistant</h3>
-        <p>Корпоративный чат-бот с RAG на базе Claude API.</p>
-        <div class="tags">
-          <span class="tag">Python</span>
-          <span class="tag">FastAPI</span>
-          <span class="tag">LLM</span>
+  </section>
+
+  <!-- ── Категории ─────────────────────────────────────────────────── -->
+  <section class="section" id="vypiska">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Каталог по категориям</p>
+          <h2>Что нужно в первые месяцы</h2>
+          <p>Нажмите на категорию — каталог ниже отфильтруется.</p>
         </div>
       </div>
+      <div class="cat-grid" id="catTiles"></div>
+    </div>
+  </section>
+
+  <!-- ── Каталог ───────────────────────────────────────────────────── -->
+  <section class="section" id="catalog" style="padding-top:8px">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Все товары</p>
+          <h2>Каталог</h2>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="filter-row">
+          <div class="search-wrap">
+            <span data-icon="search"></span>
+            <input id="searchInput" type="search" placeholder="Поиск: конверт, слип, велюр…" aria-label="Поиск по каталогу">
+          </div>
+          <select class="field" id="sortSelect" aria-label="Сортировка" style="max-width:210px">
+            <option value="popular">Сначала популярные</option>
+            <option value="cheap">Сначала дешёвые</option>
+            <option value="expensive">Сначала дорогие</option>
+            <option value="rating">По оценке покупателей</option>
+          </select>
+        </div>
+
+        <div class="filter-row">
+          <span class="filter-label">Категория</span>
+          <div class="filter-row" id="catChips" style="gap:8px"></div>
+        </div>
+
+        <div class="filter-row">
+          <span class="filter-label">Сезон</span>
+          <div class="filter-row" id="seasonChips" style="gap:8px"></div>
+        </div>
+
+        <div class="filter-row">
+          <span class="filter-label">Размер</span>
+          <div class="filter-row" id="sizeChips" style="gap:8px"></div>
+          <button class="btn btn--quiet" type="button" data-open-sizes>Таблица размеров</button>
+        </div>
+      </div>
+
+      <div class="results-line">
+        <span id="resultsCount"></span>
+        <button class="btn btn--quiet" type="button" data-reset-filters>Сбросить фильтры</button>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+  <!-- ── Размеры ───────────────────────────────────────────────────── -->
+  <section class="section" id="sizes">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Как выбрать</p>
+          <h2>Размерная сетка</h2>
+          <p>Размер на бирке — это рост ребёнка в сантиметрах. Большинству детей при рождении подходит 56-й, крупным малышам — 62-й.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Размер</th><th>Рост</th><th>Вес</th><th>Ориентировочный возраст</th></tr>
+          </thead>
+          <tbody id="sizeRows"></tbody>
+        </table>
+      </div>
+      <p class="size-hint">
+        Дети растут быстро: 56-й размер обычно носят до полутора месяцев, поэтому большие
+        комплекты имеет смысл сразу брать на размер вперёд. Сомневаетесь — напишите нам рост
+        и вес при рождении, подберём.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Отзывы ────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Отзывы покупателей</p>
+          <h2>Что пишут мамы</h2>
+        </div>
+      </div>
+      <div class="review-grid" id="reviewGrid"></div>
+    </div>
+  </section>
+
+  <!-- ── Вопросы ───────────────────────────────────────────────────── -->
+  <section class="section" id="faq">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Частые вопросы</p>
+          <h2>Коротко о главном</h2>
+        </div>
+      </div>
+      <div class="faq-list" id="faqList"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Подвал ──────────────────────────────────────────────────────── -->
+<footer class="site-footer" id="delivery">
+  <div class="shell">
+    <div class="footer-grid">
+      <div class="footer-about">
+        <a class="brand" href="#top">
+          <span data-brand-mark></span>
+          <span>
+            <span class="brand__name" data-brand-name></span><br>
+            <span class="brand__tag" data-brand-tag></span>
+          </span>
+        </a>
+        <p>Шьём одежду для новорождённых из хлопкового трикотажа. Работаем <span data-brand-hours></span>.</p>
+      </div>
+
+      <div>
+        <h4>Каталог</h4>
+        <ul id="footerCats"></ul>
+      </div>
+
+      <div>
+        <h4>Доставка</h4>
+        <ul id="deliveryList"></ul>
+      </div>
+
+      <div>
+        <h4>Связаться</h4>
+        <ul>
+          <li><a data-brand-phone href="#"></a></li>
+          <li><a data-brand-email href="#"></a></li>
+          <li><span data-brand-address style="font-size:14px;color:var(--ink-soft)"></span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© <span data-year></span> <span data-brand-name></span>. Прототип интернет-магазина.</span>
+      <span>Оплата в прототипе не проводится</span>
     </div>
   </div>
-</section>
-
-<!-- ── КОНТАКТЫ ─────────────────────────────────── -->
-<section id="contacts" class="contacts-section" style="padding:60px 40px;">
-  <p class="section-label">Контакты</p>
-  <h2>Давайте работать вместе</h2>
-  <div class="contact-list">
-    <a href="mailto:ivanov@example.com" class="contact-item">
-      <div class="contact-icon">✉️</div>
-      <div class="contact-info">
-        <strong>ivanov@example.com</strong>
-        <span>Email — отвечаю в течение дня</span>
-      </div>
-    </a>
-    <a href="tel:+79001234567" class="contact-item">
-      <div class="contact-icon">📞</div>
-      <div class="contact-info">
-        <strong>+7 900 123-45-67</strong>
-        <span>Телефон / WhatsApp / Telegram</span>
-      </div>
-    </a>
-    <a href="#" class="contact-item">
-      <div class="contact-icon">💼</div>
-      <div class="contact-info">
-        <strong>linkedin.com/in/ivanov</strong>
-        <span>LinkedIn — профессиональный профиль</span>
-      </div>
-    </a>
-    <a href="#" class="contact-item">
-      <div class="contact-icon">🐙</div>
-      <div class="contact-info">
-        <strong>github.com/ivanov</strong>
-        <span>GitHub — открытые проекты и код</span>
-      </div>
-    </a>
-  </div>
-</section>
-
-<footer>
-  © 2026 Алексей Иванов &nbsp;·&nbsp; Сделано с ❤️ и чистым кодом
 </footer>
 
-<script>
-  // Animate skill bars when they enter viewport
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.querySelectorAll('.bar-fill').forEach(bar => {
-          bar.style.width = bar.dataset.w + '%';
-        });
-        observer.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.3 });
+<!-- ── Нижняя панель на мобильных ──────────────────────────────────── -->
+<nav class="tabbar" aria-label="Быстрая навигация">
+  <div class="tabbar__inner">
+    <a class="tab is-active" href="#top"><span data-icon="home"></span>Главная</a>
+    <a class="tab" href="#catalog"><span data-icon="grid"></span>Каталог</a>
+    <button class="tab" type="button" data-open-favs>
+      <span data-icon="heart"></span>Избранное
+      <span class="badge-count num" data-fav-count>0</span>
+    </button>
+    <button class="tab" type="button" data-open-cart>
+      <span data-icon="cart"></span>Корзина
+      <span class="badge-count num" data-cart-count>0</span>
+    </button>
+  </div>
+</nav>
 
-  document.querySelectorAll('.skill-list').forEach(el => observer.observe(el));
-</script>
+<!-- ── Слои ────────────────────────────────────────────────────────── -->
+<div class="overlay" id="overlay"></div>
+
+<aside class="drawer" id="cartDrawer" aria-label="Корзина">
+  <div class="drawer__head">
+    <h3>Корзина</h3>
+    <button class="icon-btn" type="button" data-close="#cartDrawer" aria-label="Закрыть корзину">
+      <span data-icon="close"></span>
+    </button>
+  </div>
+  <div class="drawer__body" id="cartBody"></div>
+  <div class="drawer__foot" id="cartFoot"></div>
+</aside>
+
+<div class="modal" id="productModal" role="dialog" aria-label="Карточка товара">
+  <div class="modal__head">
+    <h3 id="productTitle">Товар</h3>
+    <button class="icon-btn" type="button" data-close="#productModal" aria-label="Закрыть">
+      <span data-icon="close"></span>
+    </button>
+  </div>
+  <div class="modal__body" id="productBody"></div>
+</div>
+
+<div class="modal modal--narrow" id="sizesModal" role="dialog" aria-label="Таблица размеров">
+  <div class="modal__head">
+    <h3>Таблица размеров</h3>
+    <button class="icon-btn" type="button" data-close="#sizesModal" aria-label="Закрыть">
+      <span data-icon="close"></span>
+    </button>
+  </div>
+  <div class="modal__body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Размер</th><th>Рост</th><th>Вес</th><th>Возраст</th></tr></thead>
+        <tbody id="sizeRowsModal"></tbody>
+      </table>
+    </div>
+    <p class="size-hint">Если малыш родился крупным (от 3,8 кг), берите размер на ступень выше.</p>
+  </div>
+</div>
+
+<div class="modal" id="checkoutModal" role="dialog" aria-label="Оформление заказа">
+  <div class="modal__head">
+    <h3>Оформление заказа</h3>
+    <button class="icon-btn" type="button" data-close="#checkoutModal" aria-label="Закрыть">
+      <span data-icon="close"></span>
+    </button>
+  </div>
+  <div class="steps" id="checkoutSteps"></div>
+  <div class="modal__body" id="checkoutBody"></div>
+  <div class="checkout-foot" id="checkoutFoot"></div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
 </body>
 </html>
