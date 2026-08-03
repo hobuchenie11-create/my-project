@@ -23,3 +23,6 @@ data/registry_backup/
 
 # IDE
 .idea/
+
+# Демо-файлы (создаются командой python demo.py)
+reports/demo/
