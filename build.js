@@ -1,8 +1,11 @@
 /* ==========================================================================
    Сборка одного самодостаточного файла из index.html и папки assets.
    Запуск: node build.js
-   Результат: dist/aistenok.html — фрагмент со встроенными стилями и скриптами,
-   без обёртки <html>/<head>/<body>. Именно его публикуем как ссылку.
+   Результат — два файла со встроенными стилями и скриптами:
+     dist/aistenok-sait.html — обычная веб-страница. Её можно отправить клиенту,
+                               открыть двойным кликом или выложить на хостинг.
+     dist/aistenok.html      — тот же сайт без обёртки <html>/<body>,
+                               в таком виде его принимает публикация по ссылке.
    ========================================================================== */
 const fs = require('fs');
 const path = require('path');
@@ -29,17 +32,36 @@ const body = between(html, '<body>', '</body>')
   .replace(/<script src="[^"]*"><\/script>\s*/g, '')
   .trim();
 
-const out = `<title>${title}</title>
-<style>
+const inlined = `<style>
 ${css}
 </style>
 ${body}
 <script>
 ${data}
 ${app}
-</script>
+</script>`;
+
+/* Фрагмент для публикации по ссылке */
+const fragment = `<title>${title}</title>\n${inlined}\n`;
+
+/* Полноценная страница для отправки клиенту и любого хостинга */
+const page = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title>
+<meta name="description" content="Комплекты на выписку из роддома, ползунки и распашонки, чепчики, комбинезоны и боди для новорождённых.">
+<meta name="color-scheme" content="light dark">
+</head>
+<body>
+${inlined}
+</body>
+</html>
 `;
 
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
-fs.writeFileSync(path.join(root, 'dist/aistenok.html'), out, 'utf8');
-console.log('dist/aistenok.html — ' + (out.length / 1024).toFixed(1) + ' КБ');
+fs.writeFileSync(path.join(root, 'dist/aistenok.html'), fragment, 'utf8');
+fs.writeFileSync(path.join(root, 'dist/aistenok-sait.html'), page, 'utf8');
+console.log('dist/aistenok-sait.html — страница, ' + (page.length / 1024).toFixed(1) + ' КБ');
+console.log('dist/aistenok.html      — фрагмент для публикации, ' + (fragment.length / 1024).toFixed(1) + ' КБ');
