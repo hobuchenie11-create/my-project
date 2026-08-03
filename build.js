@@ -2,9 +2,9 @@
    Сборка одного самодостаточного файла из index.html и папки assets.
    Запуск: node build.js
    Результат — два файла со встроенными стилями и скриптами:
-     dist/aistenok-sait.html — обычная веб-страница. Её можно отправить клиенту,
+     dist/alisa-sait.html — обычная веб-страница. Её можно отправить клиенту,
                                открыть двойным кликом или выложить на хостинг.
-     dist/aistenok.html      — тот же сайт без обёртки <html>/<body>,
+     dist/alisa.html      — тот же сайт без обёртки <html>/<body>,
                                в таком виде его принимает публикация по ссылке.
    ========================================================================== */
 const fs = require('fs');
@@ -61,7 +61,7 @@ ${inlined}
 `;
 
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
-fs.writeFileSync(path.join(root, 'dist/aistenok.html'), fragment, 'utf8');
-fs.writeFileSync(path.join(root, 'dist/aistenok-sait.html'), page, 'utf8');
-console.log('dist/aistenok-sait.html — страница, ' + (page.length / 1024).toFixed(1) + ' КБ');
-console.log('dist/aistenok.html      — фрагмент для публикации, ' + (fragment.length / 1024).toFixed(1) + ' КБ');
+fs.writeFileSync(path.join(root, 'dist/alisa.html'), fragment, 'utf8');
+fs.writeFileSync(path.join(root, 'dist/alisa-sait.html'), page, 'utf8');
+console.log('dist/alisa-sait.html — страница, ' + (page.length / 1024).toFixed(1) + ' КБ');
+console.log('dist/alisa.html      — фрагмент для публикации, ' + (fragment.length / 1024).toFixed(1) + ' КБ');

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Аистёнок — логика прототипа
+   Алиса — логика прототипа
    Каталог с фильтрами, карточка товара, избранное, корзина, оформление заказа.
    Состояние корзины и избранного переживает перезагрузку (localStorage).
    ========================================================================== */
@@ -29,12 +29,12 @@
   const store = {
     read(key, fallback) {
       try {
-        const raw = localStorage.getItem('aistenok:' + key);
+        const raw = localStorage.getItem('alisa:' + key);
         return raw ? JSON.parse(raw) : fallback;
       } catch (e) { return fallback; }
     },
     write(key, value) {
-      try { localStorage.setItem('aistenok:' + key, JSON.stringify(value)); } catch (e) { /* приватный режим */ }
+      try { localStorage.setItem('alisa:' + key, JSON.stringify(value)); } catch (e) { /* приватный режим */ }
     },
   };
 
@@ -228,9 +228,9 @@
       ? `<img class="brand__logo" src="${esc(BRAND.logo)}" alt="${esc(BRAND.name)}">`
       : `<svg class="brand__mark" viewBox="0 0 40 40" aria-hidden="true">
            <circle cx="20" cy="20" r="19" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="1.2"/>
-           <path d="M12 27c0-6 3.6-10 8-10s8 4 8 10" fill="none" stroke="var(--accent-deep)" stroke-width="1.8" stroke-linecap="round"/>
-           <path d="M20 17c-2.6-3.4-1.4-7 2-7.6" fill="none" stroke="var(--accent-deep)" stroke-width="1.6" stroke-linecap="round"/>
-           <circle cx="20" cy="23" r="2.6" fill="var(--accent)"/>
+           <text x="20" y="20" text-anchor="middle" dominant-baseline="central"
+                 font-family="Georgia, serif" font-size="19" fill="var(--accent-deep)"
+                 >${esc(BRAND.name.charAt(0))}</text>
          </svg>`;
 
     $$('[data-brand-mark]').forEach((el) => { el.innerHTML = mark; });
@@ -701,7 +701,7 @@
   }
 
   function submitOrder() {
-    const number = 'АС-' + String(Date.now()).slice(-6);
+    const number = 'АЛ-' + String(Date.now()).slice(-6);
     const o = state.order;
     const d = DELIVERY.find((x) => x.id === o.delivery);
 
