@@ -57,7 +57,11 @@ MIGRATIONS = [
     ("apartments", "rooms", "INTEGER NOT NULL DEFAULT 0"),
     ("users", "username", "TEXT NOT NULL DEFAULT ''"),
     ("users", "last_seen", "TEXT NOT NULL DEFAULT ''"),
+    ("readings", "late", "INTEGER NOT NULL DEFAULT 0"),
 ]
+
+# Пометка в ведомости для показаний, переданных после срока сбора
+LATE_NOTE = "Переданы после срока сбора показаний"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS apartments (
@@ -97,7 +101,8 @@ CREATE TABLE IF NOT EXISTS readings (
     user_id    INTEGER REFERENCES users (id),
     period     TEXT NOT NULL,                          -- 'YYYY-MM'
     value      REAL NOT NULL,
-    source     TEXT NOT NULL DEFAULT 'bot',            -- bot | chat | admin
+    source     TEXT NOT NULL DEFAULT 'bot',            -- bot | chat | whatsapp | admin
+    late       INTEGER NOT NULL DEFAULT 0,             -- 1 — передано после срока сбора
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 

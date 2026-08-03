@@ -21,10 +21,14 @@ class Config:
     nonresidential_count: int = int(os.getenv("NONRESIDENTIAL_COUNT", "2"))
     group_chat_id: int | None = int(os.getenv("GROUP_CHAT_ID")) if os.getenv("GROUP_CHAT_ID") else None
     proxy_url: str | None = os.getenv("PROXY_URL") or None
-    readings_day_start: int = int(os.getenv("READINGS_DAY_START", "20"))
-    readings_day_end: int = int(os.getenv("READINGS_DAY_END", "25"))
+    # Период сбора показаний: с 15 по 19 число включительно
+    readings_day_start: int = int(os.getenv("READINGS_DAY_START", "15"))
+    readings_day_end: int = int(os.getenv("READINGS_DAY_END", "19"))
+    # Ведомость со всеми собранными показаниями: 20 числа в 10:00
+    statement_day: int = int(os.getenv("STATEMENT_DAY", "20"))
+    statement_hour: int = int(os.getenv("STATEMENT_HOUR", "10"))
     reminder_days: tuple[int, ...] = field(
-        default_factory=lambda: _parse_int_list(os.getenv("REMINDER_DAYS", "17,23,25")))
+        default_factory=lambda: _parse_int_list(os.getenv("REMINDER_DAYS", "15,17,19")))
     # Когда автоматически формировать ведомость непередавших
     debtors_day: int = int(os.getenv("DEBTORS_DAY", "20"))
     debtors_hour: int = int(os.getenv("DEBTORS_HOUR", "9"))

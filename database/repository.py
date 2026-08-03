@@ -147,10 +147,12 @@ def last_reading(conn: sqlite3.Connection, meter_id: int) -> sqlite3.Row | None:
 
 
 def add_reading(conn: sqlite3.Connection, meter_id: int, user_id: int | None,
-                period: str, value: float, source: str = "bot") -> None:
+                period: str, value: float, source: str = "bot",
+                late: bool = False) -> None:
     conn.execute(
-        "INSERT INTO readings (meter_id, user_id, period, value, source) VALUES (?, ?, ?, ?, ?)",
-        (meter_id, user_id, period, value, source),
+        """INSERT INTO readings (meter_id, user_id, period, value, source, late)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (meter_id, user_id, period, value, source, int(late)),
     )
     conn.commit()
 
@@ -159,7 +161,7 @@ def readings_for_period(conn: sqlite3.Connection, period: str) -> list[sqlite3.R
     """Последнее показание каждого прибора за период, с номером квартиры."""
     return conn.execute(
         """SELECT a.number AS apartment_number, a.type AS apartment_type,
-                  m.kind, r.value, r.created_at
+                  m.kind, r.value, r.created_at, r.late
            FROM readings r
            JOIN meters m ON m.id = r.meter_id
            JOIN apartments a ON a.id = m.apartment_id

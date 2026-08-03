@@ -5,8 +5,9 @@ from aiogram.types import Message
 
 from bot.config import config
 from bot.keyboards.menu import BTN_SUBMIT, cancel_keyboard, main_menu
-from bot.services.reading_service import (current_period, receipt_text,
+from bot.services.reading_service import (current_period, is_late, receipt_text,
                                           save_reading, unit_for)
+from bot.texts import late_submission_text
 from bot.services.validation import parse_value
 from bot.states.readings import SubmitReadings
 from database import repository
@@ -54,6 +55,8 @@ async def _finish(message: Message, state: FSMContext) -> None:
         conn.close()
     if warnings:
         text += "\n\n" + "\n".join(f"⚠️ {w}" for w in warnings)
+    if saved and is_late():
+        text += "\n\n" + late_submission_text()
 
     is_admin = message.from_user.id in config.admin_ids
     await message.answer(text, reply_markup=main_menu(is_admin))

@@ -50,6 +50,12 @@ async def _tick(bot: Bot, now: datetime, done: set[str]) -> None:
             await send_debtors_statement(bot)
             done.add(key)
 
+    if now.day == config.statement_day and now.hour >= config.statement_hour:
+        key = f"statement:{today}"
+        if key not in done:
+            await send_monthly_statement(bot)
+            done.add(key)
+
 
 async def send_reminders(bot: Bot) -> int:
     """Разослать напоминания должникам за текущий период. Возвращает число отправленных."""
@@ -87,6 +93,31 @@ async def send_debtors_statement(bot: Bot) -> int:
             logger.warning("Не удалось отправить ведомость админу %s: %s", admin_id, exc)
     logger.info("Ведомость непередавших сформирована: %s (должников: %s)", path, count)
     return count
+
+
+async def send_monthly_statement(bot: Bot) -> None:
+    """Сформировать ведомость со всеми собранными показаниями и отправить её."""
+    from reports.monthly_statement import generate_statement
+
+    period = current_period()
+    path = generate_statement(period)
+    conn = repository.connect()
+    try:
+        submitted = len(repository.apartments_submitted(conn, period))
+        total = len(repository.list_apartments(conn))
+    finally:
+        conn.close()
+
+    caption = (f"📄 Ведомость передачи показаний — {period_title(period)}\n"
+               f"Собрано: {submitted} из {total}.\n"
+               "Показания, переданные после срока, попадут в следующий "
+               "расчётный период (в ведомости они с пометкой).")
+    for admin_id in config.admin_ids:
+        try:
+            await bot.send_document(admin_id, FSInputFile(path), caption=caption)
+        except TelegramAPIError as exc:
+            logger.warning("Не удалось отправить ведомость админу %s: %s", admin_id, exc)
+    logger.info("Ведомость сформирована: %s (собрано %s из %s)", path, submitted, total)
 
 
 # Обратная совместимость с прежним названием

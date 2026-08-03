@@ -20,8 +20,9 @@ from aiogram.types import Message, ReactionTypeEmoji
 
 from bot.config import config
 from bot.services.parser import parse_message
-from bot.services.reading_service import (current_period, receipt_text,
+from bot.services.reading_service import (current_period, is_late, receipt_text,
                                           save_parsed_readings)
+from bot.texts import late_submission_text
 from database import repository
 
 logger = logging.getLogger(__name__)
@@ -113,6 +114,8 @@ async def handle_group_message(message: Message) -> None:
 
     # Подтверждение — в личку жителю
     dm_text = receipt + ("\n\n" + problems_text if problems else "")
+    if outcome.anything_saved and is_late():
+        dm_text += "\n\n" + late_submission_text()
     delivered = await _dm(message, dm_text)
 
     # В чат пишем только если в личку не дошло И есть о чём предупредить

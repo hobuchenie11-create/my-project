@@ -8,6 +8,7 @@ import sqlite3
 from dataclasses import dataclass, field
 
 from database import repository
+from database.models import LATE_NOTE
 
 STATEMENT_COLUMNS = ["Кв.", "✔", "Электроэнергия", "ГВС сумма", "ХВС кухня",
                      "ХВС сан.узел", "ГВС кухня", "ГВС ванна", "Примечание"]
@@ -47,14 +48,20 @@ class Statement:
 
 def build_statement(conn: sqlite3.Connection, period: str) -> Statement:
     readings: dict[str, dict[str, float]] = {}
+    late_apartments: set[str] = set()
     for row in repository.readings_for_period(conn, period):
         readings.setdefault(row["apartment_number"], {})[row["kind"]] = row["value"]
+        if row["late"]:
+            late_apartments.add(row["apartment_number"])
 
     statement = Statement(period=period)
     for apt in repository.list_apartments(conn):
         values = readings.get(apt["number"], {})
-        row = StatementRow(number=apt["number"], submitted=bool(values),
-                           note=apt["note"])
+        note = apt["note"]
+        if apt["number"] in late_apartments:
+            # Показания приняты, но идут в следующий расчётный период
+            note = f"{note}. {LATE_NOTE}".lstrip(". ") if note else LATE_NOTE
+        row = StatementRow(number=apt["number"], submitted=bool(values), note=note)
         row.electricity = values.get("electricity")
         # Раскладку определяют фактические приборы квартиры (учтен и смешанный
         # случай: раздельный ХВС + один ГВС и наоборот).

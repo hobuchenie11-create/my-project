@@ -14,6 +14,18 @@ def current_period(today: date | None = None) -> str:
     return f"{today.year:04d}-{today.month:02d}"
 
 
+def is_late(today: date | None = None) -> bool:
+    """Показание передано после срока сбора?
+
+    Сбор идёт с READINGS_DAY_START по READINGS_DAY_END (по умолчанию 15–19).
+    С 20 числа показания принимаются, но идут с пометкой «после срока» и
+    учитываются в следующем расчётном периоде.
+    """
+    from bot.config import config
+    today = today or date.today()
+    return today.day > config.readings_day_end
+
+
 def period_title(period: str) -> str:
     months = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль",
               "август", "сентябрь", "октябрь", "ноябрь", "декабрь"]
@@ -27,7 +39,7 @@ def unit_for(kind: str) -> str:
 
 def save_reading(conn: sqlite3.Connection, apartment_id: int, kind: str, value: float,
                  user_id: int | None, source: str = "bot",
-                 period: str | None = None) -> CheckResult:
+                 period: str | None = None, late: bool | None = None) -> CheckResult:
     """Проверяет и сохраняет одно показание. Возвращает результат проверки."""
     meter = repository.get_meter(conn, apartment_id, kind)
     if meter is None:
@@ -37,7 +49,8 @@ def save_reading(conn: sqlite3.Connection, apartment_id: int, kind: str, value: 
     result = check_reading(kind, value, last["value"] if last else None)
     if result.ok:
         repository.add_reading(conn, meter["id"], user_id,
-                               period or current_period(), value, source)
+                               period or current_period(), value, source,
+                               late=is_late() if late is None else late)
     return result
 
 
@@ -55,7 +68,8 @@ class SaveOutcome:
 
 def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
                          parsed: ParsedReadings, user_id: int | None,
-                         source: str = "chat", period: str | None = None) -> SaveOutcome:
+                         source: str = "chat", period: str | None = None,
+                         late: bool | None = None) -> SaveOutcome:
     """Раскладывает распознанные показания на приборы конкретной квартиры.
 
     Один ХВС/ГВС (compact-планировка, нежилое) и раздельный учет (full-планировка)
@@ -77,7 +91,7 @@ def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
             )
             continue
         result = save_reading(conn, apartment["id"], target, value, user_id,
-                              source=source, period=period)
+                              source=source, period=period, late=late)
         if result.ok:
             outcome.saved[target] = value
             if result.warning:
