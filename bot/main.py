@@ -10,7 +10,7 @@ from aiogram.types import BotCommand
 from bot.config import config
 from bot.handlers import admin, common, group, readings, registration, reports, start
 from bot.proxy import make_session
-from bot.scheduler import run_reminder_scheduler
+from bot.scheduler import run_scheduler
 from bot.utils.logger import setup_logging
 from database.init_db import init_db
 
@@ -66,8 +66,8 @@ async def main() -> None:
         BotCommand(command="start", description="Запуск / главное меню"),
     ])
 
-    # Фоновая рассылка напоминаний (Этап 7)
-    asyncio.create_task(run_reminder_scheduler(bot))
+    # Календарные задачи: напоминания и ведомость непередавших
+    asyncio.create_task(run_scheduler(bot))
 
     logger.info("DH OS запущен")
     await dp.start_polling(bot)

@@ -49,6 +49,28 @@ def export_statement(statement: Statement, period_name: str, out_path: Path) -> 
             value=f"Сдали показания: {statement.submitted_count} из {statement.total_count}")
     ws.cell(row=footer_row + 2, column=1, value="Председатель: ______________________")
 
+    _setup_print(ws, last_row=footer_row + 2, ncols=ncols)
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)
     return out_path
+
+
+def _setup_print(ws, last_row: int, ncols: int) -> None:
+    """Готовит лист к печати: А4 книжная, вписать по ширине, шапка на каждой странице."""
+    ws.page_setup.orientation = "portrait"
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0        # по высоте — сколько нужно страниц
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+
+    ws.print_title_rows = "3:3"          # шапка таблицы повторяется на каждом листе
+    ws.print_area = f"A1:{get_column_letter(ncols)}{last_row}"
+
+    ws.page_margins.left = 0.4
+    ws.page_margins.right = 0.4
+    ws.page_margins.top = 0.5
+    ws.page_margins.bottom = 0.5
+
+    ws.freeze_panes = "A4"               # при просмотре на экране шапка закреплена
+    ws.oddFooter.right.text = "Стр. &P из &N"

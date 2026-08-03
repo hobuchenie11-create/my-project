@@ -7,6 +7,7 @@ BTN_STATEMENT = "📄 Ведомость передачи"
 BTN_WORKBOOK = "📗 Книга Excel"
 BTN_STATS = "📈 Статистика"
 BTN_DEBTORS = "🔴 Должники"
+BTN_DEBTORS_DOC = "📕 Ведомость непередавших"
 BTN_REMIND = "🔔 Напомнить должникам"
 BTN_INVITE = "📣 Памятка жителям"
 BTN_USERS = "👥 Пользователи"
@@ -20,7 +21,7 @@ def admin_menu() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=BTN_REGISTRY), KeyboardButton(text=BTN_STATEMENT)],
             [KeyboardButton(text=BTN_WORKBOOK), KeyboardButton(text=BTN_STATS)],
-            [KeyboardButton(text=BTN_DEBTORS)],
+            [KeyboardButton(text=BTN_DEBTORS), KeyboardButton(text=BTN_DEBTORS_DOC)],
             [KeyboardButton(text=BTN_REMIND), KeyboardButton(text=BTN_INVITE)],
             [KeyboardButton(text=BTN_USERS), KeyboardButton(text=BTN_SETTINGS)],
             [KeyboardButton(text=BTN_BACKUP)],

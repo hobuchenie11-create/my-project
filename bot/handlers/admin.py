@@ -5,9 +5,9 @@ from aiogram.types import FSInputFile, Message
 
 from bot.config import config
 from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTORS,
-                                      BTN_INVITE, BTN_REGISTRY, BTN_REMIND,
-                                      BTN_SETTINGS, BTN_STATEMENT, BTN_STATS,
-                                      BTN_USERS, BTN_WORKBOOK, admin_menu)
+                                      BTN_DEBTORS_DOC, BTN_INVITE, BTN_REGISTRY,
+                                      BTN_REMIND, BTN_SETTINGS, BTN_STATEMENT,
+                                      BTN_STATS, BTN_USERS, BTN_WORKBOOK, admin_menu)
 from bot.keyboards.menu import main_menu
 from bot.scheduler import send_reminders
 from bot.services.apartment_service import registry_summary
@@ -86,6 +86,18 @@ async def show_debtors(message: Message) -> None:
         await message.answer(debtors_text(conn, period, period_title(period)))
     finally:
         conn.close()
+
+
+@router.message(F.text == BTN_DEBTORS_DOC)
+async def send_debtors_doc(message: Message) -> None:
+    from reports.debtors_statement import generate_debtors_statement
+    period = current_period()
+    path, count = generate_debtors_statement(period)
+    await message.answer_document(
+        FSInputFile(path),
+        caption=(f"📕 Ведомость непередавших показания — {period_title(period)}\n"
+                 f"Не передали: {count}"),
+    )
 
 
 @router.message(F.text == BTN_REMIND)

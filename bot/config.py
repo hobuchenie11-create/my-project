@@ -25,6 +25,9 @@ class Config:
     readings_day_end: int = int(os.getenv("READINGS_DAY_END", "25"))
     reminder_days: tuple[int, ...] = field(
         default_factory=lambda: _parse_int_list(os.getenv("REMINDER_DAYS", "17,23,25")))
+    # Когда автоматически формировать ведомость непередавших
+    debtors_day: int = int(os.getenv("DEBTORS_DAY", "20"))
+    debtors_hour: int = int(os.getenv("DEBTORS_HOUR", "9"))
 
     base_dir: Path = BASE_DIR
     db_path: Path = BASE_DIR / "database" / "dhos.db"
