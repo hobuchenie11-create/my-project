@@ -15,8 +15,18 @@ HEADER_FILL = PatternFill("solid", fgColor="DDEBF7")
 
 
 def export_statement(statement: Statement, period_name: str, out_path: Path) -> Path:
+    """Отдельный файл ведомости — его председатель отправляет ресурсникам."""
     wb = Workbook()
     ws = wb.active
+    fill_statement_sheet(ws, statement, period_name)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(out_path)
+    return out_path
+
+
+def fill_statement_sheet(ws, statement: Statement, period_name: str) -> None:
+    """Заполняет готовый лист ведомостью — используется и в отдельном файле,
+    и как лист внутри книги DH OS."""
     ws.title = "Ведомость"
 
     ncols = len(STATEMENT_COLUMNS)
@@ -50,10 +60,6 @@ def export_statement(statement: Statement, period_name: str, out_path: Path) -> 
     ws.cell(row=footer_row + 2, column=1, value="Председатель: ______________________")
 
     _setup_print(ws, last_row=footer_row + 2, ncols=ncols)
-
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    wb.save(out_path)
-    return out_path
 
 
 def _setup_print(ws, last_row: int, ncols: int) -> None:

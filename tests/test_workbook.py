@@ -10,7 +10,7 @@ from database.models import apartment_meters
 from excel import style
 from excel.workbook import (REGISTRY_COLUMNS, SHEET_CONTROL, SHEET_CURRENT,
                             SHEET_HISTORY, SHEET_REGISTRY, SHEET_SETTINGS,
-                            build_workbook)
+                            SHEET_STATEMENT, build_workbook)
 
 
 @pytest.fixture()
@@ -36,8 +36,8 @@ def _build(conn, tmp_path):
 
 def test_sheets_present(conn, tmp_path):
     wb = _build(conn, tmp_path)
-    assert wb.sheetnames == [SHEET_REGISTRY, SHEET_HISTORY, SHEET_CURRENT,
-                             SHEET_CONTROL, SHEET_SETTINGS]
+    assert wb.sheetnames == [SHEET_STATEMENT, SHEET_REGISTRY, SHEET_HISTORY,
+                             SHEET_CURRENT, SHEET_CONTROL, SHEET_SETTINGS]
 
 
 def test_registry_columns_and_rows(conn, tmp_path):

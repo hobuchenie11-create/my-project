@@ -6,11 +6,15 @@
 не ломая.
 
 Состав книги:
-    Лист 1. Реестр квартир      — главный, по строке на квартиру
-    Лист 2. Переданные показания — полная история передач
-    Лист 3. Текущие показания    — последние значения по каждой квартире
-    Лист 4. Контроль передачи    — ежедневная панель председателя
-    Лист 5. Настройки            — справочники и правила проверки
+    Лист 1. Ведомость            — печатная форма для ресурсоснабжающих организаций
+    Лист 2. Реестр квартир       — главный, по строке на квартиру
+    Лист 3. Переданные показания — полная история передач
+    Лист 4. Текущие показания    — последние значения по каждой квартире
+    Лист 5. Контроль передачи    — ежедневная панель председателя
+    Лист 6. Настройки            — справочники и правила проверки
+
+Ту же ведомость можно получить отдельным файлом (кнопка «Ведомость передачи»),
+чтобы отправить ресурсникам, не пересылая всю книгу.
 """
 import sqlite3
 from collections import defaultdict
@@ -28,13 +32,14 @@ from database import repository
 from database.models import DELTA_WARN_DEFAULT, DELTA_WARN_LIMITS, SOURCE_LABELS
 from excel import style
 
+SHEET_STATEMENT = "Ведомость"
 SHEET_REGISTRY = "Реестр квартир"
 SHEET_HISTORY = "Переданные показания"
 SHEET_CURRENT = "Текущие показания"
 SHEET_CONTROL = "Контроль передачи"
 SHEET_SETTINGS = "Настройки"
 
-# Лист 1: основные (A-L) и служебные (M-Q) колонки
+# Реестр квартир: основные (A-L) и служебные (M-Q) колонки
 REGISTRY_COLUMNS = [
     "№ квартиры", "Тип", "Telegram ID", "WhatsApp", "ХВС кухня", "ХВС сан.узел",
     "ГВС кухня", "ГВС ванна", "Электроэнергия", "Последняя передача", "Статус",
@@ -72,7 +77,8 @@ def build_workbook(conn: sqlite3.Connection, out_path: Path,
     period = period or current_period()
     wb = Workbook()
 
-    _sheet_registry(wb.active, conn, period)
+    _sheet_statement(wb.active, conn, period)
+    _sheet_registry(wb.create_sheet(SHEET_REGISTRY), conn, period)
     _sheet_history(wb.create_sheet(SHEET_HISTORY), conn)
     _sheet_current(wb.create_sheet(SHEET_CURRENT), conn)
     _sheet_control(wb.create_sheet(SHEET_CONTROL), conn, period)
@@ -84,7 +90,17 @@ def build_workbook(conn: sqlite3.Connection, out_path: Path,
 
 
 # --------------------------------------------------------------------------
-# Лист 1. Реестр квартир
+# Лист 1. Ведомость для ресурсоснабжающих организаций
+# --------------------------------------------------------------------------
+
+def _sheet_statement(ws, conn: sqlite3.Connection, period: str) -> None:
+    from bot.services.report_service import build_statement
+    from excel.export import fill_statement_sheet
+    fill_statement_sheet(ws, build_statement(conn, period), period_title(period))
+
+
+# --------------------------------------------------------------------------
+# Лист 2. Реестр квартир
 # --------------------------------------------------------------------------
 
 def _sheet_registry(ws, conn: sqlite3.Connection, period: str) -> None:
@@ -169,7 +185,7 @@ def _sheet_registry(ws, conn: sqlite3.Connection, period: str) -> None:
 
 
 # --------------------------------------------------------------------------
-# Лист 2. Переданные показания (история)
+# Лист 3. Переданные показания (история)
 # --------------------------------------------------------------------------
 
 def _sheet_history(ws, conn: sqlite3.Connection) -> None:
@@ -206,7 +222,7 @@ def _sheet_history(ws, conn: sqlite3.Connection) -> None:
 
 
 # --------------------------------------------------------------------------
-# Лист 3. Текущие показания
+# Лист 4. Текущие показания
 # --------------------------------------------------------------------------
 
 def _sheet_current(ws, conn: sqlite3.Connection) -> None:
@@ -245,7 +261,7 @@ def _sheet_current(ws, conn: sqlite3.Connection) -> None:
 
 
 # --------------------------------------------------------------------------
-# Лист 4. Контроль передачи (панель председателя)
+# Лист 5. Контроль передачи (панель председателя)
 # --------------------------------------------------------------------------
 
 def _sheet_control(ws, conn: sqlite3.Connection, period: str) -> None:
@@ -317,7 +333,7 @@ def _sheet_control(ws, conn: sqlite3.Connection, period: str) -> None:
 
 
 # --------------------------------------------------------------------------
-# Лист 5. Настройки (справочники)
+# Лист 6. Настройки (справочники)
 # --------------------------------------------------------------------------
 
 def _sheet_settings(ws) -> None:
