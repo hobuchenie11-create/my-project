@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Журнал заказов — Алиса</title>
+  <meta name="description" content="Демонстрация: как владелец магазина видит заказы с сайта — список, статусы, поиск и выгрузка в таблицу.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <link rel="stylesheet" href="../assets/css/orders.css">
+</head>
+<body class="orders-page">
+
+<header class="site-header">
+  <div class="shell header-row">
+    <a class="brand" href="../">
+      <span>
+        <span class="brand__name" data-brand-name></span><br>
+        <span class="brand__tag">журнал заказов</span>
+      </span>
+    </a>
+    <nav class="main-nav" aria-label="Навигация">
+      <a href="../">← Вернуться на сайт магазина</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="Сменить тему"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="page-head">
+    <div class="shell">
+      <div class="head-row">
+        <div>
+          <span class="demo-flag">Демонстрация · данные вымышленные</span>
+          <h1>Так вы будете видеть заказы</h1>
+          <p>
+            Каждый заказ с сайта попадает сюда автоматически: состав, размеры, контакты покупателя
+            и адрес доставки. Статусы переключаются в один клик, всё вместе выгружается в таблицу.
+            Попробуйте открыть любой заказ в списке — откроется карточка со всеми подробностями.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="shell">
+
+    <!-- ── Как это работает ────────────────────────────────────────── -->
+    <section class="how">
+      <div class="how-steps">
+        <div class="how-step">
+          <i class="how-step__n">1</i>
+          <div>
+            <b>Покупатель оформляет заказ на сайте</b>
+            <span>Выбирает размер и цвет, указывает телефон, адрес и способ доставки.</span>
+          </div>
+        </div>
+        <div class="how-step">
+          <i class="how-step__n">2</i>
+          <div>
+            <b>Вам сразу приходит сообщение в Telegram</b>
+            <span>За несколько секунд, в обычный чат. Ничего открывать и обновлять не нужно —
+                  телефон просто звякнет, как при сообщении от знакомого. Дубль уходит на почту.</span>
+          </div>
+        </div>
+        <div class="how-step">
+          <i class="how-step__n">3</i>
+          <div>
+            <b>Заказ появляется в этом журнале</b>
+            <span>Здесь удобно смотреть историю, искать по телефону, отмечать, что собрано
+                  и отправлено, и считать выручку.</span>
+          </div>
+        </div>
+        <div class="how-step">
+          <i class="how-step__n">4</i>
+          <div>
+            <b>Раз в месяц выгружаете таблицу</b>
+            <span>Кнопка «Выгрузить в таблицу» отдаёт файл, который открывается в Excel
+                  или Google Таблицах — для отчётности и учёта.</span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="chat">
+        <div class="chat__label">Так заказ приходит в Telegram</div>
+        <div class="chat__bubble" id="chatBubble"></div>
+        <div class="chat__meta"><span class="num" id="chatTime"></span><span>✓✓</span></div>
+      </aside>
+    </section>
+
+    <!-- ── Показатели ──────────────────────────────────────────────── -->
+    <section class="stats" id="stats"></section>
+
+    <!-- ── Панель управления ───────────────────────────────────────── -->
+    <div class="toolbar">
+      <div class="toolbar__row">
+        <div class="search-wrap">
+          <span data-icon="search"></span>
+          <input id="searchInput" type="search" placeholder="Поиск по номеру, имени, телефону или товару" aria-label="Поиск по заказам">
+        </div>
+        <select class="field" id="periodSelect" aria-label="Период" style="max-width:190px">
+          <option value="all">За всё время</option>
+          <option value="today">За сутки</option>
+          <option value="week">За неделю</option>
+        </select>
+        <button class="btn btn--ghost" type="button" data-export>
+          <span data-icon="down"></span> Выгрузить в таблицу
+        </button>
+      </div>
+      <div class="toolbar__row" id="statusChips"></div>
+    </div>
+
+    <div class="results-line">
+      <span id="resultsLine"></span>
+      <button class="btn btn--quiet" type="button" data-reset>Сбросить фильтры</button>
+    </div>
+
+    <div class="orders-wrap" id="ordersWrap"></div>
+
+    <!-- ── Пояснение ───────────────────────────────────────────────── -->
+    <section class="note-card">
+      <h3>Что это и чего здесь нет</h3>
+      <p>
+        Это демонстрация на вымышленных заказах. Данные хранятся только в вашем браузере:
+        переключите статус — он запомнится, но никуда не отправится, а очистка истории браузера
+        всё сбросит.
+      </p>
+      <p>В рабочей версии добавляется то, чего в демонстрации нет:</p>
+      <ul>
+        <li>заказы приходят с настоящего сайта, а не заготовлены заранее;</li>
+        <li>журнал общий — его видно с телефона, планшета и компьютера, данные не теряются;</li>
+        <li>несколько сотрудников могут работать одновременно и видеть изменения друг друга;</li>
+        <li>покупателю уходит письмо с подтверждением и номером заказа.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-bottom" style="margin-top:0;border-top:none;padding-top:0">
+    <span>© <span data-year></span> <span data-brand-name></span>. Прототип журнала заказов.</span>
+    <a href="../" style="text-decoration:none">Вернуться на сайт магазина</a>
+  </div>
+</footer>
+
+<div class="overlay" id="overlay"></div>
+
+<aside class="drawer" id="orderDrawer" aria-label="Карточка заказа">
+  <div class="drawer__head">
+    <h3 id="orderTitle">Заказ</h3>
+    <button class="icon-btn" type="button" data-close-order aria-label="Закрыть карточку">
+      <span data-icon="close"></span>
+    </button>
+  </div>
+  <div class="drawer__body" id="orderBody"></div>
+  <div class="drawer__foot" id="orderFoot"></div>
+</aside>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/orders-data.js"></script>
+<script src="../assets/js/orders.js"></script>
+</body>
+</html>

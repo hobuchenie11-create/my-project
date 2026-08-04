@@ -1,75 +1,116 @@
 /* ==========================================================================
-   Сборка одного самодостаточного файла из index.html и папки assets.
+   Сборка самодостаточных файлов из разметки и папки assets.
    Запуск: node build.js
-   Результат — два файла со встроенными стилями и скриптами:
-     dist/alisa-sait.html — обычная веб-страница. Её можно отправить клиенту,
-                               открыть двойным кликом или выложить на хостинг.
-     dist/alisa.html      — тот же сайт без обёртки <html>/<body>,
-                               в таком виде его принимает публикация по ссылке.
+
+   Собираются две страницы — витрина магазина и журнал заказов. Для каждой
+   получается обычная веб-страница (её можно переслать или открыть двойным
+   кликом) и фрагмент без обёртки <html>/<body> — в таком виде страницу
+   принимает публикация по ссылке.
    ========================================================================== */
 const fs = require('fs');
 const path = require('path');
 
 const root = __dirname;
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
-
-const html = read('index.html');
-const css = read('assets/css/styles.css');
-const data = read('assets/js/data.js');
-const app = read('assets/js/app.js');
+const write = (p, content) => {
+  fs.mkdirSync(path.join(root, path.dirname(p)), { recursive: true });
+  fs.writeFileSync(path.join(root, p), content, 'utf8');
+};
 
 const between = (source, startTag, endTag) => {
   const start = source.indexOf(startTag);
   const end = source.indexOf(endTag);
-  if (start === -1 || end === -1) throw new Error('Не найден фрагмент ' + startTag);
+  if (start === -1 || end === -1) throw new Error('Не найден фрагмент ' + startTag + ' в исходной разметке');
   return source.slice(start + startTag.length, end);
 };
 
-const title = between(html, '<title>', '</title>');
+/* Собирает одну страницу: встраивает стили и скрипты внутрь разметки */
+function bundle({ html, css, js, description }) {
+  const source = read(html);
+  const title = between(source, '<title>', '</title>');
 
-/* Тело страницы без ссылок на внешние файлы — они встраиваются ниже */
-const body = between(html, '<body>', '</body>')
-  .replace(/<script src="[^"]*"><\/script>\s*/g, '')
-  .trim();
+  /* Тело страницы: всё между открывающим <body ...> и </body>,
+     без ссылок на внешние файлы — они встраиваются ниже */
+  const bodyOpen = source.indexOf('<body');
+  const bodyEnd = source.indexOf('</body>');
+  if (bodyOpen === -1 || bodyEnd === -1) throw new Error('В ' + html + ' не найден тег <body>');
 
-const inlined = `<style>
-${css}
+  const bodyTag = source.slice(bodyOpen, source.indexOf('>', bodyOpen) + 1);
+  const bodyClass = (bodyTag.match(/class="([^"]*)"/) || [])[1] || '';
+
+  const body = source
+    .slice(source.indexOf('>', bodyOpen) + 1, bodyEnd)
+    .replace(/<script src="[^"]*"><\/script>\s*/g, '')
+    .trim();
+
+  const inlined = `<style>
+${css.map(read).join('\n')}
 </style>
 ${body}
 <script>
-${data}
-${app}
+${js.map(read).join('\n')}
 </script>`;
 
-/* Фрагмент для публикации по ссылке */
-const fragment = `<title>${title}</title>\n${inlined}\n`;
-
-/* Полноценная страница для отправки клиенту и любого хостинга */
-const page = `<!DOCTYPE html>
+  return {
+    title,
+    fragment: `<title>${title}</title>\n${inlined}\n`,
+    page: `<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title}</title>
-<meta name="description" content="Комплекты на выписку из роддома, ползунки и распашонки, чепчики, комбинезоны и боди для новорождённых.">
+<meta name="description" content="${description}">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex, nofollow">
 </head>
-<body>
+<body${bodyClass ? ' class="' + bodyClass + '"' : ''}>
 ${inlined}
 </body>
 </html>
-`;
+`,
+  };
+}
 
-fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
-fs.writeFileSync(path.join(root, 'dist/alisa.html'), fragment, 'utf8');
-fs.writeFileSync(path.join(root, 'dist/alisa-sait.html'), page, 'utf8');
+/* ── Витрина магазина ──────────────────────────────────────────────────── */
+const shop = bundle({
+  html: 'index.html',
+  css: ['assets/css/styles.css'],
+  js: ['assets/js/data.js', 'assets/js/app.js'],
+  description: 'Комплекты на выписку из роддома, ползунки и распашонки, чепчики, комбинезоны и боди для новорождённых.',
+});
 
-/* Та же страница лежит в demo/ — эта папка попадает в репозиторий,
-   поэтому ссылка для клиента всегда указывает на свежую версию. */
-fs.mkdirSync(path.join(root, 'demo'), { recursive: true });
-fs.writeFileSync(path.join(root, 'demo/index.html'), page, 'utf8');
+/* Адрес опубликованного сайта. В отдельных файлах относительные ссылки между
+   страницами не работают, поэтому подставляем полные адреса. */
+const SITE_URL = 'https://hobuchenie11-create.github.io/my-project/';
 
-console.log('dist/alisa-sait.html — страница, ' + (page.length / 1024).toFixed(1) + ' КБ');
-console.log('dist/alisa.html      — фрагмент для публикации, ' + (fragment.length / 1024).toFixed(1) + ' КБ');
-console.log('demo/index.html      — та же страница для ссылки в репозитории');
+const shopPage = shop.page.replace(/href="orders\/"/g, 'href="' + SITE_URL + 'orders/"');
+
+write('dist/alisa.html', shop.fragment.replace(/href="orders\/"/g, 'href="' + SITE_URL + 'orders/"'));
+write('dist/alisa-sait.html', shopPage);
+
+/* Копия в demo/ попадает в репозиторий, в отличие от dist/,
+   поэтому ссылка для клиента всегда указывает на свежую сборку. */
+write('demo/index.html', shopPage);
+
+/* ── Журнал заказов ────────────────────────────────────────────────────── */
+const orders = bundle({
+  html: 'orders/index.html',
+  css: ['assets/css/styles.css', 'assets/css/orders.css'],
+  js: ['assets/js/data.js', 'assets/js/orders-data.js', 'assets/js/orders.js'],
+  description: 'Демонстрация: как владелец магазина видит заказы с сайта — список, статусы, поиск и выгрузка в таблицу.',
+});
+
+/* Ссылки «вернуться на сайт» ведут на ../ — в одиночном файле это ломается,
+   поэтому подставляем полный адрес витрины. */
+const ordersPage = orders.page.replace(/href="\.\.\/"/g, 'href="' + SITE_URL + '"');
+
+write('dist/alisa-zhurnal-zakazov.html', ordersPage);
+
+console.log('Витрина магазина:');
+console.log('  dist/alisa-sait.html            — страница, ' + (shop.page.length / 1024).toFixed(1) + ' КБ');
+console.log('  dist/alisa.html                 — фрагмент для публикации, ' + (shop.fragment.length / 1024).toFixed(1) + ' КБ');
+console.log('  demo/index.html                 — копия для ссылки в репозитории');
+console.log('Журнал заказов:');
+console.log('  dist/alisa-zhurnal-zakazov.html — страница, ' + (ordersPage.length / 1024).toFixed(1) + ' КБ');
+console.log('  orders/index.html               — публикуется по ссылке /orders/');
