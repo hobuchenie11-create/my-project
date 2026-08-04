@@ -26,3 +26,6 @@ data/registry_backup/
 
 # Демо-файлы (создаются командой python demo.py)
 reports/demo/
+
+# Карта знаний graphify (пересобирается командой /graphify)
+graphify-out/

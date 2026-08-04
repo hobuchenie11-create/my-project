@@ -1,0 +1,4 @@
+# Служебные файлы ассистента и самого graphify — не часть проекта DH OS
+.claude/
+graphify-out/
+index.html
