@@ -63,5 +63,12 @@ ${inlined}
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(root, 'dist/alisa.html'), fragment, 'utf8');
 fs.writeFileSync(path.join(root, 'dist/alisa-sait.html'), page, 'utf8');
+
+/* Та же страница лежит в demo/ — эта папка попадает в репозиторий,
+   поэтому ссылка для клиента всегда указывает на свежую версию. */
+fs.mkdirSync(path.join(root, 'demo'), { recursive: true });
+fs.writeFileSync(path.join(root, 'demo/index.html'), page, 'utf8');
+
 console.log('dist/alisa-sait.html — страница, ' + (page.length / 1024).toFixed(1) + ' КБ');
 console.log('dist/alisa.html      — фрагмент для публикации, ' + (fragment.length / 1024).toFixed(1) + ' КБ');
+console.log('demo/index.html      — та же страница для ссылки в репозитории');
