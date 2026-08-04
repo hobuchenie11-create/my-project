@@ -27,5 +27,8 @@ data/registry_backup/
 # Демо-файлы (создаются командой python demo.py)
 reports/demo/
 
-# Карта знаний graphify (пересобирается командой /graphify)
-graphify-out/
+# Карта знаний graphify: тяжёлые файлы пересобираются командой /graphify,
+# а текстовый отчёт храним в репозитории — по нему ассистент ориентируется
+# в новой сессии.
+graphify-out/*
+!graphify-out/GRAPH_REPORT.md
