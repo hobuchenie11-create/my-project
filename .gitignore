@@ -141,3 +141,13 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# graphify: граф знаний проекта.
+# Храним сам граф и отчёт — они переживают сессию и полезны следующему разу.
+# Студию и кэш не храним: студия весит полтора мегабайта и пересобирается
+# командой `graphify studio export .graphify/studio`, кэш привязан к машине.
+.graphify/studio/
+.graphify/cache/
+.graphify/branch.json
+.graphify/worktree.json
+.graphify/needs_update

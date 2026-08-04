@@ -1,0 +1,1856 @@
+{
+  "schema": "graphify_ontology_citations_v1",
+  "graph_signature": "3edb1e9e33f7dd8f01b1d6fc4af259e32d5fd3dba8602ad66f43f6067c2e37b9",
+  "nodes": {
+    "build": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… ========================================================================== Сборка самодостаточных файлов из разметки и папки assets. Запуск: node build.js",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p0"
+        }
+      ]
+    },
+    "build_between": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "const between = (source, startTag, endTag) => { const start = source.indexOf(startTag); const end = source.indexOf(endTag); if (start === -1 || end === -1) throw new Error('Не найден фрагмент ' + startTag + ' в исходной …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p3"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… внутрь разметки */ function bundle({ html, css, js, description }) { const source = read(html); const title = between(source, '<title>', '</title>');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p4"
+        }
+      ]
+    },
+    "build_bundle": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "/* ── Витрина магазина ──────────────────────────────────────────────────── */ const shop = bundle({ html: 'index.html', css: ['assets/css/styles.css'], js: ['assets/js/data.js', 'assets/js/app.js'], description: 'Комплекты на выписку из роддома, ползунки и распашонки, чепчики, комбинезоны и боди для новорождённых …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p10"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "/* ── Журнал заказов ────────────────────────────────────────────────────── */ const orders = bundle({ html: 'orders/index.html', css: ['assets/css/styles.css', 'assets/css/orders.css'], js: ['assets/js/data.js', 'assets/js/orders-data.js', 'assets/js/orders.js'], description: 'Демонстрация: как владелец …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p15"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "/* Собирает одну страницу: встраивает стили и скрипты внутрь разметки */ function bundle({ html, css, js, description }) { const source = read(html); const title = between(source, '<title>', '</title>');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p4"
+        }
+      ]
+    },
+    "build_orders": {
+      "count": 6,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "const shopPage = shop.page.replace(/href=\"orders\\/\"/g, 'href=\"' + SITE_URL + 'orders/\"');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p12"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "write('dist/alisa.html', shop.fragment.replace(/href=\"orders\\/\"/g, 'href=\"' + SITE_URL + 'orders/\"')); write('dist/alisa-sait.html', shopPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p13"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "/* ── Журнал заказов ────────────────────────────────────────────────────── */ const orders = bundle({ html: 'orders/index.html', css: ['assets/css/styles.css', 'assets/css/orders.css'], js: ['assets/js/data.js', 'assets/js/orders-data.js', 'assets/js/orders.js'], description: 'Демонстрация: как …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p15"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… «вернуться на сайт» ведут на ../ — в одиночном файле это ломается, поэтому подставляем полный адрес витрины. */ const ordersPage = orders.page.replace(/href=\"\\.\\.\\/\"/g, 'href=\"' + SITE_URL + '\"');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p16"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "write('dist/alisa-zhurnal-zakazov.html', ordersPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p17"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… репозитории'); console.log('Журнал заказов:'); console.log(' dist/alisa-zhurnal-zakazov.html — страница, ' + (ordersPage.length / 1024).toFixed(1) + ' КБ'); console.log(' orders/index.html — публикуется по ссылке /orders/');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p18"
+        }
+      ]
+    },
+    "build_orderspage": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… «вернуться на сайт» ведут на ../ — в одиночном файле это ломается, поэтому подставляем полный адрес витрины. */ const ordersPage = orders.page.replace(/href=\"\\.\\.\\/\"/g, 'href=\"' + SITE_URL + '\"');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p16"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "write('dist/alisa-zhurnal-zakazov.html', ordersPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p17"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… репозитории'); console.log('Журнал заказов:'); console.log(' dist/alisa-zhurnal-zakazov.html — страница, ' + (ordersPage.length / 1024).toFixed(1) + ' КБ'); console.log(' orders/index.html — публикуется по ссылке /orders/');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p18"
+        }
+      ]
+    },
+    "build_path": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… ========================================================================== */ const fs = require('fs'); const path = require('path');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p1"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "const root = __dirname; const read = (p) => fs.readFileSync(path.join(root, p), 'utf8'); const write = (p, content) => { fs.mkdirSync(path.join(root, path.dirname(p)), { recursive: true }); fs.writeFileSync(path.join(root, p), content, 'utf8'); };",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p2"
+        }
+      ]
+    },
+    "build_read": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "const root = __dirname; const read = (p) => fs.readFileSync(path.join(root, p), 'utf8'); const write = (p, content) => { fs.mkdirSync(path.join(root, path.dirname(p)), { recursive: true }); fs.writeFileSync(path.join(root, p), content, 'utf8' …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p2"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… встраивает стили и скрипты внутрь разметки */ function bundle({ html, css, js, description }) { const source = read(html); const title = between(source, '<title>', '</title>');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p4"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "const inlined = `<style> ${css.map(read).join('\\n')} </style> ${body} <script> ${js.map(read).join('\\n')} </script>`;",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p8"
+        }
+      ]
+    },
+    "build_shop": {
+      "count": 5,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "/* ── Витрина магазина ──────────────────────────────────────────────────── */ const shop = bundle({ html: 'index.html', css: ['assets/css/styles.css'], js: ['assets/js/data.js', 'assets/js/app.js'], description: 'Комплекты на выписку из роддома, ползунки и распашонки, чепчики, комбинезоны и боди …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p10"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "const shopPage = shop.page.replace(/href=\"orders\\/\"/g, 'href=\"' + SITE_URL + 'orders/\"');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p12"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "write('dist/alisa.html', shop.fragment.replace(/href=\"orders\\/\"/g, 'href=\"' + SITE_URL + 'orders/\"')); write('dist/alisa-sait.html', shopPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p13"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… в отличие от dist/, поэтому ссылка для клиента всегда указывает на свежую сборку. */ write('demo/index.html', shopPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p14"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "console.log('Витрина магазина:'); console.log(' dist/alisa-sait.html — страница, ' + (shop.page.length / 1024).toFixed(1) + ' КБ'); console.log(' dist/alisa.html — фрагмент для публикации, ' + (shop.fragment.length / 1024).toFixed(1) + ' КБ'); console.log(' demo/index.html …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p18"
+        }
+      ]
+    },
+    "build_shoppage": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "const shopPage = shop.page.replace(/href=\"orders\\/\"/g, 'href=\"' + SITE_URL + 'orders/\"');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p12"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… ('dist/alisa.html', shop.fragment.replace(/href=\"orders\\/\"/g, 'href=\"' + SITE_URL + 'orders/\"')); write('dist/alisa-sait.html', shopPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p13"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… в отличие от dist/, поэтому ссылка для клиента всегда указывает на свежую сборку. */ write('demo/index.html', shopPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p14"
+        }
+      ]
+    },
+    "build_write": {
+      "count": 4,
+      "citations": [
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "write('dist/alisa.html', shop.fragment.replace(/href=\"orders\\/\"/g, 'href=\"' + SITE_URL + 'orders/\"')); write('dist/alisa-sait.html', shopPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p13"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "… попадает в репозиторий, в отличие от dist/, поэтому ссылка для клиента всегда указывает на свежую сборку. */ write('demo/index.html', shopPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p14"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "write('dist/alisa-zhurnal-zakazov.html', ordersPage);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p17"
+        },
+        {
+          "source_file": "build.js",
+          "source_location": "document",
+          "quote": "const root = __dirname; const read = (p) => fs.readFileSync(path.join(root, p), 'utf8'); const write = (p, content) => { fs.mkdirSync(path.join(root, path.dirname(p)), { recursive: true }); fs.writeFileSync(path.join(root, p), content, 'utf8'); };",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p2"
+        }
+      ]
+    },
+    "faq_section": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "index.html",
+          "source_location": "document",
+          "quote": "… --> <section class=\"section\" id=\"faq\"> <div class=\"shell\"> <div class=\"section-head\"> <div> <p class=\"eyebrow\">Частые вопросы</p> <h2>Коротко о главном</h2> </div> </div> <div class=\"faq-list\" id=\"faqList\"></div> </div> </section>",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p20"
+        }
+      ]
+    },
+    "js_app_addtocart": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function addToCart(id, size, color, qty) { const p = productById(id); if (!p) return; const line = { id, size: size || p.sizes[0], color: color || p.colors[0], qty: qty || 1, }; const found = state.cart.find((c) => cartKey(c …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p12"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "const add = hit('data-add'); if (add !== null) { addToCart(add); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p96"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… c.classList.toggle('is-active', c.getAttribute('data-pdp-color') === pdpColor)); return; } if (t.closest('[data-pdp-add]')) { addToCart(pdpSelection.id, pdpSelection.size, pdpSelection.color); closeLayer('#productModal'); openLayer('#cartDrawer'); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p98"
+        }
+      ]
+    },
+    "js_app_applytheme": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches); applyTheme(isDark ? 'light' : 'dark'); return; } });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p106"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "applyTheme(store.read('theme', null)); renderBrand(); renderStatic(); renderCategoryTiles(); renderFilterChips(); renderCatalog(); renderCart(); renderCounters(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p113"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Тема ───────────────────────────────────────────────────────────── */ function applyTheme(theme) { if (theme) document.documentElement.setAttribute('data-theme', theme); else document.documentElement.removeAttribute('data-theme'); store.write('theme', theme); const dark = theme === 'dark' …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p82"
+        }
+      ]
+    },
+    "js_app_bind": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… renderStatic(); renderCategoryTiles(); renderFilterChips(); renderCatalog(); renderCart(); renderCounters(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p113"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… ('is-open'); document.body.style.overflow = 'hidden'; const focusTarget = $(sel).querySelector('button, input, [tabindex]'); if (focusTarget) setTimeout(() => focusTarget.focus(), 60); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p79"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── События ────────────────────────────────────────────────────────── */ function bind() { /* Делегирование кликов по всему документу */ document.addEventListener('click', (e) => { const t = e.target; const hit = (attr) => { const el = t.closest('[' + attr + ']'); return el ? el.getAttribute(attr …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p88"
+        }
+      ]
+    },
+    "js_app_closealllayers": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… (t.closest('[data-close-layers]')) { const goto = t.closest('[data-close-layers]').getAttribute('data-goto'); closeAllLayers(); if (goto) $(goto).scrollIntoView({ behavior: 'smooth', block: 'start' }); return; } if (t.id === 'overlay') { closeAllLayers(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p105"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllLayers(); }); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p110"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function closeAllLayers() { $$('.drawer.is-open, .modal.is-open').forEach((el) => el.classList.remove('is-open')); $('#overlay').classList.remove('is-open'); document.body.style.overflow = ''; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p81"
+        }
+      ]
+    },
+    "js_app_closelayer": {
+      "count": 4,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Закрытие */ const closeSel = hit('data-close'); if (closeSel !== null) { closeLayer(closeSel); return; } if (t.closest('[data-close-layers]')) { const goto = t.closest('[data-close-layers]').getAttribute('data-goto'); closeAllLayers(); if (goto) $(goto).scrollIntoView({ behavior: 'smooth', …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p105"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… openCheckout() { if (!state.cart.length) { toast('Сначала добавьте товары в корзину'); return; } state.checkoutStep = 1; closeLayer('#cartDrawer'); renderCheckout(); openLayer('#checkoutModal'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p57"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function closeLayer(sel) { $(sel).classList.remove('is-open'); if (!$$('.drawer.is-open, .modal.is-open').length) { $('#overlay').classList.remove('is-open'); document.body.style.overflow = ''; if (lastFocused) lastFocused …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p80"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… return; } if (t.closest('[data-pdp-add]')) { addToCart(pdpSelection.id, pdpSelection.size, pdpSelection.color); closeLayer('#productModal'); openLayer('#cartDrawer'); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p98"
+        }
+      ]
+    },
+    "js_app_collectstep": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Шаги оформления */ if (t.closest('[data-step-next]')) { collectStep(); if (!validateStep()) return; state.checkoutStep += 1; renderCheckout(); $('#checkoutBody').scrollTop = 0; return; } if (t.closest('[data-step-back]')) { collectStep(); state.checkoutStep -= 1; renderCheckout( …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p103"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Выбор доставки и оплаты */ const delivery = hit('data-delivery'); if (delivery !== null) { collectStep(); state.order.delivery = delivery; renderCheckout(); return; } const payment = hit('data-payment'); if (payment !== null) { collectStep(); state.order.payment = payment; renderCheckout(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p104"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Собирает значения полей текущего шага в state.order */ function collectStep() { const o = state.order; if (state.checkoutStep === 1) { o.name = ($('#f-name') || {}).value || ''; o.phone = ($('#f-phone') || {}).value || ''; o.email = ($('#f-email') || {}).value || ''; o.callback …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p70"
+        }
+      ]
+    },
+    "js_app_deliveryprice": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function deliveryPrice() { const method = DELIVERY.find((d) => d.id === state.order.delivery) || DELIVERY[0]; if (method.id === 'courier' && cartSubtotal() - discountValue() >= BRAND.freeFrom) return 0; return method.price; …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p17"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… const giftPrice = () => (state.order.gift ? 350 : 0); const orderTotal = () => cartSubtotal() - discountValue() + deliveryPrice() + giftPrice();",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p18"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… class=\"num\">−${money(discountValue())}</b></div>` : ''} <div class=\"sum-row\"><span>Доставка</span><b class=\"num\">${deliveryPrice() === 0 ? 'Бесплатно' : money(deliveryPrice())}</b></div> ${o.gift ? `<div class=\"sum-row\"><span>Подарочная упаковка</span><b class=\"num\">${money(giftPrice())}</b></div>` : ''} <div class=\"",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p68"
+        }
+      ]
+    },
+    "js_app_flagfor": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… \"card__flags\">${p.badge ? `<span class=\"flag flag--${p.badge === 'Хит' ? 'hit' : 'new'}\">${esc(p.badge)}</span>` : ''}${flagFor(p)}</div> <button class=\"fav-btn is-on\" type=\"button\" data-fav=\"${p.id}\" aria-label=\"Убрать из избранного\">${ICON.heart}</button> <div class=\"card__body\"> <div class=\"card__meta\"><span>${esc",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p111"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function flagFor(p) { if (p.oldPrice) { const off = Math.round((1 - p.price / p.oldPrice) * 100); return `<span class=\"flag flag--sale\">−${off}%</span>`; } return ''; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p30"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… \"> ${p.badge ? `<span class=\"flag flag--${p.badge === 'Хит' ? 'hit' : 'new'}\">${esc(p.badge)}</span>` : ''} ${flagFor(p)} </div> <button class=\"fav-btn${state.favs.includes(p.id) ? ' is-on' : ''}\" type=\"button\" data-fav=\"${p.id}\" aria-label=\"${state.favs.includes(p.id) ? 'Убрать из избранного' : 'В избранное'}\">${ICO",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p35"
+        }
+      ]
+    },
+    "js_app_init": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Старт ──────────────────────────────────────────────────────────── */ function init() { /* Иконки в статичной разметке */ $$('[data-icon]').forEach((el) => { const name = el.getAttribute('data-icon'); if (ICON[name]) el.innerHTML = ICON[name] + el.innerHTML; });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p112"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); })();",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p114"
+        }
+      ]
+    },
+    "js_app_markerror": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function markError(fieldName, hasError) { const el = $(`[data-field=\"${fieldName}\"]`); if (el) el.classList.toggle('has-error', hasError); return !hasError; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p71"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "if (state.checkoutStep === 1) { ok = markError('name', o.name.trim().length < 2) && ok; ok = markError('phone', o.phone.replace(/\\D/g, '').length !== 11) && ok; ok = markError('email', !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(o.email.trim())) && ok; } …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p73"
+        }
+      ]
+    },
+    "js_app_opencheckout": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… if (t.closest('[data-open-sizes]')) { openLayer('#sizesModal'); return; } if (t.closest('[data-checkout]')) { openCheckout(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p101"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Оформление заказа ──────────────────────────────────────────────── */ function openCheckout() { if (!state.cart.length) { toast('Сначала добавьте товары в корзину'); return; } state.checkoutStep = 1; closeLayer('#cartDrawer'); renderCheckout(); openLayer('#checkoutModal'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p57"
+        }
+      ]
+    },
+    "js_app_openlayer": {
+      "count": 5,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Открытие слоёв */ if (t.closest('[data-open-cart]')) { renderCart(); openLayer('#cartDrawer'); return; } if (t.closest('[data-open-sizes]')) { openLayer('#sizesModal'); return; } if (t.closest('[data-checkout]')) { openCheckout(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p101"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "openLayer('#productModal'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p47"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… ('Сначала добавьте товары в корзину'); return; } state.checkoutStep = 1; closeLayer('#cartDrawer'); renderCheckout(); openLayer('#checkoutModal'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p57"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function openLayer(sel) { lastFocused = document.activeElement; $('#overlay').classList.add('is-open'); $(sel).classList.add('is-open'); document.body.style.overflow = 'hidden'; const focusTarget = $(sel).querySelector('button, …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p79"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… ('[data-pdp-add]')) { addToCart(pdpSelection.id, pdpSelection.size, pdpSelection.color); closeLayer('#productModal'); openLayer('#cartDrawer'); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p98"
+        }
+      ]
+    },
+    "js_app_openproduct": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function openProduct(id) { const p = productById(id); if (!p) return; pdpSelection = { id: p.id, size: p.sizes[0], color: p.colors[0] }; $('#productTitle').textContent = (CATEGORIES.find((c) => c.id === p.cat) || {}).title …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p38"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Товары */ const open = hit('data-open'); if (open !== null) { openProduct(open); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p95"
+        }
+      ]
+    },
+    "js_app_persistcart": {
+      "count": 5,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… state.cart.find((c) => cartKey(c) === cartKey(line)); if (found) found.qty += line.qty; else state.cart.push(line); persistCart(); toast(`«${p.name}» — в корзине`); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p12"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… (!line) return; line.qty += delta; if (line.qty < 1) state.cart = state.cart.filter((c) => cartKey(c) !== key); persistCart(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p13"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function removeLine(key) { state.cart = state.cart.filter((c) => cartKey(c) !== key); persistCart(); toast('Товар убран из корзины'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p14"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function persistCart() { store.write('cart', state.cart); renderCart(); renderCounters(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p15"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "state.cart = []; state.promo = null; persistCart(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p77"
+        }
+      ]
+    },
+    "js_app_removeline": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function removeLine(key) { state.cart = state.cart.filter((c) => cartKey(c) !== key); persistCart(); toast('Товар убран из корзины'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p14"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… ('data-qty-plus'); if (qPlus !== null) { setQty(qPlus, 1); return; } const rm = hit('data-remove'); if (rm !== null) { removeLine(rm); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p99"
+        }
+      ]
+    },
+    "js_app_renderbrand": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "applyTheme(store.read('theme', null)); renderBrand(); renderStatic(); renderCategoryTiles(); renderFilterChips(); renderCatalog(); renderCart(); renderCounters(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p113"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Шапка: бренд ───────────────────────────────────────────────────── */ function renderBrand() { /* Логотип-заглушка. Когда придёт готовый файл — положить его в assets/img/logo.svg и указать путь в BRAND.logo (data.js). */ const mark = BRAND.logo ? `<img class=\"brand__logo\" src=\"${esc(BRAND …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p21"
+        }
+      ]
+    },
+    "js_app_rendercart": {
+      "count": 5,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… const found = PROMOS[code]; if (found) { state.promo = { code, discount: found.discount, title: found.title }; renderCart(); toast('Промокод применён: ' + found.title); } else { state.promo = null; const note = $('#promoNote'); note.className = 'promo-note is-err'; note.textContent = code ? 'Такого промокода нет. Про",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p100"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Открытие слоёв */ if (t.closest('[data-open-cart]')) { renderCart(); openLayer('#cartDrawer'); return; } if (t.closest('[data-open-sizes]')) { openLayer('#sizesModal'); return; } if (t.closest('[data-checkout]')) { openCheckout(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p101"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… ('theme', null)); renderBrand(); renderStatic(); renderCategoryTiles(); renderFilterChips(); renderCatalog(); renderCart(); renderCounters(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p113"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function persistCart() { store.write('cart', state.cart); renderCart(); renderCounters(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p15"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Корзина: отрисовка ─────────────────────────────────────────────── */ function renderCart() { const body = $('#cartBody'); const foot = $('#cartFoot');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p48"
+        }
+      ]
+    },
+    "js_app_rendercatalog": {
+      "count": 6,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… избранное'); } else { state.favs.splice(i, 1); toast('Убрано из избранного'); } store.write('favs', state.favs); renderCatalog(); renderCounters(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p19"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function renderCatalog() { const list = visibleProducts(); const grid = $('#grid');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p31"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Фильтры */ const cat = hit('data-cat'); if (cat !== null) { state.cat = cat; renderFilterChips(); renderCatalog(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p89"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "const catTile = hit('data-cat-tile'); if (catTile !== null) { state.cat = catTile; renderFilterChips(); renderCatalog(); $('#catalog').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p90"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… = hit('data-cat-link'); if (catLink !== null) { e.preventDefault(); state.cat = catLink; renderFilterChips(); renderCatalog(); $('#catalog').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p91"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "const season = hit('data-season'); if (season !== null) { state.season = season; renderFilterChips(); renderCatalog(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p92"
+        }
+      ]
+    },
+    "js_app_rendercatalogfrom": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… ('#resultsCount').textContent = 'Избранное: ' + favProducts.length + ' ' + plural(favProducts.length, 'товар', 'товара', 'товаров'); renderCatalogFrom(favProducts); $('#catalog').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p102"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Отрисовка произвольного списка (используется для избранного) */ function renderCatalogFrom(list) { const grid = $('#grid'); if (!list.length) { grid.innerHTML = `<div class=\"empty-state\"><strong>Пусто</strong>Здесь появятся отмеченные сердечком товары.</div>`; return; } const seasonTitle …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p111"
+        }
+      ]
+    },
+    "js_app_rendercategorytiles": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "applyTheme(store.read('theme', null)); renderBrand(); renderStatic(); renderCategoryTiles(); renderFilterChips(); renderCatalog(); renderCart(); renderCounters(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p113"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Категории ──────────────────────────────────────────────────────── */ function renderCategoryTiles() { const counts = {}; PRODUCTS.forEach((p) => { counts[p.cat] = (counts[p.cat] || 0) + 1; });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p23"
+        }
+      ]
+    },
+    "js_app_rendercheckout": {
+      "count": 5,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… */ if (t.closest('[data-step-next]')) { collectStep(); if (!validateStep()) return; state.checkoutStep += 1; renderCheckout(); $('#checkoutBody').scrollTop = 0; return; } if (t.closest('[data-step-back]')) { collectStep(); state.checkoutStep -= 1; renderCheckout(); return; } if (t.closest('[data-submit-order]')) { su",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p103"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… const delivery = hit('data-delivery'); if (delivery !== null) { collectStep(); state.order.delivery = delivery; renderCheckout(); return; } const payment = hit('data-payment'); if (payment !== null) { collectStep(); state.order.payment = payment; renderCheckout(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p104"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… document.addEventListener('change', (e) => { if (e.target.id === 'f-gift') { state.order.gift = e.target.checked; renderCheckout(); } });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p107"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… (!state.cart.length) { toast('Сначала добавьте товары в корзину'); return; } state.checkoutStep = 1; closeLayer('#cartDrawer'); renderCheckout(); openLayer('#checkoutModal'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p57"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function renderCheckout() { renderSteps(); const o = state.order; const body = $('#checkoutBody'); const foot = $('#checkoutFoot');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p59"
+        }
+      ]
+    },
+    "js_app_rendercounters": {
+      "count": 4,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… null)); renderBrand(); renderStatic(); renderCategoryTiles(); renderFilterChips(); renderCatalog(); renderCart(); renderCounters(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p113"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function persistCart() { store.write('cart', state.cart); renderCart(); renderCounters(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p15"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… { state.favs.splice(i, 1); toast('Убрано из избранного'); } store.write('favs', state.favs); renderCatalog(); renderCounters(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p19"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function renderCounters() { const c = cartCount(); $$('[data-cart-count]').forEach((el) => { el.textContent = c; el.classList.toggle('is-on', c > 0); }); const f = state.favs.length; $$('[data-fav-count]').forEach((el) => …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p56"
+        }
+      ]
+    },
+    "js_app_renderfilterchips": {
+      "count": 6,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function renderFilterChips() { $('#catChips').innerHTML = CATEGORIES.map((c) => ` <button class=\"chip${state.cat === c.id ? ' is-active' : ''}\" type=\"button\" data-cat=\"${c.id}\">${esc(c.title)}</button> `).join('');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p25"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Фильтры */ const cat = hit('data-cat'); if (cat !== null) { state.cat = cat; renderFilterChips(); renderCatalog(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p89"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "const catTile = hit('data-cat-tile'); if (catTile !== null) { state.cat = catTile; renderFilterChips(); renderCatalog(); $('#catalog').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p90"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "const catLink = hit('data-cat-link'); if (catLink !== null) { e.preventDefault(); state.cat = catLink; renderFilterChips(); renderCatalog(); $('#catalog').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p91"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "const season = hit('data-season'); if (season !== null) { state.season = season; renderFilterChips(); renderCatalog(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p92"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "const size = hit('data-size'); if (size !== null) { state.size = size; renderFilterChips(); renderCatalog(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p93"
+        }
+      ]
+    },
+    "js_app_renderstatic": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "applyTheme(store.read('theme', null)); renderBrand(); renderStatic(); renderCategoryTiles(); renderFilterChips(); renderCatalog(); renderCart(); renderCounters(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p113"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Статический контент ────────────────────────────────────────────── */ function renderStatic() { const sizeRows = SIZES.map((s) => ` <tr> <td class=\"num\">${esc(s.id)}</td> <td class=\"num\">${esc(s.height)}</td> <td class=\"num\">${esc(s.weight)}</td> <td>${esc(s.age)}</td> </tr>`).join(''); $('#sizeRows' …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p83"
+        }
+      ]
+    },
+    "js_app_rendersteps": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function renderSteps() { const titles = ['Контакты', 'Доставка и оплата', 'Подтверждение']; $('#checkoutSteps').innerHTML = titles.map((t, i) => { const n = i + 1; const cls = state.checkoutStep === n ? ' is-active' : (state …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p58"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function renderCheckout() { renderSteps(); const o = state.order; const body = $('#checkoutBody'); const foot = $('#checkoutFoot');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p59"
+        }
+      ]
+    },
+    "js_app_setqty": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function setQty(key, delta) { const line = state.cart.find((c) => cartKey(c) === key); if (!line) return; line.qty += delta; if (line.qty < 1) state.cart = state.cart.filter((c) => cartKey(c) !== key); persistCart(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p13"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Корзина */ const qMinus = hit('data-qty-minus'); if (qMinus !== null) { setQty(qMinus, -1); return; } const qPlus = hit('data-qty-plus'); if (qPlus !== null) { setQty(qPlus, 1); return; } const rm = hit('data-remove'); if (rm !== null) { removeLine(rm); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p99"
+        }
+      ]
+    },
+    "js_app_submitorder": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… { collectStep(); state.checkoutStep -= 1; renderCheckout(); return; } if (t.closest('[data-submit-order]')) { submitOrder(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p103"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function submitOrder() { const number = 'АЛ-' + String(Date.now()).slice(-6); const o = state.order; const d = DELIVERY.find((x) => x.id === o.delivery);",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p74"
+        }
+      ]
+    },
+    "js_app_toast": {
+      "count": 6,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… => cartKey(c) === cartKey(line)); if (found) found.qty += line.qty; else state.cart.push(line); persistCart(); toast(`«${p.name}» — в корзине`); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p12"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function removeLine(key) { state.cart = state.cart.filter((c) => cartKey(c) !== key); persistCart(); toast('Товар убран из корзины'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p14"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… ──────────────────────────────────────────────────────── */ function toggleFav(id) { const i = state.favs.indexOf(id); if (i === -1) { state.favs.push(id); toast('Добавлено в избранное'); } else { state.favs.splice(i, 1); toast('Убрано из избранного'); } store.write('favs', state.favs); renderCatalog(); renderCounter",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p19"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Уведомления ────────────────────────────────────────────────────── */ let toastTimer = null; function toast(text) { const box = $('#toasts'); const el = document.createElement('div'); el.className = 'toast'; el.textContent = text; box.innerHTML = ''; /* показываем только последнее …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p20"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… заказа ──────────────────────────────────────────────── */ function openCheckout() { if (!state.cart.length) { toast('Сначала добавьте товары в корзину'); return; } state.checkoutStep = 1; closeLayer('#cartDrawer'); renderCheckout(); openLayer('#checkoutModal'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p57"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "… o.delivery !== 'pickup'; ok = markError('address', needAddress && o.address.trim().length < 4) && ok; } if (!ok) toast('Проверьте отмеченные поля'); return ok; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p73"
+        }
+      ]
+    },
+    "js_app_togglefav": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Избранное ──────────────────────────────────────────────────────── */ function toggleFav(id) { const i = state.favs.indexOf(id); if (i === -1) { state.favs.push(id); toast('Добавлено в избранное'); } else { state.favs.splice(i, 1); toast('Убрано из избранного'); } store.write('favs', state …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p19"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "const fav = hit('data-fav'); if (fav !== null) { toggleFav(fav); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p97"
+        }
+      ]
+    },
+    "js_app_validatestep": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* Шаги оформления */ if (t.closest('[data-step-next]')) { collectStep(); if (!validateStep()) return; state.checkoutStep += 1; renderCheckout(); $('#checkoutBody').scrollTop = 0; return; } if (t.closest('[data-step-back]')) { collectStep(); state.checkoutStep -= 1; renderCheckout(); return; …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p103"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function validateStep() { const o = state.order; let ok = true;",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p72"
+        }
+      ]
+    },
+    "js_app_visibleproducts": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "/* ── Каталог ────────────────────────────────────────────────────────── */ function visibleProducts() { const q = state.query.trim().toLowerCase(); let list = PRODUCTS.filter((p) => { if (state.cat !== 'all' && p.cat !== state.cat) return false; if (state.season !== 'all' && p.season !== state …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p28"
+        },
+        {
+          "source_file": "assets/js/app.js",
+          "source_location": "document",
+          "quote": "function renderCatalog() { const list = visibleProducts(); const grid = $('#grid');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p31"
+        }
+      ]
+    },
+    "js_data_brand": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "/* Название и контакты — меняются в одном месте, подставляются по всему сайту */ const BRAND = { name: 'Алиса', tagline: 'одежда для новорождённых', /* Телефон, почта и адрес — примеры. Замените на настоящие перед показом. */ phone: '+7 900 123-45-67', phoneHref: '+79001234567', email: 'zakaz@alisa-baby …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p1"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… const DELIVERY = [ { id: 'pickup', title: 'Самовывоз', price: 0, eta: 'сегодня или завтра', note: BRAND.address }, { id: 'courier', title: 'Курьер по городу', price: 350, eta: '1–2 дня', note: 'Бесплатно при заказе от ' + BRAND.freeFrom + ' ₽' }, { id: 'cdek', title: 'СДЭК до пункта выдачи',price: …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p11"
+        }
+      ]
+    },
+    "js_data_categories": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "/* Категории каталога. `icon` — ключ SVG-иллюстрации из app.js */ const CATEGORIES = [ { id: 'all', title: 'Все товары', icon: 'all' }, { id: 'vypiska', title: 'Комплекты на выписку', icon: 'envelope' }, { id: 'komplekty', title: 'Комплекты для малыша', …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p2"
+        }
+      ]
+    },
+    "js_data_delivery": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "/* Способы доставки. price = null → рассчитывается менеджером */ const DELIVERY = [ { id: 'pickup', title: 'Самовывоз', price: 0, eta: 'сегодня или завтра', note: BRAND.address }, { id: 'courier', title: 'Курьер по городу', price: 350, eta: '1–2 дня', note: …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p11"
+        }
+      ]
+    },
+    "js_data_faq": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "const FAQ = [ { q: 'Какой размер выбрать новорождённому?', a: 'Размер — это рост ребёнка в сантиметрах. Большинству детей при рождении подходит 56 (рост 51–56 см, вес 3,2–4,0 кг), крупным малышам — 62. Размер 50 берут …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p15"
+        }
+      ]
+    },
+    "js_data_payment": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "const PAYMENT = [ { id: 'card', title: 'Картой онлайн', note: 'Visa, Mastercard, МИР' }, { id: 'sbp', title: 'СБП по QR-коду', note: 'Без комиссии' }, { id: 'cash', title: 'При получении', note: 'Наличными …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p12"
+        }
+      ]
+    },
+    "js_data_products": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… SVG-иллюстрация рисуется на карточке tone — базовый цвет иллюстрации includes — состав комплекта (для наборов) */ const PRODUCTS = [ { id: 'v-01', name: 'Комплект на выписку «Первый снег», зимний', cat: 'vypiska', season: 'zima', price: 8900, oldPrice: 10500, art: 'envelope', tone: '#EDE6DC', sizes: ['56', '62'], col",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p5"
+        }
+      ]
+    },
+    "js_data_promos": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "/* Промокоды прототипа */ const PROMOS = { 'МАЛЫШ10': { discount: 0.10, title: 'скидка 10%' }, 'MALYSH10': { discount: 0.10, title: 'скидка 10%' }, 'ВЫПИСКА15':{ discount: 0.15, title: 'скидка 15%' }, 'VYPISKA15':{ discount: 0.15, title: 'скидка …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p13"
+        }
+      ]
+    },
+    "js_data_reviews": {
+      "count": 6,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… ['Молочный', 'Бежевый', 'Мятный'], material: 'Интерлок', composition: '100% хлопок', care: 'Стирка 40 °C', rating: 4.9, reviews: 178, badge: null, desc: 'Набор из трёх боди на каждый день. Запáх на плечах и кнопки в шаговом шве.', includes: [], }, { id: 'b-02', name: 'Боди-майка, 2 шт.', cat: 'bodi', season: 'leto',",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p10"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… 100% полиэстер, подклад 100% хлопок', care: 'Стирка 30 °C, без отбеливания, не выжимать в машине', rating: 4.9, reviews: 64, badge: 'Хит', desc: 'Тёплый конверт-одеяло с утеплителем 300 г/м² для выписки при температуре до −20 °C. Раскладывается в плед — потом пригодится для прогулок в коляске.', includes: ['Конверт-о",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p5"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… material: 'Интерлок', composition: '100% хлопок', care: 'Стирка 40 °C, гладить при средней температуре', rating: 4.9, reviews: 137, badge: 'Хит', desc: 'Базовый набор на первые недели: всё, что нужно в роддом и домой. Швы наружу, чтобы не натирать кожу.', includes: ['Распашонка — 2 шт.', 'Ползунки — 2 шт.', 'Чепчик —",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p6"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… 'Бежевый', 'Голубой', 'Розовый'], material: 'Интерлок', composition: '100% хлопок', care: 'Стирка 40 °C', rating: 4.8, reviews: 214, badge: 'Хит', desc: 'Классические ползунки без грубых швов. Широкий мягкий пояс закрывает животик и не сползает.', includes: [], }, { id: 'p-02', name: 'Ползунки на кнопках через плечо'",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p7"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… ['Молочный', 'Пудровый', 'Голубой'], material: 'Кулирка', composition: '100% хлопок', care: 'Стирка 40 °C', rating: 4.9, reviews: 191, badge: null, desc: 'Тонкий чепчик с плоскими швами и мягкими завязками, которые не давят под подбородком.', includes: [], }, { id: 'c-02', name: 'Шапочка двойная утеплённая', cat: 'ch",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p8"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… 'Бежевый', 'Мятный', 'Голубой'], material: 'Интерлок', composition: '100% хлопок', care: 'Стирка 40 °C', rating: 4.9, reviews: 246, badge: 'Хит', desc: 'Молния снизу вверх с защитой подбородка — переодеть ночью можно за десять секунд. Закрытые стопы.', includes: [], }, { id: 'kb-02', name: 'Комбинезон-слип велюровый'",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p9"
+        }
+      ]
+    },
+    "js_data_seasons": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "const SEASONS = [ { id: 'leto', title: 'Лето' }, { id: 'demi', title: 'Демисезон' }, { id: 'zima', title: 'Зима' }, { id: 'vsesezon', title: 'Всесезон' }, ];",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p3"
+        }
+      ]
+    },
+    "js_data_sizes": {
+      "count": 6,
+      "citations": [
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "/* Размерная сетка новорождённых: размер = рост в см */ const SIZES = [ { id: '50', height: '44–50 см', weight: 'до 3,2 кг', age: '0–1 мес. / недоношенные' }, { id: '56', height: '51–56 см', weight: '3,2–4,0 кг', age: '0–1,5 мес.' }, { id: '62', height: '57–62 см', weight: …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p4"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… снег», зимний', cat: 'vypiska', season: 'zima', price: 8900, oldPrice: 10500, art: 'envelope', tone: '#EDE6DC', sizes: ['56', '62'], colors: ['Молочный', 'Пудровый', 'Дымчато-голубой'], material: 'Плащёвка, утеплитель 300 г/м², подклад — интерлок', composition: 'Верх 100% полиэстер, подклад 100% хлопок', care: 'Стирк",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p5"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… 7 предметов', cat: 'komplekty', season: 'vsesezon', price: 3200, oldPrice: 3800, art: 'set', tone: '#EFE7DE', sizes: ['50', '56', '62'], colors: ['Молочный', 'Бежевый', 'Мятный'], material: 'Интерлок', composition: '100% хлопок', care: 'Стирка 40 °C, гладить при средней температуре', rating: 4.9, reviews: 137, badge:",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p6"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… резинке, 2 шт.', cat: 'polzunki', season: 'vsesezon', price: 890, oldPrice: null, art: 'pants', tone: '#EDE8E0', sizes: ['50', '56', '62', '68'], colors: ['Молочный', 'Бежевый', 'Голубой', 'Розовый'], material: 'Интерлок', composition: '100% хлопок', care: 'Стирка 40 °C', rating: 4.8, reviews: 214, badge: 'Хит', desc",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p7"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… завязках, 2 шт.', cat: 'chepchiki', season: 'vsesezon', price: 450, oldPrice: null, art: 'bonnet', tone: '#F1EBE3', sizes: ['50', '56', '62'], colors: ['Молочный', 'Пудровый', 'Голубой'], material: 'Кулирка', composition: '100% хлопок', care: 'Стирка 40 °C', rating: 4.9, reviews: 191, badge: null, desc: 'Тонкий чепчи",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p8"
+        },
+        {
+          "source_file": "assets/js/data.js",
+          "source_location": "document",
+          "quote": "… молнии', cat: 'kombinezony', season: 'vsesezon', price: 1290, oldPrice: 1490, art: 'romper', tone: '#EDE7DF', sizes: ['50', '56', '62', '68', '74'], colors: ['Молочный', 'Бежевый', 'Мятный', 'Голубой'], material: 'Интерлок', composition: '100% хлопок', care: 'Стирка 40 °C', rating: 4.9, reviews: 246, badge: 'Хит', de",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p9"
+        }
+      ]
+    },
+    "js_orders_applytheme": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Тема ───────────────────────────────────────────────────────────── */ function applyTheme(theme) { if (theme) document.documentElement.setAttribute('data-theme', theme); else document.documentElement.removeAttribute('data-theme'); store.write('theme', theme); const dark = theme === 'dark' …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p48"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches); applyTheme(isDark ? 'light' : 'dark'); return; } });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p55"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "applyTheme(store.read('theme', null)); $$('[data-brand-name]').forEach((el) => { el.textContent = BRAND.name; }); $$('[data-year]').forEach((el) => { el.textContent = new Date().getFullYear(); });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p59"
+        }
+      ]
+    },
+    "js_orders_bind": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── События ────────────────────────────────────────────────────────── */ function bind() { document.addEventListener('click', (e) => { const t = e.target; const hit = (attr) => { const el = t.closest('[' + attr + ']'); return el ? el.getAttribute(attr) : null; };",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p49"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "renderChat(); renderStats(); renderFilters(); renderTable(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p60"
+        }
+      ]
+    },
+    "js_orders_closeorder": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "function closeOrder() { $('#orderDrawer').classList.remove('is-open'); $('#overlay').classList.remove('is-open'); document.body.style.overflow = ''; state.selected = null; renderTable(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p37"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "if (t.closest('[data-close-order]') || t.id === 'overlay') { closeOrder(); return; } if (t.closest('[data-export]')) { exportCsv(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p53"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOrder(); }); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p57"
+        }
+      ]
+    },
+    "js_orders_data_demo_orders": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "assets/js/orders-data.js",
+          "source_location": "const ORDER_STATUSES = [",
+          "quote": "const DEMO_ORDERS = [ { number: 'АЛ-000412', hoursAgo: 1, status: 'new', customer: { name: 'Ольга Кравцова', phone: '+7 916 245-13-08', email: 'o.kravtsova@mail.ru', city: 'Москва', address: 'ул. Профсоюзная, 42, кв. …",
+          "confidence": "EXTRACTED",
+          "section": "const ORDER_STATUSES = [",
+          "paragraph_id": "p2"
+        }
+      ]
+    },
+    "js_orders_exportcsv": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Выгрузка в таблицу ─────────────────────────────────────────────── */ function exportCsv() { const rows = [[ 'Номер', 'Дата', 'Статус', 'Покупатель', 'Телефон', 'Почта', 'Город', 'Адрес', 'Состав', 'Доставка', 'Оплата', 'Сумма, ₽', 'Комментарий', ]];",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p39"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… (t.closest('[data-close-order]') || t.id === 'overlay') { closeOrder(); return; } if (t.closest('[data-export]')) { exportCsv(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p53"
+        }
+      ]
+    },
+    "js_orders_fmtago": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "function fmtAgo(hours) { if (hours < 1) return 'только что'; if (hours < 24) return hours + ' ' + plural(hours, 'час', 'часа', 'часов') + ' назад'; const days = Math.round(hours / 24); return days + ' ' + plural(days, 'день', …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p13"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… pill--${statusById(st).tone}\">${esc(statusById(st).title)}</span> <span class=\"o-date num\">${fmtDate(d)}, ${fmtTime(d)} · ${fmtAgo(o.hoursAgo)}</span> </div> </div>",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p28"
+        }
+      ]
+    },
+    "js_orders_init": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Старт ──────────────────────────────────────────────────────────── */ function init() { $$('[data-icon]').forEach((el) => { const name = el.getAttribute('data-icon'); if (ICON[name]) el.innerHTML = ICON[name] + el.innerHTML; });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p58"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); })();",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p61"
+        }
+      ]
+    },
+    "js_orders_openorder": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Карточка заказа ────────────────────────────────────────────────── */ function openOrder(number) { const o = DEMO_ORDERS.find((x) => x.number === number); if (!o) return; state.selected = number;",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p24"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… status) { state.changed[number] = status; store.write('changed', state.changed); renderStats(); renderFilters(); openOrder(number); toast('Статус заказа ' + number + ' — «' + statusById(status).title + '»'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p38"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "const row = hit('data-order'); if (row !== null) { openOrder(row); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p51"
+        }
+      ]
+    },
+    "js_orders_orderdate": {
+      "count": 4,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "function orderDate(order) { return new Date(Date.now() - order.hoursAgo * 3600 * 1000); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p10"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… \">Сумма</th> <th>Статус</th> </tr> </thead> <tbody> ${list.map((o) => { const st = statusById(orderStatus(o)); const d = orderDate(o); const sum = orderSum(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; return ` <tr data-order=\"${esc(o.number)}\"${state.selected === o.number ? ' class=\"is-sel",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p21"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "const st = orderStatus(o); const sum = orderSum(o); const d = orderDate(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; const pm = PAYMENT.find((x) => x.id === o.payment) || PAYMENT[0];",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p25"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "visibleOrders().forEach((o) => { const d = orderDate(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; const pm = PAYMENT.find((x) => x.id === o.payment) || PAYMENT[0]; rows.push([ o.number, fmtDate(d) + ' ' + fmtTime(d), statusById(orderStatus(o …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p40"
+        }
+      ]
+    },
+    "js_orders_orderstatus": {
+      "count": 6,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… const q = state.query.trim().toLowerCase(); return DEMO_ORDERS.filter((o) => { if (state.status !== 'all' && orderStatus(o) !== state.status) return false; if (state.period === 'today' && o.hoursAgo > 24) return false; if (state.period === 'week' && o.hoursAgo > 24 * 7) return false; if (q) { const hay = (o.number +",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p15"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… ─────────────────────────────────────────────────────── */ function renderStats() { const isNew = DEMO_ORDERS.filter((o) => orderStatus(o) === 'new'); const inWork = DEMO_ORDERS.filter((o) => ['work', 'shipped'].includes(orderStatus(o))); const done = DEMO_ORDERS.filter((o) => orderStatus(o) === 'done'); const revenu",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p16"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… \"text-align:right\">Сумма</th> <th>Статус</th> </tr> </thead> <tbody> ${list.map((o) => { const st = statusById(orderStatus(o)); const d = orderDate(o); const sum = orderSum(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; return ` <tr data-order=\"${esc(o.number)}\"${state.selected === o.number",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p21"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… ────────────────────────────────────────────────────────── */ function renderFilters() { const counts = {}; DEMO_ORDERS.forEach((o) => { const s = orderStatus(o); counts[s] = (counts[s] || 0) + 1; });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p22"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "const st = orderStatus(o); const sum = orderSum(o); const d = orderDate(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; const pm = PAYMENT.find((x) => x.id === o.payment) || PAYMENT[0];",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p25"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "function orderStatus(order) { return state.changed[order.number] || order.status; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p9"
+        }
+      ]
+    },
+    "js_orders_ordersum": {
+      "count": 6,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "function orderSum(order) { const goods = order.items.reduce((s, i) => { const p = productById(i.id); return p ? s + p.price * i.qty : s; }, 0); const promo = order.promo && PROMOS[order.promo] ? Math.round(goods * PROMOS[order …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p11"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… const done = DEMO_ORDERS.filter((o) => orderStatus(o) === 'done'); const revenue = done.reduce((s, o) => s + orderSum(o).total, 0); const avg = done.length ? revenue / done.length : 0;",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p16"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… </thead> <tbody> ${list.map((o) => { const st = statusById(orderStatus(o)); const d = orderDate(o); const sum = orderSum(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; return ` <tr data-order=\"${esc(o.number)}\"${state.selected === o.number ? ' class=\"is-selected\"' : ''}> <td> <div class=\"o-n",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p21"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "const st = orderStatus(o); const sum = orderSum(o); const d = orderDate(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; const pm = PAYMENT.find((x) => x.id === o.payment) || PAYMENT[0];",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p25"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… o.customer.phone, o.customer.email, o.customer.city, o.customer.address, itemsSummary(o), dm.title, pm.title, orderSum(o).total, o.comment || '', ]); });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p40"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… мессенджере ─────────────────────────────────── */ function renderChat() { const o = DEMO_ORDERS[0]; const sum = orderSum(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; const pm = PAYMENT.find((x) => x.id === o.payment) || PAYMENT[0];",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p45"
+        }
+      ]
+    },
+    "js_orders_renderchat": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Пример сообщения в мессенджере ─────────────────────────────────── */ function renderChat() { const o = DEMO_ORDERS[0]; const sum = orderSum(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; const pm = PAYMENT.find((x) => x.id === o.payment) || PAYMENT[0];",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p45"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "renderChat(); renderStats(); renderFilters(); renderTable(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p60"
+        }
+      ]
+    },
+    "js_orders_renderfilters": {
+      "count": 5,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Фильтры ────────────────────────────────────────────────────────── */ function renderFilters() { const counts = {}; DEMO_ORDERS.forEach((o) => { const s = orderStatus(o); counts[s] = (counts[s] || 0) + 1; });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p22"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… setStatus(number, status) { state.changed[number] = status; store.write('changed', state.changed); renderStats(); renderFilters(); openOrder(number); toast('Статус заказа ' + number + ' — «' + statusById(status).title + '»'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p38"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "const status = hit('data-status'); if (status !== null) { state.status = status; renderFilters(); renderTable(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p50"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… ''; state.status = 'all'; state.period = 'all'; $('#searchInput').value = ''; $('#periodSelect').value = 'all'; renderFilters(); renderTable(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p54"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "renderChat(); renderStats(); renderFilters(); renderTable(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p60"
+        }
+      ]
+    },
+    "js_orders_renderstats": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Показатели ─────────────────────────────────────────────────────── */ function renderStats() { const isNew = DEMO_ORDERS.filter((o) => orderStatus(o) === 'new'); const inWork = DEMO_ORDERS.filter((o) => ['work', 'shipped'].includes(orderStatus(o))); const done = DEMO_ORDERS.filter((o) => orderStatus(o …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p16"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "function setStatus(number, status) { state.changed[number] = status; store.write('changed', state.changed); renderStats(); renderFilters(); openOrder(number); toast('Статус заказа ' + number + ' — «' + statusById(status).title + '»'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p38"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "renderChat(); renderStats(); renderFilters(); renderTable(); bind(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p60"
+        }
+      ]
+    },
+    "js_orders_rendertable": {
+      "count": 6,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Таблица ────────────────────────────────────────────────────────── */ function renderTable() { const list = visibleOrders(); const wrap = $('#ordersWrap');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p18"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… ('#overlay').classList.add('is-open'); $('#orderDrawer').classList.add('is-open'); document.body.style.overflow = 'hidden'; renderTable(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p36"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… ('is-open'); $('#overlay').classList.remove('is-open'); document.body.style.overflow = ''; state.selected = null; renderTable(); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p37"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "const status = hit('data-status'); if (status !== null) { state.status = status; renderFilters(); renderTable(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p50"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… 'all'; state.period = 'all'; $('#searchInput').value = ''; $('#periodSelect').value = 'all'; renderFilters(); renderTable(); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p54"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "$('#searchInput').addEventListener('input', (e) => { state.query = e.target.value; renderTable(); }); $('#periodSelect').addEventListener('change', (e) => { state.period = e.target.value; renderTable(); });",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p56"
+        }
+      ]
+    },
+    "js_orders_setstatus": {
+      "count": 2,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "function setStatus(number, status) { state.changed[number] = status; store.write('changed', state.changed); renderStats(); renderFilters(); openOrder(number); toast('Статус заказа ' + number + ' — «' + statusById(status …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p38"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "const setSt = hit('data-set-status'); if (setSt !== null) { setStatus(state.selected, setSt); return; }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p52"
+        }
+      ]
+    },
+    "js_orders_toast": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… state.changed[number] = status; store.write('changed', state.changed); renderStats(); renderFilters(); openOrder(number); toast('Статус заказа ' + number + ' — «' + statusById(status).title + '»'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p38"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "toast('Файл выгружен — откроется в Excel или Google Таблицах'); }",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p43"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Уведомления ────────────────────────────────────────────────────── */ let toastTimer = null; function toast(text) { const box = $('#toasts'); const el = document.createElement('div'); el.className = 'toast'; el.textContent = text; box.innerHTML = ''; box.appendChild(el); clearTimeout(toastTimer …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p44"
+        }
+      ]
+    },
+    "js_orders_visibleorders": {
+      "count": 3,
+      "citations": [
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "/* ── Фильтрация ─────────────────────────────────────────────────────── */ function visibleOrders() { const q = state.query.trim().toLowerCase(); return DEMO_ORDERS.filter((o) => { if (state.status !== 'all' && orderStatus(o) !== state.status) return false; if (state.period === 'today' && o.hoursAgo …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p15"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "… ── Таблица ────────────────────────────────────────────────────────── */ function renderTable() { const list = visibleOrders(); const wrap = $('#ordersWrap');",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p18"
+        },
+        {
+          "source_file": "assets/js/orders.js",
+          "source_location": "document",
+          "quote": "visibleOrders().forEach((o) => { const d = orderDate(o); const dm = DELIVERY.find((x) => x.id === o.delivery) || DELIVERY[0]; const pm = PAYMENT.find((x) => x.id === o.payment) || PAYMENT[0]; rows.push([ o.number, …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p40"
+        }
+      ]
+    },
+    "mobile_tabbar": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "index.html",
+          "source_location": "document",
+          "quote": "<!-- ── Нижняя панель на мобильных ──────────────────────────────────── --> <nav class=\"tabbar\" aria-label=\"Быстрая навигация\"> <div class=\"tabbar__inner\"> <a class=\"tab is-active\" href=\"#top\"><span data-icon=\"home\"></span>Главная</a> …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p27"
+        }
+      ]
+    },
+    "product_modal": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "index.html",
+          "source_location": "document",
+          "quote": "<div class=\"modal\" id=\"productModal\" role=\"dialog\" aria-label=\"Карточка товара\"> <div class=\"modal__head\"> <h3 id=\"productTitle\">Товар</h3> <button class=\"icon-btn\" type=\"button\" data-close=\"#productModal\" aria-label=\"Закрыть\"> <span data-icon=\"close\"></span> </button> </div> …",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p30"
+        }
+      ]
+    },
+    "reviews_section": {
+      "count": 1,
+      "citations": [
+        {
+          "source_file": "index.html",
+          "source_location": "document",
+          "quote": "… ────────────────────────────────────────────────────── --> <section class=\"section\"> <div class=\"shell\"> <div class=\"section-head\"> <div> <p class=\"eyebrow\">Отзывы покупателей</p> <h2>Что пишут мамы</h2> </div> </div> <div class=\"review-grid\" id=\"reviewGrid\"></div> </div> </section>",
+          "confidence": "EXTRACTED",
+          "paragraph_id": "p19"
+        }
+      ]
+    }
+  }
+}
