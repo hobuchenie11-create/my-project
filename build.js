@@ -53,6 +53,7 @@ const page = `<!DOCTYPE html>
 <title>${title}</title>
 <meta name="description" content="Комплекты на выписку из роддома, ползунки и распашонки, чепчики, комбинезоны и боди для новорождённых.">
 <meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
 </head>
 <body>
 ${inlined}
