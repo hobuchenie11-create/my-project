@@ -48,7 +48,8 @@ def test_statement_split_apartment(conn):
 
     statement = build_statement(conn, "2026-07")
     assert len(statement.rows) == 5  # 4 помещения + общедомовой прибор
-    assert statement.rows[-1].number == "Общедомовой прибор учета"
+    numbers = [r.number for r in statement.rows]
+    assert numbers[:2] == ["Нежилое помещение №1", "Общедомовой прибор учета"]
 
     row = next(r for r in statement.rows if r.number == "2")
     assert row.submitted

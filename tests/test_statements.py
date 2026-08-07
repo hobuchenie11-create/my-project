@@ -24,8 +24,11 @@ def test_statement_lists_apartments_in_order(db, tmp_path):
     finally:
         conn.close()
     numbers = [r.number for r in statement.rows]
-    assert numbers[:5] == ["1", "2", "3", "4", "5"]          # по порядку
-    assert numbers[-1] == "Общедомовой прибор учета"
+    # Нежилые помещения и общедомовой прибор — первыми, чтобы попадали на
+    # первую страницу; затем квартиры строго по порядку.
+    assert numbers[0] == "Нежилое помещение №1"
+    assert numbers[1] == "Общедомовой прибор учета"
+    assert numbers[2:7] == ["1", "2", "3", "4", "5"]
 
 
 def test_statement_is_print_ready(db, tmp_path):
@@ -39,11 +42,31 @@ def test_statement_is_print_ready(db, tmp_path):
     ws = load_workbook(out).active
     assert ws.page_setup.orientation == "portrait"
     assert ws.page_setup.fitToWidth == 1
-    # Весь список — на одном листе (включая нежилые и общедомовой прибор)
-    assert ws.page_setup.fitToHeight == 1
+    # По высоте не сжимаем — ведомость печатается крупным шрифтом на двух листах
+    assert ws.page_setup.fitToHeight == 0
     assert ws.sheet_properties.pageSetUpPr.fitToPage is True
     assert ws.print_title_rows == "$3:$3"      # шапка повторяется на каждой странице
     assert ws.print_area is not None
+
+
+def test_page_break_splits_flats_across_two_sheets(tmp_path):
+    """В доме на 80 квартир ведомость печатается на двух листах: на первом —
+    нежилые, общедомовой прибор и квартиры 1-40, на втором — остальные."""
+    db = tmp_path / "big.db"
+    init_db(db, apartments_count=80, nonresidential_count=2)
+    conn = repository.connect(db)
+    try:
+        statement = build_statement(conn, "2026-07")
+    finally:
+        conn.close()
+    out = export_statement(statement, "июль 2026", tmp_path / "big.xlsx")
+
+    ws = load_workbook(out).active
+    assert len(ws.row_breaks.brk) == 1              # ровно один перенос
+    break_row = ws.row_breaks.brk[0].id
+    # До переноса: 3 служебные строки + 40 квартир, последняя из них — кв. 40
+    assert ws.cell(break_row, 1).value == "40"
+    assert ws.cell(break_row + 1, 1).value == "41"
 
 
 def test_long_note_wraps_instead_of_overflowing(db, tmp_path):

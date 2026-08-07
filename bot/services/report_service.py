@@ -55,6 +55,8 @@ def build_statement(conn: sqlite3.Connection, period: str) -> Statement:
             late_apartments.add(row["apartment_number"])
 
     statement = Statement(period=period)
+    residential: list[StatementRow] = []
+    nonresidential: list[StatementRow] = []
     for apt in repository.list_apartments(conn):
         values = readings.get(apt["number"], {})
         note = apt["note"]
@@ -78,13 +80,15 @@ def build_statement(conn: sqlite3.Connection, period: str) -> Statement:
         elif "hws" in values:
             # Один ГВС -> колонка «ГВС сумма»
             row.hws_sum = values.get("hws")
-        statement.rows.append(row)
+        (nonresidential if apt["type"] == "nonresidential" else residential).append(row)
         if row.submitted:
             statement.submitted_count += 1
 
-    # Итоговая строка для общедомового прибора (заполняется вручную)
-    statement.rows.append(StatementRow(number="Общедомовой прибор учета",
-                                       note="(заполняется вручную)"))
+    # Нежилые помещения и общедомовой прибор идут первыми — так они всегда
+    # попадают на первую страницу печатной ведомости, а не теряются в конце.
+    statement.rows = nonresidential + [
+        StatementRow(number="Общедомовой прибор учета", note="(заполняется вручную)")
+    ] + residential
     statement.total_count = len(repository.list_apartments(conn))
     return statement
 
