@@ -39,6 +39,8 @@ def test_statement_is_print_ready(db, tmp_path):
     ws = load_workbook(out).active
     assert ws.page_setup.orientation == "portrait"
     assert ws.page_setup.fitToWidth == 1
+    # Весь список — на одном листе (включая нежилые и общедомовой прибор)
+    assert ws.page_setup.fitToHeight == 1
     assert ws.sheet_properties.pageSetUpPr.fitToPage is True
     assert ws.print_title_rows == "$3:$3"      # шапка повторяется на каждой странице
     assert ws.print_area is not None

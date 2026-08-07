@@ -7,10 +7,10 @@ from openpyxl.utils import get_column_letter
 
 from bot.services.report_service import STATEMENT_COLUMNS, Statement
 
-# Ширины подобраны так, чтобы при печати А4 лист влезал по ширине, а длинные
-# подписи («Общедомовой прибор учета», «Переданы после срока…») переносились
-# внутри своей колонки, а не обрезались по краю страницы.
-COLUMN_WIDTHS = [17, 4, 13, 10, 10, 12, 10, 10, 26]
+# Первая колонка узкая — в ней в основном номера квартир, а длинные подписи
+# («Нежилое помещение №1», «Общедомовой прибор учета») переносятся по строкам.
+# Освободившееся место отдано колонкам с показаниями и примечанием.
+COLUMN_WIDTHS = [13, 4, 17, 12, 12, 14, 12, 12, 28]
 WRAP_COLUMNS = {1, 9}  # «Кв.» и «Примечание» — с переносом текста
 
 _thin = Side(style="thin")
@@ -72,7 +72,9 @@ def _setup_print(ws, last_row: int, ncols: int) -> None:
     ws.page_setup.orientation = "portrait"
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.fitToWidth = 1
-    ws.page_setup.fitToHeight = 0        # по высоте — сколько нужно страниц
+    # Весь список (квартиры + нежилые помещения + общедомовой прибор) на одном
+    # листе — так председателю удобнее просматривать целиком.
+    ws.page_setup.fitToHeight = 1
     ws.sheet_properties.pageSetUpPr.fitToPage = True
 
     ws.print_title_rows = "3:3"          # шапка таблицы повторяется на каждом листе
