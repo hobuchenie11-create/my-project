@@ -44,6 +44,28 @@ def test_statement_is_print_ready(db, tmp_path):
     assert ws.print_area is not None
 
 
+def test_long_note_wraps_instead_of_overflowing(db, tmp_path):
+    """Длинное примечание должно переноситься внутри колонки, иначе при печати
+    оно обрезается по краю листа А4."""
+    conn = repository.connect(db)
+    try:
+        apt = repository.get_apartment_by_number(conn, "1")
+        save_reading(conn, apt["id"], "electricity", 100, None,
+                     period="2026-07", late=True)
+        statement = build_statement(conn, "2026-07")
+    finally:
+        conn.close()
+    out = export_statement(statement, "июль 2026", tmp_path / "v.xlsx")
+
+    ws = load_workbook(out).active
+    row = next(r for r in range(4, 12) if ws.cell(r, 1).value == "1")
+    note = ws.cell(row, 9)
+    assert note.value and "после срока" in note.value
+    assert note.alignment.wrap_text is True
+    # «Общедомовой прибор учета» в первой колонке тоже длиннее её ширины
+    assert ws.cell(4, 1).alignment.wrap_text is True
+
+
 def test_debtors_statement(db, tmp_path):
     conn = repository.connect(db)
     try:

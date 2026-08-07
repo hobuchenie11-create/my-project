@@ -7,7 +7,11 @@ from openpyxl.utils import get_column_letter
 
 from bot.services.report_service import STATEMENT_COLUMNS, Statement
 
-COLUMN_WIDTHS = [22, 5, 15, 11, 11, 13, 11, 11, 22]
+# Ширины подобраны так, чтобы при печати А4 лист влезал по ширине, а длинные
+# подписи («Общедомовой прибор учета», «Переданы после срока…») переносились
+# внутри своей колонки, а не обрезались по краю страницы.
+COLUMN_WIDTHS = [17, 4, 13, 10, 10, 12, 10, 10, 26]
+WRAP_COLUMNS = {1, 9}  # «Кв.» и «Примечание» — с переносом текста
 
 _thin = Side(style="thin")
 BORDER = Border(left=_thin, right=_thin, top=_thin, bottom=_thin)
@@ -49,10 +53,11 @@ def fill_statement_sheet(ws, statement: Statement, period_name: str) -> None:
         for col, value in enumerate(row.as_cells(), start=1):
             cell = ws.cell(row=i, column=col, value=value)
             cell.border = BORDER
-            if col in (1, 9):
-                cell.alignment = Alignment(horizontal="left")
+            if col in WRAP_COLUMNS:
+                cell.alignment = Alignment(horizontal="left", vertical="center",
+                                           wrap_text=True)
             else:
-                cell.alignment = Alignment(horizontal="center")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
 
     footer_row = len(statement.rows) + 5
     ws.cell(row=footer_row, column=1,
