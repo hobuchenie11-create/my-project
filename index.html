@@ -127,6 +127,14 @@ button{background:none;border:none;cursor:pointer}
 .role-btn.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(126,92,110,.28)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .role-btn.on{color:#221D20}}
 :root[data-theme="dark"] .role-btn.on{color:#221D20}
+.sync{
+  display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;
+  padding:5px 11px;border-radius:99px;border:1px solid var(--line);
+  background:var(--surface);color:var(--muted);
+}
+.sync.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.sync.busy{background:var(--gold-soft);color:var(--gold);border-color:transparent}
+.sync.err{background:var(--danger-soft);color:var(--danger);border-color:transparent}
 .who{
   display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
   padding:0 16px 12px;max-width:560px;margin:0 auto;
@@ -301,6 +309,18 @@ button{background:none;border:none;cursor:pointer}
 }
 .coll-foot button:active{background:var(--surface-2)}
 
+.payee{
+  margin:12px 18px 0;padding:12px 14px;border-radius:var(--radius-s);
+  background:var(--accent-soft);border:1px solid var(--accent);
+}
+.pay-hd{
+  display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--accent);margin-bottom:7px;
+}
+.pay-row{display:flex;align-items:center;gap:10px}
+.pay-t{flex:1;min-width:0}
+.pay-t b{display:block;font-size:17px;font-weight:600;letter-spacing:.3px}
+.pay-t span{display:block;font-size:12px;color:var(--muted);margin-top:1px}
 .mine-box{
   margin:0 18px 16px;padding:15px;border-radius:var(--radius-s);
   border:1px solid var(--accent);background:var(--accent-soft);
@@ -377,6 +397,7 @@ button{background:none;border:none;cursor:pointer}
 .calc b{font-weight:700}
 .calc.money{background:var(--gold-soft);border-color:var(--gold)}
 .hint-row{margin-top:-8px}
+.lnk{color:var(--accent);font-weight:600;text-decoration:underline;font-size:12px;padding:0}
 .seg{display:flex;gap:7px;flex-wrap:wrap}
 .seg button{
   flex:1;min-width:88px;padding:11px 8px;border-radius:13px;font-size:14px;font-weight:600;
@@ -431,6 +452,7 @@ button{background:none;border:none;cursor:pointer}
    ══════════════════════════════════════════════════════════ */
 
 const STORE_KEY = 'kopilka.class.v1';
+const DEV_KEY   = 'kopilka.device.v1';
 const SEATS = 29;          // 24 ученика + 5 мест в запасе
 const FILLED = 24;
 
@@ -509,25 +531,35 @@ function seed(){
     parent: '',
   }));
   const y = today().getFullYear();
-  const C = (id,cat,occ,title,amount,start,d,note) =>
+  const C = (id,cat,occ,title,amount,start,d,note,payee) =>
     ({id, cat, occ, title, mode:'per', amount, total:amount*FILLED, payers:FILLED,
-      start, days:d, note:note||'', payments:{}, expenses:[], archived:false});
+      start, days:d, note:note||'', payee:payee||{name:'',phone:'',bank:''},
+      payments:{}, expenses:[], archived:false});
 
+  // ответственные меняются от праздника к празднику — у каждого сбора свои реквизиты
+  const P = (name, phone, bank) => ({name, phone, bank});
+  const kaznachey = P('Смирнова Ольга Владимировна', '+7 916 204-18-73', 'Сбербанк');
   const cols = [
     C('c1','repair','repair','Жалюзи и покраска стен', 2500, isoD(addDays(today(),-7)), 30,
-      'Смета согласована на собрании 1 сентября'),
+      'Смета согласована на собрании 1 сентября', kaznachey),
     C('c2','meals','meals','Питание — сентябрь', 3400, isoD(addDays(today(),-2)), 10,
-      'Оплата в столовую до 10 числа'),
+      'Оплата в столовую до 10 числа', kaznachey),
     C('c3','teachers','bday','День рождения Марии Петровны', 500, isoD(addDays(today(),-19)), 10,
-      'Букет и сертификат'),
-    C('c4','teachers','tday','День учителя — подарок классному руководителю', 700, isoD(addDays(today(),24)), 14),
-    C('c5','teachers','ny','Новогодние подарки учителям-предметникам', 600, isoD(addDays(today(),100)), 14),
-    C('c6','teachers','mar8','8 марта — классному руководителю', 700, isoD(addDays(today(),200)), 12),
-    C('c7','teachers','grad','Выпускной: подарок и оформление', 1500, isoD(addDays(today(),250)), 21),
+      'Букет и сертификат', P('Волкова Ирина Сергеевна', '+7 903 551-40-62', 'Т-Банк')),
+    C('c4','teachers','tday','День учителя — подарок классному руководителю', 700, isoD(addDays(today(),24)), 14,
+      '', P('Лебедева Анна Петровна', '+7 925 118-77-05', 'Альфа-Банк')),
+    C('c5','teachers','ny','Новогодние подарки учителям-предметникам', 600, isoD(addDays(today(),100)), 14,
+      '', kaznachey),
+    C('c6','teachers','mar8','8 марта — классному руководителю', 700, isoD(addDays(today(),200)), 12,
+      '', P('Никитина Елена Юрьевна', '+7 999 342-16-88', 'ВТБ')),
+    C('c7','teachers','grad','Выпускной: подарок и оформление', 1500, isoD(addDays(today(),250)), 21,
+      '', kaznachey),
     C('c8','kids','ny','Новогодние подарки детям', 1200, isoD(addDays(today(),85)), 14,
-      'Сладкий подарок + сюрприз от Деда Мороза'),
-    C('c9','kids','feb23','Подарки мальчикам на 23 февраля', 700, isoD(addDays(today(),160)), 10),
-    C('c10','kids','mar8','Подарки девочкам на 8 марта', 700, isoD(addDays(today(),195)), 10),
+      'Сладкий подарок + сюрприз от Деда Мороза', P('Орлова Татьяна Игоревна', '+7 926 730-95-14', 'Сбербанк')),
+    C('c9','kids','feb23','Подарки мальчикам на 23 февраля', 700, isoD(addDays(today(),160)), 10,
+      '', P('Морозова Светлана Львовна', '+7 917 608-23-49', 'Сбербанк')),
+    C('c10','kids','mar8','Подарки девочкам на 8 марта', 700, isoD(addDays(today(),195)), 10,
+      '', P('Егорова Наталья Борисовна', '+7 909 415-62-30', 'Т-Банк')),
   ];
 
   // фонд класса: ежемесячный взнос, по сбору на каждый месяц
@@ -536,7 +568,7 @@ function seed(){
     const d = new Date(today().getFullYear(), today().getMonth() - back, 1);
     const f = C('f' + back, 'fund', MONTH_KEYS[d.getMonth()],
       `Фонд класса — ${MONTHS_N[d.getMonth()].toLowerCase()} ${d.getFullYear()}`,
-      FUND, isoD(d), 10, 'Ежемесячный взнос на текущие нужды класса');
+      FUND, isoD(d), 10, 'Ежемесячный взнос на текущие нужды класса', kaznachey);
     // чем старше месяц, тем больше сдали
     const paid = back === 0 ? 15 : back === 1 ? 22 : FILLED;
     for (let i = 1; i <= paid; i++)
@@ -582,8 +614,7 @@ function seed(){
   ];
   return {
     className:'3 «Б» класс',
-    role:'treasurer',
-    myId:'s5',
+    payee:kaznachey,
     defDays:14,
     students,
     collections:cols,
@@ -591,20 +622,192 @@ function seed(){
 }
 
 /* ── состояние ─────────────────────────── */
-let S;
+/* S — данные класса (общие для всех, синхронизируются).
+   D — настройки этого устройства: роль, выбранный ребёнок, доступ к базе.
+   Разделены намеренно: иначе роль казначея уехала бы всем родителям. */
+let S, D;
 try {
   const raw = localStorage.getItem(STORE_KEY);
   S = raw ? JSON.parse(raw) : seed();
 } catch(e) { S = seed(); }
+try {
+  D = JSON.parse(localStorage.getItem(DEV_KEY)) || {};
+} catch(e) { D = {}; }
+if (!D.role) D.role = 'treasurer';
+if (!D.myId) D.myId = 's5';
 // миграция данных, сохранённых прежними версиями
 S.collections.forEach(c => {
   if (!Array.isArray(c.expenses)) c.expenses = [];
   if (!c.mode) c.mode = 'per';
   if (c.total == null) c.total = (+c.amount || 0) * S.students.filter(s => s.name.trim()).length;
   if (c.payers == null) c.payers = S.students.filter(s => s.name.trim()).length;
+  if (!c.payee) c.payee = {name:'', phone:'', bank:''};
 });
+if (!S.payee) S.payee = {name:'', phone:'', bank:''};
 
-const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch(e){} };
+const saveDevice = () => { try { localStorage.setItem(DEV_KEY, JSON.stringify(D)); } catch(e){} };
+const saveLocal  = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch(e){} };
+const save = () => {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch(e){}
+  saveDevice();
+  if (typeof Cloud !== 'undefined' && Cloud.on()) Cloud.schedulePush();
+};
+
+/* ══ ОБЩАЯ БАЗА (Supabase) ════════════════════════════════════
+   Состояние класса лежит одной строкой в таблице classes и правится
+   через функции class_* (см. supabase-schema.sql). Клиент хранит копию
+   последнего известного серверного состояния (base) — по ней он понимает,
+   что изменил именно он, и накладывает свои правки на чужие, а не затирает.
+   ═══════════════════════════════════════════════════════════ */
+const Cloud = {
+  base: null,        // состояние сервера на момент последнего обмена
+  version: 0,
+  busy: false,
+  dirty: false,
+  timer: null,
+  status: 'off',     // off | ok | sync | error | conflict
+  err: '',
+
+  on(){ return !!(D.cloud && D.cloud.id && D.cloud.url && D.cloud.key); },
+
+  async rpc(fn, args){
+    const {url, key} = D.cloud;
+    const r = await fetch(`${url.replace(/\/$/,'')}/rest/v1/rpc/${fn}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json', apikey:key, Authorization:'Bearer ' + key},
+      body: JSON.stringify(args),
+    });
+    const txt = await r.text();
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; } catch(e){ data = txt; }
+    if (!r.ok) throw new Error((data && (data.message || data.error)) || ('HTTP ' + r.status));
+    return data;
+  },
+
+  /* забрать состояние с сервера */
+  async pull(){
+    const rows = await this.rpc('class_get', {p_id:D.cloud.id, p_code:D.cloud.code});
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (!row) throw new Error('класс не найден');
+    return {state: row.state, version: row.version};
+  },
+
+  /* отдать свои правки, наложив их на свежее серверное состояние */
+  async push(){
+    if (this.busy){ this.dirty = true; return; }
+    this.busy = true; this.dirty = false;
+    this.status = 'sync'; paintStatus();
+    try {
+      for (let attempt = 0; attempt < 4; attempt++){
+        const nv = await this.rpc('class_save',
+          {p_id:D.cloud.id, p_code:D.cloud.code, p_state:S, p_version:this.version});
+        if (nv != null){                       // приняли
+          this.base = clone(S); this.version = nv;
+          this.status = 'ok'; this.err = ''; break;
+        }
+        // кто-то опередил: забираем свежее, накладываем свои правки, пробуем снова
+        const fresh = await this.pull();
+        const rebased = merge3(this.base || fresh.state, S, fresh.state);
+        S = rebased;
+        this.base = clone(fresh.state);
+        this.version = fresh.version;
+        saveLocal();
+        if (attempt === 3) this.status = 'conflict';
+      }
+    } catch(e){
+      this.status = 'error'; this.err = e.message || String(e);
+    }
+    this.busy = false; paintStatus();
+    if (this.dirty) this.push();
+  },
+
+  schedulePush(){
+    clearTimeout(this._pt);
+    this._pt = setTimeout(() => this.push(), 600);   // склеиваем частые правки
+  },
+
+  /* опрос сервера: сначала дешёвая проверка версии */
+  async tick(){
+    if (!this.on() || this.busy) return;
+    try {
+      const v = await this.rpc('class_version', {p_id:D.cloud.id, p_code:D.cloud.code});
+      if (v === this.version) { if (this.status !== 'ok'){ this.status='ok'; paintStatus(); } return; }
+      const fresh = await this.pull();
+      S = this.base ? merge3(this.base, S, fresh.state) : fresh.state;
+      this.base = clone(fresh.state);
+      this.version = fresh.version;
+      saveLocal();
+      this.status = 'ok'; this.err = '';
+      render();
+    } catch(e){
+      this.status = 'error'; this.err = e.message || String(e); paintStatus();
+    }
+  },
+
+  start(){
+    clearInterval(this.timer);
+    if (!this.on()) { this.status = 'off'; return; }
+    this.timer = setInterval(() => this.tick(), 7000);
+    this.tick();
+  },
+};
+
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ── трёхстороннее слияние ─────────────────────────────────────
+   base — общий предок, mine — моя версия, theirs — серверная.
+   Правило: беру серверное, а поверх кладу то, что изменил именно я.
+   Так две одновременные отметки по разным ученикам обе выживают. */
+function merge3(base, mine, theirs){
+  const out = clone(theirs);
+  const changed = (a, b) => JSON.stringify(a) !== JSON.stringify(b);
+
+  ['className','defDays','payee'].forEach(k => {
+    if (changed(mine[k], base[k])) out[k] = clone(mine[k]);
+  });
+
+  // ученики — по позиции в списке
+  out.students = (theirs.students || []).map((st, i) => {
+    const m = (mine.students || [])[i], b = (base.students || [])[i];
+    return m && b && changed(m, b) ? clone(m) : st;
+  });
+  (mine.students || []).slice((theirs.students || []).length).forEach(st => out.students.push(clone(st)));
+
+  const byId = arr => Object.fromEntries((arr || []).map(x => [x.id, x]));
+  const bC = byId(base.collections), mC = byId(mine.collections), tC = byId(theirs.collections);
+
+  out.collections = (theirs.collections || []).filter(c => !(bC[c.id] && !mC[c.id])) // удалённые мной
+    .map(t => {
+      const m = mC[t.id], b = bC[t.id];
+      if (!m) return t;
+      if (!b) return clone(m);
+      const c = clone(t);
+      ['title','cat','occ','mode','amount','total','payers','start','days','note','payee','archived']
+        .forEach(k => { if (changed(m[k], b[k])) c[k] = clone(m[k]); });
+
+      // отметки об оплате — по каждому ученику отдельно
+      c.payments = {...t.payments};
+      const ids = new Set([...Object.keys(m.payments || {}), ...Object.keys(b.payments || {})]);
+      ids.forEach(sid => {
+        if (changed((m.payments || {})[sid], (b.payments || {})[sid])){
+          if ((m.payments || {})[sid] == null) delete c.payments[sid];
+          else c.payments[sid] = clone(m.payments[sid]);
+        }
+      });
+
+      // траты — по id: свои добавления добавляем, свои удаления убираем
+      const bE = new Set((b.expenses || []).map(e => e.id));
+      const mE = byId(m.expenses), tE = byId(t.expenses);
+      c.expenses = (t.expenses || []).filter(e => !(bE.has(e.id) && !mE[e.id]))
+        .map(e => (mE[e.id] && changed(mE[e.id], (b.expenses||[]).find(x=>x.id===e.id)) ? clone(mE[e.id]) : e));
+      (m.expenses || []).forEach(e => { if (!bE.has(e.id) && !tE[e.id]) c.expenses.push(clone(e)); });
+      return c;
+    });
+
+  // сборы, заведённые мной
+  (mine.collections || []).forEach(m => { if (!bC[m.id] && !tC[m.id]) out.collections.push(clone(m)); });
+  return out;
+}
 
 let view = 'home';      // home | kids | teachers | repair | meals | roster
 let occFilter = {};     // cat -> occ | 'all'
@@ -678,6 +881,9 @@ const I = {
   up:'<polyline points="18 15 12 9 6 15"/>',
   right:'<polyline points="9 18 15 12 9 6"/>',
   minus:'<line x1="6" y1="12" x2="18" y2="12"/>',
+  card:'<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
+  cloud:'<path d="M18 10h-1.3A7 7 0 104 15.7"/><path d="M13 19l3 3 5-5"/><path d="M6 16h6"/>',
+  cloudoff:'<path d="M18 10h-1.3A7 7 0 004.6 6.6"/><path d="M3 15.7A7 7 0 006 17h9"/><line x1="2" y1="2" x2="22" y2="22"/>',
   receipt:'<path d="M5 2v20l2.5-1.6L10 22l2-1.6L14 22l2.5-1.6L19 22V2l-2.5 1.6L14 2l-2 1.6L10 2 7.5 3.6z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/>',
 };
 const svg = (p, sz=20, w=1.7) =>
@@ -689,15 +895,128 @@ const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>'
 
 function render(){
   const app = document.getElementById('app');
+  if (gate){ app.innerHTML = gateView(); return; }
   app.innerHTML = header() + `<main class="wrap">${body()}</main>` + nav() + (sheet ? sheetHTML() : '');
   window.scrollTo(0, scrollMemo[view] || 0);
 }
 const scrollMemo = {};
 
+/* ── индикатор общей базы ──────────────── */
+function paintStatus(){
+  const el = document.getElementById('sync');
+  if (el) el.outerHTML = syncChip();
+}
+function syncChip(){
+  if (!Cloud.on()) return `<button id="sync" class="sync off" data-act="cloud">${svg(I.cloudoff,13)} Только этот телефон</button>`;
+  const m = {
+    ok:      [`${svg(I.cloud,13)} Общая база`, 'ok'],
+    sync:    [`${svg(I.cloud,13)} Сохраняем…`, 'busy'],
+    error:   [`${svg(I.cloudoff,13)} Нет связи`, 'err'],
+    conflict:[`${svg(I.cloudoff,13)} Конфликт`, 'err'],
+    off:     [`${svg(I.cloud,13)} Общая база`, 'ok'],
+  }[Cloud.status] || [`${svg(I.cloud,13)} Общая база`, 'ok'];
+  return `<button id="sync" class="sync ${m[1]}" data-act="cloud">${m[0]}</button>`;
+}
+
+/* ── экран подключения к общей базе ────── */
+function cloudView(){
+  const c = D.cloud || {};
+  const linked = Cloud.on();
+  const link = linked ? shareLink() : '';
+  return `
+  <div class="card hero">
+    <div class="lbl">Общая база</div>
+    <div class="big" style="font-size:26px">${linked ? 'Класс подключён' : 'Пока не подключена'}</div>
+    <div class="cap">${linked
+      ? 'Казначей и родители видят одни и те же данные. Обновление приходит в течение 7 секунд.'
+      : 'Сейчас данные живут только в этом браузере. Подключите базу, чтобы отметки казначея видели все.'}</div>
+  </div>
+
+  ${linked ? `
+  <div class="sec-title">Ссылка для родителей</div>
+  <div class="card card-pad">
+    <div class="field">
+      <label>Отправьте её в чат класса</label>
+      <textarea rows="3" readonly style="font-size:12.5px">${esc(link)}</textarea>
+    </div>
+    <button class="btn pri wide" style="width:100%;margin-bottom:8px" data-act="copylink">${svg(I.copy,15)} Скопировать ссылку</button>
+    <div class="hint">Код класса <b>${esc(c.code || '')}</b> сообщите отдельно — например, голосом на собрании.
+      Он не входит в ссылку, поэтому случайно попавшая не туда ссылка сама по себе доступ не даёт.</div>
+  </div>
+
+  <div class="sec-title">Состояние</div>
+  <div class="card card-pad">
+    <div class="cash" style="margin:0">
+      <div><span>Версия</span><b class="num">${Cloud.version}</b></div>
+      <div><span>Связь</span><b style="font-size:13px">${Cloud.status === 'error' ? 'нет' : 'есть'}</b></div>
+      <div><span>Роль</span><b style="font-size:13px">${D.role === 'treasurer' ? 'казначей' : 'родитель'}</b></div>
+    </div>
+    ${Cloud.err ? `<div class="hint" style="color:var(--danger);margin-top:10px">${esc(Cloud.err)}</div>` : ''}
+    <button class="btn wide" style="width:100%;margin-top:12px" data-act="pullnow">Обновить сейчас</button>
+    <button class="btn ghost wide" style="width:100%;margin-top:8px;color:var(--danger)" data-act="unlink">Отключить это устройство</button>
+  </div>
+  ` : `
+  <div class="sec-title">Шаг 1 — создайте проект</div>
+  <div class="card card-pad">
+    <div class="hint" style="margin:0">Зайдите на <b>supabase.com</b>, создайте бесплатный проект.
+      Откройте SQL Editor, вставьте файл <b>supabase-schema.sql</b> из репозитория и нажмите Run.
+      Затем Project Settings → API — оттуда нужны два значения ниже.</div>
+  </div>
+
+  <div class="sec-title">Шаг 2 — подключите класс</div>
+  <div class="card card-pad">
+    <div class="field">
+      <label>Project URL</label>
+      <input id="cl-url" value="${esc(c.url || '')}" placeholder="https://xxxx.supabase.co">
+    </div>
+    <div class="field">
+      <label>Ключ anon public</label>
+      <input id="cl-key" value="${esc(c.key || '')}" placeholder="eyJhbGciOi...">
+    </div>
+    <div class="field">
+      <label>Код класса — его будут вводить родители</label>
+      <input id="cl-code" value="${esc(c.code || '')}" placeholder="например: 3б-2026">
+    </div>
+    <div class="field">
+      <label>Пароль казначея — только для вас</label>
+      <input id="cl-admin" type="password" placeholder="минимум 4 символа">
+    </div>
+    <button class="btn pri wide" style="width:100%;margin-bottom:8px" data-act="cloudcreate">
+      Создать класс и загрузить текущие данные
+    </button>
+    <div class="hint">Загрузятся данные, которые сейчас в приложении. Если это демо-пример —
+      сначала впишите настоящий список класса на вкладке «Список класса».</div>
+  </div>
+
+  <div class="sec-title">Или подключиться к готовому</div>
+  <div class="card card-pad">
+    <div class="field">
+      <label>Ссылка от казначея</label>
+      <input id="cl-link" placeholder="вставьте ссылку целиком">
+    </div>
+    <div class="field">
+      <label>Код класса</label>
+      <input id="cl-jcode" placeholder="код, который назвал казначей">
+    </div>
+    <button class="btn pri wide" style="width:100%" data-act="cloudjoin">Подключиться</button>
+  </div>
+  `}
+  <p class="fab-note">Ключ anon public открыт всем по замыслу Supabase — доступ к данным закрывают
+    id класса в ссылке и код класса. Это защита от посторонних глаз, а не банковская тайна:
+    не храните здесь ничего, кроме учёта сборов.</p>`;
+}
+
+function shareLink(){
+  const c = D.cloud;
+  const base = location.href.split('#')[0];
+  const pack = btoa(unescape(encodeURIComponent(JSON.stringify({u:c.url, k:c.key, i:c.id}))));
+  return `${base}#k=${pack}`;
+}
+
 /* ── шапка ─────────────────────────────── */
 function header(){
-  const parent = S.role === 'parent';
-  const me = S.students.find(s => s.id === S.myId);
+  const parent = D.role === 'parent';
+  const me = S.students.find(s => s.id === D.myId);
   return `
   <header class="top">
     <div class="top-in">
@@ -707,6 +1026,7 @@ function header(){
       </div>
       <button class="icon-btn" data-act="settings" aria-label="Настройки">${svg(I.gear,18)}</button>
     </div>
+    <div style="padding:0 16px 10px;max-width:560px;margin:0 auto">${syncChip()}</div>
     <div class="role-bar">
       <button class="role-btn ${!parent?'on':''}" data-act="role" data-v="treasurer">${svg(I.wallet,15)} Казначей</button>
       <button class="role-btn ${parent?'on':''}" data-act="role" data-v="parent">${svg(I.users,15)} Родитель</button>
@@ -715,7 +1035,7 @@ function header(){
     <div class="who">
       <span>Мой ребёнок:</span>
       <select data-act="setme">
-        ${active().map(s => `<option value="${s.id}" ${s.id===S.myId?'selected':''}>${esc(s.name)}</option>`).join('')}
+        ${active().map(s => `<option value="${s.id}" ${s.id===D.myId?'selected':''}>${esc(s.name)}</option>`).join('')}
       </select>
     </div>` : ''}
   </header>`;
@@ -734,7 +1054,7 @@ function nav(){
   return `<nav class="nav"><div class="nav-in">${items.map(([v,label,ic]) => {
     const alert = v !== 'home' && colsOf(v).some(c => {
       const t = timing(c);
-      if (S.role === 'parent') return isOpen(c) && stOf(c,S.myId) === 'none';
+      if (D.role === 'parent') return isOpen(c) && stOf(c,D.myId) === 'none';
       return t.phase === 'late' && stats(c).left > 0;
     });
     return `<button class="${view===v?'on':''}" data-act="view" data-v="${v}">
@@ -746,6 +1066,7 @@ function nav(){
 function body(){
   if (view === 'roster') return rosterView();
   if (view === 'spend')  return spendView();
+  if (view === 'cloud')  return cloudView();
   if (view === 'home')   return homeView();
   return catView(view);
 }
@@ -756,7 +1077,7 @@ function spendView(){
   const out = all.reduce((a,e) => a + e.sum, 0);
   const got = S.collections.reduce((a,c) => a + stats(c).got, 0);
   const rest = got - out;
-  const editable = S.role === 'treasurer';
+  const editable = D.role === 'treasurer';
 
   // группировка по месяцам
   const groups = [];
@@ -811,12 +1132,12 @@ function spendView(){
 /* ── ОБЗОР ─────────────────────────────── */
 function homeView(){
   const open = S.collections.filter(c => !c.archived && isOpen(c));
-  const parent = S.role === 'parent';
+  const parent = D.role === 'parent';
 
   if (parent){
-    const mine = open.filter(c => stOf(c, S.myId) !== 'paid');
-    const due = mine.filter(c => stOf(c,S.myId)==='none').reduce((a,c) => a + perOf(c), 0);
-    const paidCnt = S.collections.filter(c => !c.archived && stOf(c,S.myId)==='paid').length;
+    const mine = open.filter(c => stOf(c, D.myId) !== 'paid');
+    const due = mine.filter(c => stOf(c,D.myId)==='none').reduce((a,c) => a + perOf(c), 0);
+    const paidCnt = S.collections.filter(c => !c.archived && stOf(c,D.myId)==='paid').length;
     return `
     <div class="card hero">
       <div class="lbl">К оплате сейчас</div>
@@ -924,9 +1245,9 @@ function fundDebts(){
   }).filter(r => r.owe.length).sort((a,b) => b.owe.length - a.owe.length);
 
   const totalDebt = rows.reduce((a,r) => a + r.sum, 0);
-  const parent = S.role === 'parent';
+  const parent = D.role === 'parent';
   if (parent){
-    const mine = rows.find(r => r.s.id === S.myId);
+    const mine = rows.find(r => r.s.id === D.myId);
     return `
     <div class="card card-pad" style="display:flex;gap:12px;align-items:center">
       <div class="coll-ico" style="background:${mine?'var(--danger-soft)':'var(--ok-soft)'};color:${mine?'var(--danger)':'var(--ok)'}">
@@ -974,9 +1295,10 @@ function catView(cat){
   const openN = all.filter(isOpen).length;
   const showChips = OCCASIONS[cat].length > 1;
 
-  // при первом заходе разворачиваем список у первого активного сбора
-  if (S.role === 'treasurer' && all.length && !all.some(c => openRoster[c.id])){
-    const first = all.find(isOpen) || all[0];
+  // разворачиваем список у первого активного сбора среди показанных
+  // (именно среди показанных: в фонде виден только выбранный месяц)
+  if (D.role === 'treasurer' && list.length && !list.some(c => openRoster[c.id])){
+    const first = list.find(isOpen) || list[0];
     openRoster[first.id] = true;
   }
 
@@ -1002,7 +1324,7 @@ function catView(cat){
     : `<div class="card"><div class="empty"><div class="e-ic">${meta.icon}</div>
         <p>В этой категории пока нет сборов.</p></div></div>`}
 
-  ${S.role === 'treasurer' ? (cat === 'fund' ? `
+  ${D.role === 'treasurer' ? (cat === 'fund' ? `
   <button class="btn pri wide" style="width:100%;margin:4px 0 8px;padding:14px" data-act="nextmonth">
     ${svg(I.plus,17)} Открыть следующий месяц
   </button>` : `
@@ -1018,7 +1340,7 @@ function catView(cat){
 function collCard(c, compact){
   const st = stats(c);
   const t = timing(c);
-  const parent = S.role === 'parent';
+  const parent = D.role === 'parent';
   const dlCls = t.phase === 'late' ? 'late' : t.phase === 'hot' ? 'hot' : '';
   const dlText =
     t.phase === 'soon' ? `Старт ${fmtD(parseD(c.start))} · сдать до <b>${fmtD(t.dl)}</b>` :
@@ -1029,7 +1351,7 @@ function collCard(c, compact){
     t.phase === 'late' ? `+${days(t.left)}` :
     `осталось ${days(t.left)}`;
 
-  const myStatus = stOf(c, S.myId);
+  const myStatus = stOf(c, D.myId);
   const myLabel = myStatus === 'none' && t.phase === 'soon' ? 'Сбор ещё не начался'
     : {paid:'Сдано', pending:'Отмечено вами — ждёт подтверждения', none:'Не сдано'}[myStatus];
 
@@ -1067,7 +1389,7 @@ function collCard(c, compact){
           <b>${myLabel}</b>
         </div>
         <div class="mb-amt num">${money(st.per)}</div>
-        <div class="mb-note">${c.note ? esc(c.note) + ' · ' : ''}${esc(S.students.find(s=>s.id===S.myId)?.name || '')}</div>
+        <div class="mb-note">${c.note ? esc(c.note) + ' · ' : ''}${esc(S.students.find(s=>s.id===D.myId)?.name || '')}</div>
         ${myStatus === 'none' ? (t.phase === 'soon' ? `
           <div class="others" style="margin:12px 0 0">${svg(I.clock,15)} Сбор начнётся ${fmtD(parseD(c.start))}</div>` : `
           <button class="btn pri wide" style="width:100%;margin-top:12px" data-act="ipaid" data-c="${c.id}">
@@ -1076,6 +1398,7 @@ function collCard(c, compact){
           myStatus === 'pending' ? `
           <button class="btn wide" style="width:100%;margin-top:12px" data-act="undo" data-c="${c.id}">Отменить отметку</button>` : ''}
       </div>
+      ${payeeBlock(c, true)}
       <div class="others">${svg(I.users,16)} По классу сдали ${st.paid} из ${st.n}${st.pending?`, ещё ${st.pending} ожидают подтверждения`:''}</div>
       ${cashStrip(c)}
       ${expenseBlock(c)}
@@ -1088,6 +1411,7 @@ function collCard(c, compact){
       const shown = !!openRoster[c.id];
       const nExp = (c.expenses || []).length;
       return `
+      ${payeeBlock(c, false)}
       ${cashStrip(c)}
       <div class="coll-acts">
         <button class="btn wide" data-act="roster" data-c="${c.id}">
@@ -1110,6 +1434,26 @@ function collCard(c, compact){
   </div>`;
 }
 
+/* ── реквизиты сбора: кому и куда переводить ───── */
+function payeeBlock(c, forParent){
+  const p = c.payee || {};
+  if (!p.phone && !p.name){
+    return forParent ? `<div class="others" style="margin-top:0">${svg(I.card,15)}
+      Реквизиты не указаны — уточните у казначея</div>` : '';
+  }
+  return `
+  <div class="payee">
+    <div class="pay-hd">${svg(I.card,15)} Кому переводить</div>
+    <div class="pay-row">
+      <div class="pay-t">
+        ${p.phone ? `<b class="num">${esc(p.phone)}</b>` : ''}
+        <span>${esc([p.name, p.bank].filter(Boolean).join(' · '))}</span>
+      </div>
+      ${p.phone ? `<button class="btn sm" data-act="copypay" data-c="${c.id}">${svg(I.copy,14)} Копировать</button>` : ''}
+    </div>
+  </div>`;
+}
+
 /* ── касса сбора: собрано / потрачено / остаток ── */
 function cashStrip(c){
   const got = stats(c).got, out = spent(c), rest = got - out;
@@ -1126,7 +1470,7 @@ function cashStrip(c){
 function expenseBlock(c){
   if (!openExp[c.id]) return '';
   const list = (c.expenses || []).slice().sort((a,b) => (b.date||'').localeCompare(a.date||''));
-  const editable = S.role === 'treasurer';
+  const editable = D.role === 'treasurer';
   return `
   <div class="roster">
     <div class="roster-hd"><span>На что потрачено</span><span class="rh-r">Сумма</span></div>
@@ -1151,7 +1495,7 @@ function erow(e, c, editable){
 function srow(c, s, i){
   const empty = !s.name.trim();
   const st = stOf(c, s.id);
-  const mine = s.id === S.myId && S.role === 'parent';
+  const mine = s.id === D.myId && D.role === 'parent';
   if (empty) return `
     <div class="srow reserve slim">
       <span class="s-no num">${i+1}</span>
@@ -1176,6 +1520,7 @@ function srow(c, s, i){
 /* ── СПИСОК КЛАССА ─────────────────────── */
 function rosterView(){
   const n = active().length;
+  const ro = D.role !== 'treasurer';   // родитель список класса не правит
   return `
   <div class="card hero">
     <div class="lbl">Список класса</div>
@@ -1184,8 +1529,11 @@ function rosterView(){
   </div>
 
   <div class="card">
-    <div class="roster-hd"><span>№ · Ученик</span><span class="rh-r">Изменить</span></div>
-    ${S.students.map((s, i) => `
+    <div class="roster-hd"><span>№ · Ученик</span><span class="rh-r">${ro ? '' : 'Изменить'}</span></div>
+    ${S.students.map((s, i) => ro
+      ? (s.name.trim() ? `<div class="srow"><span class="s-no num">${i+1}</span>
+          <span class="s-name">${esc(s.name)}</span></div>` : '')
+      : `
       <div class="srow ${!s.name.trim()?'reserve':''}">
         <span class="s-no num">${i+1}</span>
         <label class="s-name" style="flex:1">
@@ -1198,6 +1546,7 @@ function rosterView(){
       </div>`).join('')}
   </div>
 
+  ${ro ? '' : `
   <div class="sec-title">Класс</div>
   <div class="card card-pad">
     <div class="field">
@@ -1211,10 +1560,43 @@ function rosterView(){
     </div>
   </div>
 
+  <div class="sec-title">Реквизиты казначея</div>
+  <div class="card card-pad">
+    <div class="field">
+      <label>Фамилия и имя</label>
+      <input value="${esc((S.payee||{}).name || '')}" data-act="pay-name" placeholder="Кто обычно собирает">
+    </div>
+    <div class="field-2">
+      <div class="field">
+        <label>Телефон или карта</label>
+        <input inputmode="tel" value="${esc((S.payee||{}).phone || '')}" data-act="pay-phone" placeholder="+7 900 000-00-00">
+      </div>
+      <div class="field">
+        <label>Банк</label>
+        <input value="${esc((S.payee||{}).bank || '')}" data-act="pay-bank" placeholder="Сбербанк">
+      </div>
+    </div>
+    <div class="hint">Подставляются в новый сбор. Если за праздник отвечает другой родитель —
+      поменяйте реквизиты прямо в сборе, на остальные это не повлияет.</div>
+  </div>`}
+
+  <div class="sec-title">Общая база</div>
+  <div class="card">
+    <div class="srow" data-act="view" data-v="cloud">
+      <div class="coll-ico" style="width:38px;height:38px;background:${Cloud.on()?'var(--ok-soft)':'var(--surface-2)'};color:${Cloud.on()?'var(--ok)':'var(--muted)'}">${svg(Cloud.on()?I.cloud:I.cloudoff,19)}</div>
+      <div class="s-name"><b style="font-weight:600">${Cloud.on()?'Класс подключён':'Подключить общую базу'}</b>
+        <span class="tag">${Cloud.on()?'все видят одни и те же данные':'сейчас данные только на этом телефоне'}</span></div>
+      <div style="color:var(--muted)">${svg(I.right,18)}</div>
+    </div>
+  </div>
+
   <div class="sec-title">Данные</div>
   <div class="card card-pad">
     <button class="btn wide" style="width:100%;margin-bottom:8px" data-act="export">${svg(I.copy,15)} Скопировать отчёт по всем сборам</button>
-    <button class="btn ghost wide" style="width:100%;color:var(--danger)" data-act="reset">Сбросить и загрузить демо-данные</button>
+    ${Cloud.on()
+      ? `<div class="hint">Класс подключён к общей базе, поэтому сброс к демо-данным недоступен —
+           он стёр бы сборы у всех родителей. Сначала отключите устройство от базы.</div>`
+      : `<button class="btn ghost wide" style="width:100%;color:var(--danger)" data-act="reset">Сбросить и загрузить демо-данные</button>`}
   </div>
   <p class="fab-note">Прототип работает офлайн. Всё хранится в этом браузере — деньги через приложение не проходят.</p>`;
 }
@@ -1340,7 +1722,7 @@ function editSheet(){
   const c = isNew
     ? {id:'', cat:sheet.cat, occ:sheet.occ || OCCASIONS[sheet.cat][0][0], title:'',
        mode:'per', amount:500, total:500 * active().length, payers:active().length,
-       start:isoD(today()), days:S.defDays, note:''}
+       start:isoD(today()), days:S.defDays, note:'', payee:{...(S.payee || {name:'',phone:'',bank:''})}}
     : S.collections.find(x => x.id === sheet.c);
   const d = sheet.draft || (sheet.draft = {...c});
   const dl = addDays(parseD(d.start), +d.days || 0);
@@ -1410,8 +1792,27 @@ function editSheet(){
     <div class="calc" id="calc-dl">${dlCalc(d)}</div>
 
     <div class="field">
+      <label>Кто собирает — ответственный за этот сбор</label>
+      <input id="f-pname" value="${esc((d.payee||{}).name || '')}" placeholder="Фамилия и имя">
+    </div>
+    <div class="field-2">
+      <div class="field">
+        <label>Телефон или карта</label>
+        <input id="f-pphone" inputmode="tel" value="${esc((d.payee||{}).phone || '')}" placeholder="+7 900 000-00-00">
+      </div>
+      <div class="field">
+        <label>Банк</label>
+        <input id="f-pbank" value="${esc((d.payee||{}).bank || '')}" placeholder="Сбербанк">
+      </div>
+    </div>
+    <div class="field hint-row">
+      <div class="hint">Реквизиты свои у каждого сбора — ответственные меняются от праздника к празднику.
+        ${(S.payee||{}).phone ? `<button class="lnk" data-act="usedefault">Подставить реквизиты казначея</button>` : ''}</div>
+    </div>
+
+    <div class="field">
       <label>Комментарий для родителей</label>
-      <textarea id="f-note" rows="2" placeholder="Например: реквизиты для перевода">${esc(d.note)}</textarea>
+      <textarea id="f-note" rows="2" placeholder="Например: в комментарии к переводу укажите фамилию ребёнка">${esc(d.note)}</textarea>
     </div>
 
     <button class="btn pri wide" style="width:100%;padding:14px;margin-bottom:8px" data-act="savecoll">
@@ -1454,6 +1855,10 @@ function remindText(c){
     + `Сдали ${st.paid} из ${st.n}, собрано ${money(st.got)} из ${money(st.target)}.\n\n`
     + (debt.length ? `Ещё не сдали (${debt.length}):\n` + debt.map(n => '• ' + n).join('\n')
                    : 'Сдали все, спасибо! 🌷')
+    + (c.payee && c.payee.phone
+        ? `\n\nПеревод: ${c.payee.phone}`
+          + (c.payee.name || c.payee.bank ? ` — ${[c.payee.name, c.payee.bank].filter(Boolean).join(', ')}` : '')
+        : '')
     + (c.note ? `\n\n${c.note}` : '');
 }
 
@@ -1519,8 +1924,8 @@ document.addEventListener('click', e => {
       view = 'roster'; render(); break;
 
     case 'role':
-      S.role = el.dataset.v;
-      if (S.role === 'parent' && !active().some(s => s.id === S.myId)) S.myId = active()[0]?.id;
+      D.role = el.dataset.v;
+      if (D.role === 'parent' && !active().some(s => s.id === D.myId)) D.myId = active()[0]?.id;
       save(); render(); break;
 
     case 'occ':
@@ -1602,12 +2007,12 @@ document.addEventListener('click', e => {
     }
 
     case 'ipaid':
-      setPay(el.dataset.c, S.myId, 'pending');
+      setPay(el.dataset.c, D.myId, 'pending');
       scrollMemo[view] = window.scrollY; render();
       toast('Отмечено — казначей подтвердит'); break;
 
     case 'undo':
-      setPay(el.dataset.c, S.myId, 'none');
+      setPay(el.dataset.c, D.myId, 'none');
       scrollMemo[view] = window.scrollY; render(); break;
 
     case 'new':
@@ -1662,6 +2067,10 @@ document.addEventListener('click', e => {
     case 'docc':
       readDraft(); sheet.draft.occ = el.dataset.v; render(); break;
 
+    case 'usedefault':
+      readDraft(); sheet.draft.payee = {...S.payee}; render();
+      toast('Реквизиты казначея подставлены'); break;
+
     case 'dmode': {
       readDraft();
       const d = sheet.draft, payers = Math.max(1, +d.payers || 1);
@@ -1697,6 +2106,12 @@ document.addEventListener('click', e => {
       save(); sheet = null; render(); toast('Сбор удалён'); break;
     }
 
+    case 'copypay': {
+      const c = S.collections.find(x => x.id === el.dataset.c);
+      // в банковское приложение нужен номер без пробелов и дефисов
+      copyText((c.payee.phone || '').replace(/[^\d+]/g, ''), 'Номер скопирован'); break;
+    }
+
     case 'remind': {
       const c = S.collections.find(x => x.id === el.dataset.c);
       copyText(remindText(c), 'Напоминание скопировано'); break;
@@ -1713,7 +2128,80 @@ document.addEventListener('click', e => {
       save(); scrollMemo[view] = window.scrollY; render(); break;
     }
 
+    case 'cloud':
+      scrollMemo[view] = window.scrollY; view = 'cloud'; render(); break;
+
+    case 'cloudcreate': {
+      const g = id => document.getElementById(id).value.trim();
+      const url = g('cl-url'), key = g('cl-key'), code = g('cl-code'), admin = g('cl-admin');
+      if (!url || !key) { toast('Нужны Project URL и ключ'); return; }
+      if (code.length < 4)  { toast('Код класса — от 4 символов'); return; }
+      if (admin.length < 4) { toast('Пароль казначея — от 4 символов'); return; }
+      D.cloud = {url, key, code, id:null};
+      el.disabled = true; el.textContent = 'Создаём…';
+      Cloud.rpc('class_create', {p_state:S, p_code:code, p_admin:admin})
+        .then(id => {
+          D.cloud.id = typeof id === 'string' ? id : (id && id.class_create) || id;
+          D.role = 'treasurer'; D.admin = true;
+          saveDevice();
+          Cloud.base = clone(S); Cloud.version = 1; Cloud.status = 'ok';
+          Cloud.start(); render(); toast('Класс создан');
+        })
+        .catch(e => { D.cloud = null; saveDevice(); render(); toast('Не вышло: ' + e.message); });
+      break;
+    }
+
+    case 'cloudjoin': {
+      const link = document.getElementById('cl-link').value.trim();
+      const code = document.getElementById('cl-jcode').value.trim();
+      const cfg = parseLink(link);
+      if (!cfg) { toast('Ссылку не удалось разобрать'); return; }
+      if (!code) { toast('Введите код класса'); return; }
+      joinClass({...cfg, code});
+      break;
+    }
+
+    case 'copylink':
+      copyText(shareLink(), 'Ссылка скопирована'); break;
+
+    case 'pullnow':
+      Cloud.tick().then(() => toast('Обновлено')); break;
+
+    case 'unlink':
+      if (!confirm('Отключить это устройство от общей базы? Данные класса останутся на сервере.')) return;
+      D.cloud = null; saveDevice(); clearInterval(Cloud.timer);
+      Cloud.base = null; Cloud.version = 0; Cloud.status = 'off';
+      render(); break;
+
+    case 'gate-join': {
+      const code = document.getElementById('g-code').value.trim();
+      if (!code) { toast('Введите код класса'); return; }
+      joinClass({...gate.cfg, code});
+      break;
+    }
+
+    case 'gate-who': {
+      D.myId = document.getElementById('g-who').value;
+      D.role = 'parent'; D.admin = false;
+      gate = null; saveDevice(); render(); break;
+    }
+
+    case 'gate-admin': {
+      const pw = document.getElementById('g-pw').value;
+      Cloud.rpc('class_is_admin', {p_id:D.cloud.id, p_code:D.cloud.code, p_admin:pw})
+        .then(okAdmin => {
+          if (!okAdmin) { toast('Неверный пароль'); return; }
+          D.role = 'treasurer'; D.admin = true; gate = null; saveDevice(); render();
+        })
+        .catch(e => toast('Не вышло: ' + e.message));
+      break;
+    }
+
+    case 'gate-mode':
+      gate.mode = el.dataset.v; render(); break;
+
     case 'reset':
+      if (Cloud.on()){ toast('Сначала отключите общую базу'); return; }
       if (!confirm('Все данные будут заменены демо-примером. Продолжить?')) return;
       S = seed(); save(); view = 'home'; sheet = null; render(); break;
   }
@@ -1731,6 +2219,11 @@ function readDraft(){
   if (g('f-days'))   sheet.draft.days   = g('f-days').value;
   if (g('f-start'))  sheet.draft.start  = g('f-start').value;
   if (g('f-note'))   sheet.draft.note   = g('f-note').value;
+  if (g('f-pname') || g('f-pphone') || g('f-pbank')) sheet.draft.payee = {
+    name:  g('f-pname')  ? g('f-pname').value.trim()  : '',
+    phone: g('f-pphone') ? g('f-pphone').value.trim() : '',
+    bank:  g('f-pbank')  ? g('f-pbank').value.trim()  : '',
+  };
 }
 
 /* живой пересчёт предельного срока при вводе */
@@ -1754,14 +2247,90 @@ document.addEventListener('input', e => {
   if (a === 'clsname'){ S.className = el.value; save();
     const t = document.querySelector('.brand .cls'); if (t) t.textContent = el.value; return; }
   if (a === 'defdays'){ S.defDays = Math.max(1, +el.value || 14); save(); return; }
+  if (a.startsWith('pay-')){
+    S.payee = {...S.payee, [a.slice(4)]: el.value};
+    save(); return;
+  }
 });
 
 document.addEventListener('change', e => {
   const el = e.target.closest('[data-act]');
-  if (el && el.dataset.act === 'setme'){ S.myId = el.value; save(); render(); }
+  if (el && el.dataset.act === 'setme'){ D.myId = el.value; save(); render(); }
 });
 
-render();
+/* ── вход по ссылке от казначея ────────── */
+let gate = null;   // {cfg, mode:'code'|'who'}
+
+function parseLink(link){
+  const m = String(link).match(/#k=([A-Za-z0-9+/=_-]+)/);
+  if (!m) return null;
+  try {
+    const o = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+    return (o.u && o.k && o.i) ? {url:o.u, key:o.k, id:o.i} : null;
+  } catch(e){ return null; }
+}
+
+function joinClass(cfg){
+  const prev = D.cloud;
+  D.cloud = cfg;
+  Cloud.pull()
+    .then(({state, version}) => {
+      S = state; Cloud.base = clone(state); Cloud.version = version; Cloud.status = 'ok';
+      saveLocal(); saveDevice();
+      gate = {cfg, mode:'who'};       // теперь спрашиваем, кто открыл
+      Cloud.start(); render();
+    })
+    .catch(e => { D.cloud = prev; toast(e.message || 'Не удалось подключиться'); render(); });
+}
+
+/* экран-«калитка»: код класса, затем выбор ребёнка или вход казначея */
+function gateView(){
+  if (gate.mode === 'code') return `
+    <div class="backdrop" style="align-items:center"><div class="sheet" data-stop="1"
+      style="border-radius:26px;margin:0 14px;max-width:420px">
+      <div class="sheet-hd"><h2>Копилка класса</h2></div>
+      <div class="sheet-body">
+        <p style="font-size:14px;color:var(--muted);margin-bottom:16px">
+          Вас пригласили в общий учёт сборов класса. Введите код класса — его называет казначей.</p>
+        <div class="field">
+          <label>Код класса</label>
+          <input id="g-code" autocomplete="off" placeholder="например: 3б-2026">
+        </div>
+        <button class="btn pri wide" style="width:100%;padding:14px" data-act="gate-join">Войти</button>
+      </div>
+    </div></div>`;
+
+  return `
+    <div class="backdrop" style="align-items:center"><div class="sheet" data-stop="1"
+      style="border-radius:26px;margin:0 14px;max-width:420px">
+      <div class="sheet-hd"><h2>Кто вы?</h2></div>
+      <div class="sheet-body">
+        <div class="field">
+          <label>Я родитель — выберите своего ребёнка</label>
+          <select id="g-who">
+            ${active().map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}
+          </select>
+        </div>
+        <button class="btn pri wide" style="width:100%;padding:14px;margin-bottom:18px" data-act="gate-who">Продолжить</button>
+        <div class="field">
+          <label>Я казначей — введите пароль</label>
+          <input id="g-pw" type="password" autocomplete="off" placeholder="пароль казначея">
+        </div>
+        <button class="btn wide" style="width:100%;padding:13px" data-act="gate-admin">Войти как казначей</button>
+      </div>
+    </div></div>`;
+}
+
+/* ── запуск ────────────────────────────── */
+(function boot(){
+  const fromLink = parseLink(location.hash);
+  if (fromLink && (!D.cloud || D.cloud.id !== fromLink.id)){
+    gate = {cfg: fromLink, mode:'code'};      // пришли по чужой ссылке — спросим код
+  } else if (Cloud.on()){
+    Cloud.start();
+  }
+  render();
+})();
 </script>
 </body>
 </html>
