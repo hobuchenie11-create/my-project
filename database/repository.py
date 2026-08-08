@@ -371,10 +371,21 @@ def one_off_tasks(conn: sqlite3.Connection, include_done: bool = False) -> list[
 
 
 def tasks_in_year(conn: sqlite3.Connection, year: int) -> list[sqlite3.Row]:
+    """Регулярные задачи года — годовой цикл (без разовых)."""
     return conn.execute(
-        """SELECT * FROM tasks WHERE period LIKE ? OR (period = '' AND due_date LIKE ?)
-           ORDER BY due_date, id""",
-        (f"{year}-%", f"{year}-%"),
+        """SELECT * FROM tasks
+           WHERE template_id IS NOT NULL AND period LIKE ?
+           ORDER BY period, due_date, id""",
+        (f"{year}-%",),
+    ).fetchall()
+
+
+def one_off_tasks_all(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Все разовые задачи, включая закрытые — для листа «Мои задачи»."""
+    return conn.execute(
+        """SELECT * FROM tasks WHERE template_id IS NULL
+           ORDER BY (status IN ('done', 'cancelled')), (due_date = ''),
+                    due_date, id"""
     ).fetchall()
 
 

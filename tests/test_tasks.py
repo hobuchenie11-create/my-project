@@ -144,6 +144,30 @@ def test_one_off_task_counts_down_from_its_due_date(conn):
     assert "Заказать смету" in task_service.one_off_text(conn, date(2026, 9, 18))
 
 
+def test_one_off_sheet_lists_my_tasks(conn, tmp_path):
+    """Разовые задачи — на отдельном листе, с автоматическим отсчётом срока."""
+    from excel.tasks_export import export_year_plan
+    from openpyxl import load_workbook
+
+    year = date.today().year
+    due = date(year, 12, 20).isoformat()
+    repository.create_task(conn, "Заказать смету на отмостку", category="repair",
+                           status="new", due_date=due, period=due[:7],
+                           source="chairman")
+    task_service.generate_year(conn, year)
+    out = export_year_plan(conn, year, tmp_path / "plan.xlsx")
+
+    wb = load_workbook(out)
+    ws = wb["Мои задачи"]
+    assert ws.cell(2, 1).value == "Задача"
+    assert ws.cell(3, 1).value == "Заказать смету на отмостку"
+    assert ws.cell(3, 4).value                    # колонка «Осталось» заполнена
+
+    # На листе годового цикла разовой задачи нет — она не мешает регламенту
+    plan_titles = [wb["Годовой план"].cell(r, 2).value for r in range(3, 90)]
+    assert "Заказать смету на отмостку" not in plan_titles
+
+
 def test_done_task_is_not_reminded(conn):
     task_service.generate_tasks(conn, date(2026, 9, 1), months_ahead=0)
     bank = _by_title(conn, "2026-09", "выписку из банка")
@@ -185,7 +209,7 @@ def test_year_plan_export(conn, tmp_path):
     out = export_year_plan(conn, 2027, tmp_path / "plan.xlsx")
 
     wb = load_workbook(out)
-    assert wb.sheetnames == ["Годовой план", "Регламент"]
+    assert wb.sheetnames == ["Годовой план", "Мои задачи", "Регламент"]
     ws = wb["Годовой план"]
     assert "2027" in ws.cell(1, 1).value
     # Четыре столбца по нежилому помещению: аренда и коммуналка
