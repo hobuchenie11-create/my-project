@@ -1,565 +1,1253 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Алексей Иванов — Full-Stack разработчик</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F7F3F1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Копилка класса — сборы родительского комитета</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 
-    :root {
-      --bg: #f8f9fa;
-      --surface: #ffffff;
-      --accent: #4f46e5;
-      --accent-light: #eef2ff;
-      --text: #111827;
-      --muted: #6b7280;
-      --border: #e5e7eb;
-      --radius: 16px;
-      --shadow: 0 4px 24px rgba(0,0,0,.08);
-    }
+:root{
+  --bg:#F7F3F1;
+  --surface:#FFFFFF;
+  --surface-2:#FBF7F6;
+  --text:#2B2529;
+  --muted:#8C8288;
+  --line:#EDE4E2;
+  --line-2:#F4EDEB;
+  --accent:#7E5C6E;
+  --accent-2:#9C7A8C;
+  --accent-soft:#F3EAEE;
+  --gold:#AE8F58;
+  --gold-soft:#F7F0E3;
+  --ok:#61876B;
+  --ok-soft:#E9F0EA;
+  --warn:#B0824F;
+  --warn-soft:#F9F0E6;
+  --danger:#A25C64;
+  --danger-soft:#F8ECED;
+  --radius:20px;
+  --radius-s:14px;
+  --shadow:0 1px 2px rgba(70,45,58,.04), 0 10px 28px rgba(70,45,58,.06);
+  --shadow-lift:0 2px 6px rgba(70,45,58,.06), 0 18px 40px rgba(70,45,58,.14);
+}
 
-    html { scroll-behavior: smooth; }
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#181416;
+    --surface:#221D20;
+    --surface-2:#282125;
+    --text:#F1E9EC;
+    --muted:#A2959B;
+    --line:#332B2F;
+    --line-2:#2B2427;
+    --accent:#CBA3B7;
+    --accent-2:#B78EA3;
+    --accent-soft:#32262C;
+    --gold:#CBAA74;
+    --gold-soft:#332B20;
+    --ok:#8FB197;
+    --ok-soft:#242E27;
+    --warn:#CB9C68;
+    --warn-soft:#332920;
+    --danger:#C98C93;
+    --danger-soft:#332325;
+    --shadow:0 1px 2px rgba(0,0,0,.2), 0 10px 28px rgba(0,0,0,.3);
+    --shadow-lift:0 2px 6px rgba(0,0,0,.3), 0 18px 40px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#181416;
+  --surface:#221D20;
+  --surface-2:#282125;
+  --text:#F1E9EC;
+  --muted:#A2959B;
+  --line:#332B2F;
+  --line-2:#2B2427;
+  --accent:#CBA3B7;
+  --accent-2:#B78EA3;
+  --accent-soft:#32262C;
+  --gold:#CBAA74;
+  --gold-soft:#332B20;
+  --ok:#8FB197;
+  --ok-soft:#242E27;
+  --warn:#CB9C68;
+  --warn-soft:#332920;
+  --danger:#C98C93;
+  --danger-soft:#332325;
+  --shadow:0 1px 2px rgba(0,0,0,.2), 0 10px 28px rgba(0,0,0,.3);
+  --shadow-lift:0 2px 6px rgba(0,0,0,.3), 0 18px 40px rgba(0,0,0,.45);
+}
 
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.5;font-size:16px;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(84px + env(safe-area-inset-bottom));
+}
+h1,h2,h3,.serif{font-family:Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-.2px}
+.num{font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:none;cursor:pointer}
 
-    /* ── HERO ── */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 24px;
-      background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
-    }
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
 
-    .avatar-wrap {
-      position: relative;
-      margin-bottom: 24px;
-    }
+/* ── HEADER ────────────────────────────── */
+.top{
+  position:sticky;top:0;z-index:40;
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line-2);
+  padding-top:env(safe-area-inset-top);
+}
+.top-in{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:560px;margin:0 auto}
+.brand{flex:1;min-width:0}
+.brand .cls{font-size:19px;font-family:Georgia,serif;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand .sub{font-size:12px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.icon-btn{
+  width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--surface);border:1px solid var(--line);color:var(--muted);flex-shrink:0;
+}
+.icon-btn:active{transform:scale(.94)}
+.icon-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .icon-btn.on{color:#221D20}}
+:root[data-theme="dark"] .icon-btn.on{color:#221D20}
 
-    .avatar {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent) 0%, #818cf8 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -2px;
-      box-shadow: 0 8px 32px rgba(79,70,229,.3);
-    }
+/* role switch */
+.role-bar{display:flex;gap:6px;padding:0 16px 12px;max-width:560px;margin:0 auto}
+.role-btn{
+  flex:1;padding:9px 8px;border-radius:99px;font-size:13.5px;font-weight:600;
+  background:var(--surface);border:1px solid var(--line);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.role-btn.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(126,92,110,.28)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .role-btn.on{color:#221D20}}
+:root[data-theme="dark"] .role-btn.on{color:#221D20}
+.who{
+  display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
+  padding:0 16px 12px;max-width:560px;margin:0 auto;
+}
+.who select{
+  flex:1;padding:9px 12px;border-radius:12px;border:1px solid var(--line);
+  background:var(--surface);font-size:14px;font-weight:600;color:var(--text);
+}
 
-    .status-dot {
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      width: 18px;
-      height: 18px;
-      background: #22c55e;
-      border-radius: 50%;
-      border: 3px solid #fff;
-    }
+/* ── CARDS ─────────────────────────────── */
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;
+}
+.card-pad{padding:18px}
+.sec-title{
+  font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--muted);margin:22px 2px 10px;
+}
+.hero{
+  background:linear-gradient(150deg,var(--accent) 0%,var(--accent-2) 100%);
+  color:#fff;border:none;padding:22px 20px;position:relative;overflow:hidden;
+}
+.hero::after{
+  content:'';position:absolute;right:-40px;top:-60px;width:180px;height:180px;
+  border-radius:50%;background:rgba(255,255,255,.09);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero{color:#1B1619}}
+:root[data-theme="dark"] .hero{color:#1B1619}
+.hero .lbl{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;opacity:.75}
+.hero .big{font-family:Georgia,serif;font-size:36px;line-height:1.15;margin:6px 0 2px}
+.hero .cap{font-size:13.5px;opacity:.82}
+.hero-row{display:flex;gap:10px;margin-top:16px;position:relative}
+.hero-chip{
+  flex:1;background:rgba(255,255,255,.16);border-radius:14px;padding:10px 12px;
+  backdrop-filter:blur(4px);
+}
+.hero-chip b{display:block;font-size:18px;font-family:Georgia,serif;font-weight:400}
+.hero-chip span{font-size:11.5px;opacity:.82;letter-spacing:.3px}
 
-    .hero h1 {
-      font-size: clamp(28px, 6vw, 44px);
-      font-weight: 800;
-      letter-spacing: -1px;
-      text-align: center;
-    }
+/* ── COLLECTION CARD ───────────────────── */
+.coll-head{padding:16px 18px 14px;display:flex;gap:12px;align-items:flex-start}
+.coll-ico{
+  width:44px;height:44px;border-radius:13px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  background:var(--accent-soft);
+}
+.coll-t{flex:1;min-width:0}
+.coll-t h3{font-size:17px;line-height:1.25}
+.coll-t .meta{font-size:12.5px;color:var(--muted);margin-top:3px}
+.coll-sum{text-align:right;flex-shrink:0}
+.coll-sum b{font-family:Georgia,serif;font-size:17px;font-weight:400;display:block}
+.coll-sum span{font-size:11px;color:var(--muted)}
 
-    .hero .role {
-      font-size: 18px;
-      color: var(--accent);
-      font-weight: 600;
-      margin-top: 4px;
-      text-align: center;
-    }
+.bar{height:7px;border-radius:99px;background:var(--line-2);overflow:hidden;margin:0 18px}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ok),#84A98D);transition:width .5s ease}
+.bar.part i{background:linear-gradient(90deg,var(--gold),#CBAF80)}
 
-    .hero .tagline {
-      margin-top: 12px;
-      color: var(--muted);
-      font-size: 16px;
-      max-width: 440px;
-      text-align: center;
-    }
+.stat-row{display:flex;gap:8px;padding:12px 18px 4px;flex-wrap:wrap}
+.pill{
+  font-size:12px;font-weight:600;padding:5px 11px;border-radius:99px;
+  background:var(--surface-2);color:var(--muted);border:1px solid var(--line-2);
+  display:inline-flex;align-items:center;gap:5px;
+}
+.pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.pill.wait{background:var(--gold-soft);color:var(--gold);border-color:transparent}
+.pill.bad{background:var(--danger-soft);color:var(--danger);border-color:transparent}
+.pill.due{background:var(--accent-soft);color:var(--accent);border-color:transparent}
 
-    .hero-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 28px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+.deadline{
+  margin:12px 18px 0;padding:11px 13px;border-radius:var(--radius-s);
+  background:var(--surface-2);border:1px solid var(--line-2);
+  display:flex;align-items:center;gap:10px;font-size:13px;
+}
+.deadline .dl-ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--accent-soft);color:var(--accent)}
+.deadline b{font-weight:600}
+.deadline.hot{background:var(--warn-soft);border-color:transparent}
+.deadline.hot .dl-ic{background:rgba(176,130,79,.18);color:var(--warn)}
+.deadline.late{background:var(--danger-soft);border-color:transparent}
+.deadline.late .dl-ic{background:rgba(162,92,100,.16);color:var(--danger)}
+.deadline .cnt{margin-left:auto;font-weight:700;font-size:12.5px;white-space:nowrap}
 
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border-radius: 50px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform .15s, box-shadow .15s;
-      border: none;
-    }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+.coll-acts{display:flex;gap:8px;padding:14px 18px 16px}
+.btn{
+  padding:11px 14px;border-radius:13px;font-size:14px;font-weight:600;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border:1px solid var(--line);background:var(--surface);color:var(--text);
+}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.pri{color:#221D20}}
+:root[data-theme="dark"] .btn.pri{color:#221D20}
+.btn.ghost{background:transparent}
+.btn.wide{flex:1}
+.btn.sm{padding:8px 12px;font-size:13px;border-radius:11px}
+.btn[disabled]{opacity:.45}
 
-    .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,.4); }
-    .btn-outline { background: #fff; color: var(--text); border: 2px solid var(--border); }
+/* ── STUDENT LIST ──────────────────────── */
+.roster{border-top:1px solid var(--line-2)}
+.roster-hd{
+  display:flex;align-items:center;gap:8px;padding:11px 18px;
+  font-size:11.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);
+  background:var(--surface-2);
+}
+.roster-hd .rh-r{margin-left:auto;text-transform:none;letter-spacing:0;font-size:12px}
+.srow{
+  display:flex;align-items:center;gap:12px;padding:11px 18px;
+  border-top:1px solid var(--line-2);min-height:56px;
+}
+.srow:first-child{border-top:none}
+.srow.mine{background:var(--accent-soft)}
+.srow.reserve{opacity:.5}
+.srow.slim{min-height:40px;padding-top:5px;padding-bottom:5px}
+.srow.slim .s-name{font-size:13px}
+.srow.slim .btn.sm{padding:5px 10px;font-size:12px}
+.s-no{
+  width:24px;font-size:12px;color:var(--muted);text-align:right;flex-shrink:0;
+  font-variant-numeric:tabular-nums;
+}
+.s-name{flex:1;min-width:0;font-size:15px;line-height:1.25}
+.s-name .tag{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+.s-name.blank{color:var(--muted);font-style:italic}
+.s-sum{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.chk{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  border:2px solid var(--line);background:var(--surface);
+  display:flex;align-items:center;justify-content:center;color:transparent;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.chk.paid{background:var(--ok);border-color:var(--ok);color:#fff}
+.chk.pending{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}
+.chk:active{transform:scale(.9)}
 
-    .scroll-hint {
-      margin-top: 48px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 13px;
-    }
+.mine-box{
+  margin:0 18px 16px;padding:15px;border-radius:var(--radius-s);
+  border:1px solid var(--accent);background:var(--accent-soft);
+}
+.mine-box .mb-top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.mine-box .mb-top b{font-size:15px}
+.mine-box .mb-amt{font-family:Georgia,serif;font-size:26px;margin:6px 0 2px}
+.mine-box .mb-note{font-size:12.5px;color:var(--muted)}
 
-    .scroll-arrow {
-      width: 28px;
-      height: 28px;
-      border-right: 2px solid var(--muted);
-      border-bottom: 2px solid var(--muted);
-      transform: rotate(45deg);
-      animation: bounce 1.4s infinite;
-    }
+.others{
+  margin:0 18px 16px;padding:12px 14px;border-radius:var(--radius-s);
+  background:var(--surface-2);font-size:13px;color:var(--muted);
+  display:flex;align-items:center;gap:10px;
+}
 
-    @keyframes bounce {
-      0%, 100% { transform: rotate(45deg) translateY(0); }
-      50%       { transform: rotate(45deg) translateY(6px); }
-    }
+/* ── OCCASION CHIPS ────────────────────── */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 14px;margin:0 -16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex-shrink:0;padding:8px 14px;border-radius:99px;font-size:13.5px;font-weight:600;
+  background:var(--surface);border:1px solid var(--line);color:var(--muted);white-space:nowrap;
+}
+.chip.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+.chip .n{
+  display:inline-block;margin-left:6px;font-size:11px;padding:1px 6px;border-radius:99px;
+  background:var(--line-2);color:var(--muted);
+}
+.chip.on .n{background:rgba(255,255,255,.2);color:inherit}
 
-    /* ── SECTIONS ── */
-    section {
-      padding: 80px 24px;
-      max-width: 760px;
-      margin: 0 auto;
-    }
+/* ── EMPTY ─────────────────────────────── */
+.empty{
+  text-align:center;padding:44px 24px;color:var(--muted);
+}
+.empty .e-ic{font-size:34px;opacity:.5;margin-bottom:10px}
+.empty p{font-size:14px;margin-bottom:16px}
 
-    .section-label {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 8px;
-    }
+/* ── SHEET / MODAL ─────────────────────── */
+.backdrop{
+  position:fixed;inset:0;z-index:80;background:rgba(43,37,41,.45);
+  backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;
+  animation:fade .2s ease;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{transform:translateY(30px)}to{transform:translateY(0)}}
+.sheet{
+  width:100%;max-width:560px;background:var(--bg);
+  border-radius:26px 26px 0 0;max-height:92vh;overflow-y:auto;
+  padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  animation:rise .26s cubic-bezier(.2,.9,.3,1);box-shadow:var(--shadow-lift);
+}
+.sheet-hd{
+  position:sticky;top:0;background:var(--bg);z-index:2;
+  padding:16px 18px 12px;border-bottom:1px solid var(--line-2);
+  display:flex;align-items:center;gap:12px;
+}
+.sheet-hd h2{font-size:19px;flex:1;line-height:1.25}
+.grip{width:38px;height:4px;border-radius:99px;background:var(--line);margin:8px auto 0}
+.sheet-body{padding:16px 18px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px;letter-spacing:.2px}
+.field input,.field select,.field textarea{
+  width:100%;padding:13px 14px;border-radius:var(--radius-s);
+  border:1px solid var(--line);background:var(--surface);font-size:16px;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.field .hint{font-size:12px;color:var(--muted);margin-top:6px}
+.field-2{display:flex;gap:10px}
+.field-2>*{flex:1}
+.calc{
+  margin:4px 0 16px;padding:13px 15px;border-radius:var(--radius-s);
+  background:var(--accent-soft);border:1px dashed var(--accent);
+  font-size:13.5px;display:flex;align-items:center;gap:10px;
+}
+.calc b{font-weight:700}
+.seg{display:flex;gap:7px;flex-wrap:wrap}
+.seg button{
+  flex:1;min-width:88px;padding:11px 8px;border-radius:13px;font-size:14px;font-weight:600;
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);
+}
+.seg button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.seg.st button.on[data-v="paid"]{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.seg.st button.on[data-v="pending"]{border-color:var(--gold);background:var(--gold-soft);color:var(--gold)}
 
-    h2 {
-      font-size: clamp(22px, 4vw, 32px);
-      font-weight: 800;
-      letter-spacing: -.5px;
-      margin-bottom: 32px;
-    }
+.toast{
+  position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);z-index:120;
+  background:var(--text);color:var(--bg);padding:12px 20px;border-radius:99px;
+  font-size:14px;font-weight:600;box-shadow:var(--shadow-lift);
+  animation:rise .22s ease;max-width:90vw;text-align:center;
+}
 
-    /* ── ABOUT ── */
-    .about-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
+/* ── BOTTOM NAV ────────────────────────── */
+.nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;
+  background:color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-in{display:flex;max-width:560px;margin:0 auto}
+.nav button{
+  flex:1;padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:var(--muted);font-size:10.5px;font-weight:600;letter-spacing:.1px;min-height:58px;
+}
+.nav button.on{color:var(--accent)}
+.nav .dot{
+  position:absolute;top:5px;right:calc(50% - 18px);width:7px;height:7px;border-radius:50%;
+  background:var(--danger);border:1.5px solid var(--surface);
+}
+.nav button{position:relative}
 
-    @media (max-width: 520px) { .about-grid { grid-template-columns: 1fr; } }
-
-    .about-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 24px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
-
-    .about-card .icon {
-      font-size: 28px;
-      margin-bottom: 10px;
-      display: block;
-    }
-
-    .about-card strong { display: block; font-weight: 700; margin-bottom: 4px; }
-    .about-card span   { color: var(--muted); font-size: 14px; }
-
-    /* ── SKILLS ── */
-    .skills-section { background: var(--surface); }
-
-    .skill-list {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .skill-item label {
-      display: flex;
-      justify-content: space-between;
-      font-weight: 600;
-      margin-bottom: 8px;
-      font-size: 15px;
-    }
-
-    .skill-item label span { color: var(--muted); font-weight: 400; }
-
-    .bar-bg {
-      height: 8px;
-      background: var(--border);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 100%;
-      border-radius: 99px;
-      background: linear-gradient(90deg, var(--accent), #818cf8);
-      width: 0;
-      transition: width 1s ease;
-    }
-
-    /* ── PORTFOLIO ── */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      transition: transform .2s, box-shadow .2s;
-    }
-    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.12); }
-
-    .card-thumb {
-      height: 120px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-    }
-
-    .card:nth-child(1) .card-thumb { background: #eef2ff; }
-    .card:nth-child(2) .card-thumb { background: #f0fdf4; }
-    .card:nth-child(3) .card-thumb { background: #fff7ed; }
-
-    .card-body { padding: 16px 18px; }
-    .card-body h3 { font-weight: 700; margin-bottom: 4px; }
-    .card-body p  { font-size: 13px; color: var(--muted); }
-
-    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .tag {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 99px;
-      background: var(--accent-light);
-      color: var(--accent);
-    }
-
-    /* ── CONTACTS ── */
-    .contacts-section {
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-      color: #fff;
-      border-radius: 24px;
-      margin: 0 24px 80px;
-      max-width: 760px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .contacts-section .section-label { color: #a5b4fc; }
-    .contacts-section h2 { color: #fff; }
-
-    .contact-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .contact-item {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      text-decoration: none;
-      color: #fff;
-      background: rgba(255,255,255,.08);
-      border-radius: 12px;
-      padding: 16px 20px;
-      transition: background .2s;
-    }
-    .contact-item:hover { background: rgba(255,255,255,.15); }
-
-    .contact-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: rgba(255,255,255,.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
-    }
-
-    .contact-info strong { display: block; font-weight: 700; }
-    .contact-info span   { font-size: 13px; color: #a5b4fc; }
-
-    /* ── FOOTER ── */
-    footer {
-      text-align: center;
-      padding: 32px 24px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    /* ── NAV ── */
-    nav {
-      position: fixed;
-      top: 20px;
-      right: 24px;
-      z-index: 100;
-      display: flex;
-      gap: 8px;
-      background: rgba(255,255,255,.85);
-      backdrop-filter: blur(12px);
-      padding: 8px 12px;
-      border-radius: 50px;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-    }
-
-    nav a {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-      text-decoration: none;
-      padding: 4px 10px;
-      border-radius: 99px;
-      transition: background .15s, color .15s;
-    }
-    nav a:hover { background: var(--accent-light); color: var(--accent); }
-  </style>
+.fab-note{font-size:12px;color:var(--muted);text-align:center;padding:6px 20px 26px;line-height:1.5}
+</style>
 </head>
 <body>
-
-<nav>
-  <a href="#hero">Главная</a>
-  <a href="#about">О себе</a>
-  <a href="#skills">Навыки</a>
-  <a href="#work">Работы</a>
-  <a href="#contacts">Контакты</a>
-</nav>
-
-<!-- ── HERO ─────────────────────────────────── -->
-<section class="hero" id="hero">
-  <div class="avatar-wrap">
-    <div class="avatar">АИ</div>
-    <div class="status-dot"></div>
-  </div>
-
-  <h1>Алексей Иванов</h1>
-  <p class="role">Full-Stack разработчик</p>
-  <p class="tagline">Создаю быстрые и красивые веб-приложения. Люблю чистый код и продуманный UX.</p>
-
-  <div class="hero-actions">
-    <a href="#work" class="btn btn-primary">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-      </svg>
-      Мои работы
-    </a>
-    <a href="#contacts" class="btn btn-outline">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-        <polyline points="22,6 12,13 2,6"/>
-      </svg>
-      Написать
-    </a>
-  </div>
-
-  <div class="scroll-hint">
-    <span>Листайте вниз</span>
-    <div class="scroll-arrow"></div>
-  </div>
-</section>
-
-<!-- ── О СЕБЕ ─────────────────────────────────── -->
-<section id="about">
-  <p class="section-label">О себе</p>
-  <h2>Факты обо мне</h2>
-  <div class="about-grid">
-    <div class="about-card">
-      <span class="icon">📍</span>
-      <strong>Местоположение</strong>
-      <span>Москва, Россия</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">💼</span>
-      <strong>Опыт</strong>
-      <span>5+ лет в разработке</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">🎓</span>
-      <strong>Образование</strong>
-      <span>МГУ, Прикладная математика</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">🌐</span>
-      <strong>Языки</strong>
-      <span>Русский, Английский (B2)</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">🚀</span>
-      <strong>Сейчас</strong>
-      <span>Открыт к новым проектам</span>
-    </div>
-    <div class="about-card">
-      <span class="icon">❤️</span>
-      <strong>Интересы</strong>
-      <span>OSS, дизайн, горы</span>
-    </div>
-  </div>
-</section>
-
-<!-- ── НАВЫКИ ─────────────────────────────────── -->
-<section id="skills" class="skills-section" style="background:var(--surface); border-radius:24px; margin:0 0 0; padding:60px 40px;">
-  <p class="section-label">Технологии</p>
-  <h2>Что я умею</h2>
-  <div class="skill-list">
-    <div class="skill-item">
-      <label>React / Next.js <span>95%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="95"></div></div>
-    </div>
-    <div class="skill-item">
-      <label>TypeScript <span>90%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="90"></div></div>
-    </div>
-    <div class="skill-item">
-      <label>Node.js / Python <span>85%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="85"></div></div>
-    </div>
-    <div class="skill-item">
-      <label>PostgreSQL / Redis <span>80%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="80"></div></div>
-    </div>
-    <div class="skill-item">
-      <label>Docker / CI/CD <span>75%</span></label>
-      <div class="bar-bg"><div class="bar-fill" data-w="75"></div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ── РАБОТЫ ─────────────────────────────────── -->
-<section id="work">
-  <p class="section-label">Портфолио</p>
-  <h2>Избранные проекты</h2>
-  <div class="cards">
-    <div class="card">
-      <div class="card-thumb">🛒</div>
-      <div class="card-body">
-        <h3>ShopFlow</h3>
-        <p>Интернет-магазин с умным поиском и рекомендациями.</p>
-        <div class="tags">
-          <span class="tag">Next.js</span>
-          <span class="tag">Stripe</span>
-          <span class="tag">PG</span>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-thumb">📊</div>
-      <div class="card-body">
-        <h3>DataBoard</h3>
-        <p>Дашборд аналитики в реальном времени для SaaS-команд.</p>
-        <div class="tags">
-          <span class="tag">React</span>
-          <span class="tag">WebSocket</span>
-          <span class="tag">D3</span>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-thumb">🤖</div>
-      <div class="card-body">
-        <h3>AI Assistant</h3>
-        <p>Корпоративный чат-бот с RAG на базе Claude API.</p>
-        <div class="tags">
-          <span class="tag">Python</span>
-          <span class="tag">FastAPI</span>
-          <span class="tag">LLM</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── КОНТАКТЫ ─────────────────────────────────── -->
-<section id="contacts" class="contacts-section" style="padding:60px 40px;">
-  <p class="section-label">Контакты</p>
-  <h2>Давайте работать вместе</h2>
-  <div class="contact-list">
-    <a href="mailto:ivanov@example.com" class="contact-item">
-      <div class="contact-icon">✉️</div>
-      <div class="contact-info">
-        <strong>ivanov@example.com</strong>
-        <span>Email — отвечаю в течение дня</span>
-      </div>
-    </a>
-    <a href="tel:+79001234567" class="contact-item">
-      <div class="contact-icon">📞</div>
-      <div class="contact-info">
-        <strong>+7 900 123-45-67</strong>
-        <span>Телефон / WhatsApp / Telegram</span>
-      </div>
-    </a>
-    <a href="#" class="contact-item">
-      <div class="contact-icon">💼</div>
-      <div class="contact-info">
-        <strong>linkedin.com/in/ivanov</strong>
-        <span>LinkedIn — профессиональный профиль</span>
-      </div>
-    </a>
-    <a href="#" class="contact-item">
-      <div class="contact-icon">🐙</div>
-      <div class="contact-info">
-        <strong>github.com/ivanov</strong>
-        <span>GitHub — открытые проекты и код</span>
-      </div>
-    </a>
-  </div>
-</section>
-
-<footer>
-  © 2026 Алексей Иванов &nbsp;·&nbsp; Сделано с ❤️ и чистым кодом
-</footer>
+<div id="app"></div>
 
 <script>
-  // Animate skill bars when they enter viewport
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.querySelectorAll('.bar-fill').forEach(bar => {
-          bar.style.width = bar.dataset.w + '%';
-        });
-        observer.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.3 });
+/* ══════════════════════════════════════════════════════════
+   КОПИЛКА КЛАССА — учёт сборов родительского комитета
+   Данные хранятся локально в браузере (localStorage).
+   ══════════════════════════════════════════════════════════ */
 
-  document.querySelectorAll('.skill-list').forEach(el => observer.observe(el));
+const STORE_KEY = 'kopilka.class.v1';
+const SEATS = 29;          // 24 ученика + 5 мест в запасе
+const FILLED = 24;
+
+/* ── справочники ───────────────────────── */
+const CATS = {
+  kids:     {name:'Детям',    full:'Подарки детям',    icon:'🎁', nav:'Детям'},
+  teachers: {name:'Учителям', full:'Подарки учителям', icon:'💐', nav:'Учителям'},
+  repair:   {name:'Ремонт',   full:'Ремонт класса',    icon:'🪟', nav:'Ремонт'},
+  meals:    {name:'Питание',  full:'Питание детей',    icon:'🍎', nav:'Питание'},
+};
+const OCCASIONS = {
+  kids:     [['ny','Новый год'],['feb23','23 февраля'],['mar8','8 марта']],
+  teachers: [['bday','День рождения'],['tday','День учителя'],['ny','Новый год'],['mar8','8 марта'],['grad','Выпускной']],
+  repair:   [['repair','Ремонт и оснащение']],
+  meals:    [['meals','Питание']],
+};
+const OCC_NAME = o => {
+  for (const list of Object.values(OCCASIONS)) {
+    const f = list.find(x => x[0] === o);
+    if (f) return f[1];
+  }
+  return '';
+};
+
+/* ── утилиты дат ───────────────────────── */
+const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const parseD = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const isoD = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
+const fmtD = d => `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+const fmtDY = d => `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+const diffDays = (a, b) => Math.round((a - b) / 86400000);
+
+/* склонение: 1 день, 2 дня, 5 дней */
+const plural = (n, one, few, many) => {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b > 1 && b < 5) return few;
+  if (b === 1) return one;
+  return many;
+};
+const days = n => `${n} ${plural(n,'день','дня','дней')}`;
+const money = n => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
+
+/* ── ПРЕДЕЛЬНЫЙ СРОК: старт + длительность ─ */
+const deadlineOf = c => addDays(parseD(c.start), c.days);
+
+/* состояние сбора относительно сегодня */
+function timing(c){
+  const t = today(), s = parseD(c.start), dl = deadlineOf(c);
+  if (t < s)  return {phase:'soon',  left:diffDays(s,t),  dl};
+  const left = diffDays(dl, t);
+  if (left < 0)  return {phase:'late', left:-left, dl};
+  if (left <= 3) return {phase:'hot',  left, dl};
+  return {phase:'open', left, dl};
+}
+
+/* ── демо-данные ───────────────────────── */
+const NAMES = ['Абрамова Алиса','Белов Артём','Волкова Варвара','Гаврилов Глеб','Дмитриева Дарья',
+'Егоров Егор','Жукова Евгения','Зайцева Злата','Иванов Иван','Кузнецова Ксения','Лебедев Лев',
+'Морозова Мария','Никитин Никита','Орлова Ольга','Петров Пётр','Романова Маргарита','Смирнова София',
+'Тимофеев Тимур','Ушакова Ульяна','Фёдоров Фёдор','Хохлова Кира','Цветкова Полина','Чернов Матвей','Шилова Ева'];
+
+function seed(){
+  const students = Array.from({length:SEATS}, (_,i) => ({
+    id: 's' + (i+1),
+    name: i < FILLED ? NAMES[i] : '',
+    parent: '',
+  }));
+  const y = today().getFullYear();
+  const C = (id,cat,occ,title,amount,start,d,note) =>
+    ({id, cat, occ, title, amount, start, days:d, note:note||'', payments:{}, archived:false});
+
+  const cols = [
+    C('c1','repair','repair','Жалюзи и покраска стен', 2500, isoD(addDays(today(),-7)), 30,
+      'Смета согласована на собрании 1 сентября'),
+    C('c2','meals','meals','Питание — сентябрь', 3400, isoD(addDays(today(),-2)), 10,
+      'Оплата в столовую до 10 числа'),
+    C('c3','teachers','bday','День рождения Марии Петровны', 500, isoD(addDays(today(),-19)), 10,
+      'Букет и сертификат'),
+    C('c4','teachers','tday','День учителя — подарок классному руководителю', 700, isoD(addDays(today(),24)), 14),
+    C('c5','teachers','ny','Новогодние подарки учителям-предметникам', 600, isoD(addDays(today(),100)), 14),
+    C('c6','teachers','mar8','8 марта — классному руководителю', 700, isoD(addDays(today(),200)), 12),
+    C('c7','teachers','grad','Выпускной: подарок и оформление', 1500, isoD(addDays(today(),250)), 21),
+    C('c8','kids','ny','Новогодние подарки детям', 1200, isoD(addDays(today(),85)), 14,
+      'Сладкий подарок + сюрприз от Деда Мороза'),
+    C('c9','kids','feb23','Подарки мальчикам на 23 февраля', 700, isoD(addDays(today(),160)), 10),
+    C('c10','kids','mar8','Подарки девочкам на 8 марта', 700, isoD(addDays(today(),195)), 10),
+  ];
+
+  // правдоподобные статусы для активных сборов
+  const fill = (c, paidIdx, pendingIdx) => {
+    paidIdx.forEach(i => c.payments['s'+i] = {status:'paid', sum:c.amount, date:isoD(addDays(today(),-3))});
+    pendingIdx.forEach(i => c.payments['s'+i] = {status:'pending', sum:c.amount, date:isoD(today())});
+  };
+  fill(cols[0], [1,2,3,4,6,7,8,9,11,12,14,15,17,18,20,21,23], [5,10]);
+  fill(cols[1], [1,3,5,7,9,11,13,15,17,19,21,23], [2,4]);
+  fill(cols[2], Array.from({length:21},(_,i)=>i+1), []);   // просрочен: 3 не сдали
+  return {
+    className:'3 «Б» класс',
+    role:'treasurer',
+    myId:'s5',
+    defDays:14,
+    students,
+    collections:cols,
+  };
+}
+
+/* ── состояние ─────────────────────────── */
+let S;
+try {
+  const raw = localStorage.getItem(STORE_KEY);
+  S = raw ? JSON.parse(raw) : seed();
+} catch(e) { S = seed(); }
+
+const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch(e){} };
+
+let view = 'home';      // home | kids | teachers | repair | meals | roster
+let occFilter = {};     // cat -> occ | 'all'
+let openRoster = {};    // id сбора -> развёрнут ли список класса
+let sheet = null;       // {type, ...}
+
+/* ── выборки ───────────────────────────── */
+const active = () => S.students.filter(s => s.name.trim());
+const stOf = (c, id) => (c.payments[id] || {}).status || 'none';
+const sumOf = (c, id) => (c.payments[id] || {}).sum ?? 0;
+
+function stats(c){
+  const list = active();
+  let paid = 0, pending = 0, got = 0;
+  list.forEach(s => {
+    const st = stOf(c, s.id);
+    if (st === 'paid')    { paid++;    got += sumOf(c, s.id); }
+    if (st === 'pending') { pending++; }
+  });
+  const target = c.amount * list.length;
+  return {
+    n: list.length, paid, pending, left: list.length - paid - pending,
+    got, target, pct: target ? Math.min(100, Math.round(got / target * 100)) : 0,
+  };
+}
+const colsOf = cat => S.collections.filter(c => c.cat === cat && !c.archived);
+const isOpen = c => { const p = timing(c).phase; return p === 'open' || p === 'hot' || p === 'late'; };
+
+/* ── ICONS ─────────────────────────────── */
+const I = {
+  gear:'<path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.7 1.7 0 006.9 19a1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H1a2 2 0 110-4h.1A1.7 1.7 0 002.6 8a1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H7a1.7 1.7 0 001-1.5V2a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V8a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>',
+  home:'<path d="M3 10l9-7 9 7v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  gift:'<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>',
+  heart:'<path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 000-7.8z"/>',
+  brush:'<path d="M19 3H5a2 2 0 00-2 2v4h18V5a2 2 0 00-2-2z"/><path d="M3 9v2a2 2 0 002 2h5v3a2 2 0 004 0v-3h5a2 2 0 002-2V9"/>',
+  cup:'<path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>',
+  users:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.9"/><path d="M16 3.1a4 4 0 010 7.8"/>',
+  copy:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  wallet:'<path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/>',
+  edit:'<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/>',
+  down:'<polyline points="6 9 12 15 18 9"/>',
+  up:'<polyline points="18 15 12 9 6 15"/>',
+};
+const svg = (p, sz=20, w=1.7) =>
+  `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+
+const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+/* ══ РЕНДЕР ═══════════════════════════════════════════════ */
+
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = header() + `<main class="wrap">${body()}</main>` + nav() + (sheet ? sheetHTML() : '');
+  window.scrollTo(0, scrollMemo[view] || 0);
+}
+const scrollMemo = {};
+
+/* ── шапка ─────────────────────────────── */
+function header(){
+  const parent = S.role === 'parent';
+  const me = S.students.find(s => s.id === S.myId);
+  return `
+  <header class="top">
+    <div class="top-in">
+      <div class="brand">
+        <div class="cls">${esc(S.className)}</div>
+        <div class="sub">Копилка класса</div>
+      </div>
+      <button class="icon-btn" data-act="settings" aria-label="Настройки">${svg(I.gear,18)}</button>
+    </div>
+    <div class="role-bar">
+      <button class="role-btn ${!parent?'on':''}" data-act="role" data-v="treasurer">${svg(I.wallet,15)} Казначей</button>
+      <button class="role-btn ${parent?'on':''}" data-act="role" data-v="parent">${svg(I.users,15)} Родитель</button>
+    </div>
+    ${parent ? `
+    <div class="who">
+      <span>Мой ребёнок:</span>
+      <select data-act="setme">
+        ${active().map(s => `<option value="${s.id}" ${s.id===S.myId?'selected':''}>${esc(s.name)}</option>`).join('')}
+      </select>
+    </div>` : ''}
+  </header>`;
+}
+
+/* ── нижнее меню ───────────────────────── */
+function nav(){
+  const items = [
+    ['home','Обзор',I.home],
+    ['kids','Детям',I.gift],
+    ['teachers','Учителям',I.heart],
+    ['repair','Ремонт',I.brush],
+    ['meals','Питание',I.cup],
+  ];
+  return `<nav class="nav"><div class="nav-in">${items.map(([v,label,ic]) => {
+    const alert = v !== 'home' && colsOf(v).some(c => {
+      const t = timing(c);
+      if (S.role === 'parent') return isOpen(c) && stOf(c,S.myId) === 'none';
+      return t.phase === 'late' && stats(c).left > 0;
+    });
+    return `<button class="${view===v?'on':''}" data-act="view" data-v="${v}">
+      ${svg(ic,21)}<span>${label}</span>${alert?'<i class="dot"></i>':''}</button>`;
+  }).join('')}</div></nav>`;
+}
+
+/* ── тело ──────────────────────────────── */
+function body(){
+  if (view === 'roster') return rosterView();
+  if (view === 'home')   return homeView();
+  return catView(view);
+}
+
+/* ── ОБЗОР ─────────────────────────────── */
+function homeView(){
+  const open = S.collections.filter(c => !c.archived && isOpen(c));
+  const parent = S.role === 'parent';
+
+  if (parent){
+    const mine = open.filter(c => stOf(c, S.myId) !== 'paid');
+    const due = mine.filter(c => stOf(c,S.myId)==='none').reduce((a,c) => a + c.amount, 0);
+    const paidCnt = S.collections.filter(c => !c.archived && stOf(c,S.myId)==='paid').length;
+    return `
+    <div class="card hero">
+      <div class="lbl">К оплате сейчас</div>
+      <div class="big num">${money(due)}</div>
+      <div class="cap">${mine.length ? `${mine.length} ${plural(mine.length,'активный сбор','активных сбора','активных сборов')} ждёт вас` : 'Всё оплачено — спасибо!'}</div>
+      <div class="hero-row">
+        <div class="hero-chip"><b class="num">${paidCnt}</b><span>СДАНО ВСЕГО</span></div>
+        <div class="hero-chip"><b class="num">${open.length}</b><span>ОТКРЫТО СБОРОВ</span></div>
+      </div>
+    </div>
+    ${mine.length ? `<div class="sec-title">Нужно перевести</div>` + mine.map(c => collCard(c, true)).join('') : `
+    <div class="card"><div class="empty"><div class="e-ic">✓</div>
+      <p>Все текущие сборы закрыты с вашей стороны. Спасибо!</p></div></div>`}
+    <div class="sec-title">Скоро начнётся</div>
+    ${(() => {
+      const soon = S.collections.filter(c => !c.archived && timing(c).phase === 'soon').slice(0,3);
+      return soon.length ? soon.map(c => collCard(c, true)).join('')
+        : `<div class="card card-pad" style="color:var(--muted);font-size:14px">Новых сборов пока не запланировано.</div>`;
+    })()}
+    <p class="fab-note">Отметка «Я перевела» уведомляет казначея — она подтвердит поступление.</p>`;
+  }
+
+  const totGot = open.reduce((a,c) => a + stats(c).got, 0);
+  const totTarget = open.reduce((a,c) => a + stats(c).target, 0);
+  const late = open.filter(c => timing(c).phase === 'late' && stats(c).left > 0);
+  const pend = open.reduce((a,c) => a + stats(c).pending, 0);
+
+  return `
+  <div class="card hero">
+    <div class="lbl">Собрано по открытым сборам</div>
+    <div class="big num">${money(totGot)}</div>
+    <div class="cap">из ${money(totTarget)} · ${active().length} ${plural(active().length,'ученик','ученика','учеников')} в списке</div>
+    <div class="hero-row">
+      <div class="hero-chip"><b class="num">${open.length}</b><span>ОТКРЫТО</span></div>
+      <div class="hero-chip"><b class="num">${pend}</b><span>НА ПРОВЕРКЕ</span></div>
+      <div class="hero-chip"><b class="num">${late.length}</b><span>ПРОСРОЧЕНО</span></div>
+    </div>
+  </div>
+
+  ${pend ? `<div class="card card-pad" style="display:flex;gap:12px;align-items:center">
+    <div class="coll-ico" style="background:var(--gold-soft);color:var(--gold)">${svg(I.clock,20)}</div>
+    <div style="flex:1;font-size:14px"><b>${pend} ${plural(pend,'перевод ждёт','перевода ждут','переводов ждут')} подтверждения</b>
+      <div style="color:var(--muted);font-size:12.5px">Родители отметили оплату — проверьте поступление</div></div>
+  </div>` : ''}
+
+  <div class="sec-title">Открытые сборы</div>
+  ${open.length ? open.map(c => collCard(c, true)).join('')
+    : `<div class="card"><div class="empty"><div class="e-ic">🕊</div><p>Сейчас нет активных сборов.</p>
+       <button class="btn pri" data-act="new" data-cat="kids">${svg(I.plus,16)} Создать сбор</button></div></div>`}
+
+  <div class="sec-title">Итог по категориям</div>
+  <div class="card">
+    ${Object.entries(CATS).map(([k,v]) => {
+      const list = colsOf(k);
+      const got = list.reduce((a,c) => a + stats(c).got, 0);
+      const op = list.filter(isOpen).length;
+      return `<div class="srow" data-act="view" data-v="${k}">
+        <div class="coll-ico" style="width:38px;height:38px;font-size:18px">${v.icon}</div>
+        <div class="s-name"><b style="font-weight:600">${v.full}</b>
+          <span class="tag">${list.length} ${plural(list.length,'сбор','сбора','сборов')} · ${op} ${plural(op,'открыт','открыто','открыто')}</span></div>
+        <div class="coll-sum"><b class="num">${money(got)}</b><span>собрано</span></div>
+      </div>`;
+    }).join('')}
+  </div>
+  <p class="fab-note">Данные хранятся только в этом браузере. Прототип — без передачи денег.</p>`;
+}
+
+/* ── КАТЕГОРИЯ ─────────────────────────── */
+function catView(cat){
+  const meta = CATS[cat];
+  const all = colsOf(cat);
+  const sel = occFilter[cat] || 'all';
+  const list = sel === 'all' ? all : all.filter(c => c.occ === sel);
+  const got = all.reduce((a,c) => a + stats(c).got, 0);
+  const target = all.reduce((a,c) => a + stats(c).target, 0);
+  const openN = all.filter(isOpen).length;
+  const showChips = OCCASIONS[cat].length > 1;
+
+  // при первом заходе разворачиваем список у первого активного сбора
+  if (S.role === 'treasurer' && all.length && !all.some(c => openRoster[c.id])){
+    const first = all.find(isOpen) || all[0];
+    openRoster[first.id] = true;
+  }
+
+  return `
+  <div class="card hero">
+    <div class="lbl">${esc(meta.full)}</div>
+    <div class="big num">${money(got)}</div>
+    <div class="cap">итого по категории из ${money(target)} · ${openN} ${plural(openN,'активный сбор','активных сбора','активных сборов')}</div>
+  </div>
+
+  ${showChips ? `<div class="chips">
+    <button class="chip ${sel==='all'?'on':''}" data-act="occ" data-cat="${cat}" data-v="all">Все<span class="n">${all.length}</span></button>
+    ${OCCASIONS[cat].map(([o,label]) => {
+      const n = all.filter(c => c.occ === o).length;
+      return `<button class="chip ${sel===o?'on':''}" data-act="occ" data-cat="${cat}" data-v="${o}">${label}<span class="n">${n}</span></button>`;
+    }).join('')}
+  </div>` : '<div style="height:6px"></div>'}
+
+  ${list.length ? list.map(c => collCard(c, false)).join('')
+    : `<div class="card"><div class="empty"><div class="e-ic">${meta.icon}</div>
+        <p>В этой категории пока нет сборов.</p></div></div>`}
+
+  ${S.role === 'treasurer' ? `
+  <button class="btn pri wide" style="width:100%;margin:4px 0 8px;padding:14px" data-act="new" data-cat="${cat}" data-occ="${sel!=='all'?sel:''}">
+    ${svg(I.plus,17)} Новый сбор — ${esc(meta.name.toLowerCase())}
+  </button>` : ''}
+  <p class="fab-note">Предельный срок считается автоматически: дата начала + срок сбора в днях.</p>`;
+}
+
+/* ── карточка сбора ────────────────────── */
+function collCard(c, compact){
+  const st = stats(c);
+  const t = timing(c);
+  const parent = S.role === 'parent';
+  const dlCls = t.phase === 'late' ? 'late' : t.phase === 'hot' ? 'hot' : '';
+  const dlText =
+    t.phase === 'soon' ? `Старт ${fmtD(parseD(c.start))} · сдать до <b>${fmtD(t.dl)}</b>` :
+    t.phase === 'late' ? `Срок вышел <b>${fmtD(t.dl)}</b>` :
+                         `Сдать до <b>${fmtDY(t.dl)}</b>`;
+  const cnt =
+    t.phase === 'soon' ? `через ${days(t.left)}` :
+    t.phase === 'late' ? `+${days(t.left)}` :
+    `осталось ${days(t.left)}`;
+
+  const myStatus = stOf(c, S.myId);
+  const myLabel = myStatus === 'none' && t.phase === 'soon' ? 'Сбор ещё не начался'
+    : {paid:'Сдано', pending:'Отмечено вами — ждёт подтверждения', none:'Не сдано'}[myStatus];
+
+  return `
+  <div class="card">
+    <div class="coll-head" ${compact ? `data-act="open" data-c="${c.id}"` : ''}>
+      <div class="coll-ico">${CATS[c.cat].icon}</div>
+      <div class="coll-t">
+        <h3>${esc(c.title)}</h3>
+        <div class="meta">${esc(OCC_NAME(c.occ))} · ${money(c.amount)} с человека</div>
+      </div>
+      <div class="coll-sum"><b class="num">${st.pct}%</b><span>${st.paid}/${st.n}</span></div>
+    </div>
+
+    <div class="bar ${st.pct<100?'part':''}"><i style="width:${st.pct}%"></i></div>
+
+    <div class="stat-row">
+      <span class="pill ok">${svg(I.check,12,2.4)} Сдали ${st.paid}</span>
+      ${st.pending ? `<span class="pill wait">${svg(I.clock,12,2)} Ждут ${st.pending}</span>` : ''}
+      ${st.left ? `<span class="pill bad">Не сдали ${st.left}</span>` : `<span class="pill ok">Все сдали</span>`}
+      <span class="pill">${money(st.got)} из ${money(st.target)}</span>
+    </div>
+
+    <div class="deadline ${dlCls}">
+      <span class="dl-ic">${svg(I.clock,15,2)}</span>
+      <span>${dlText}</span>
+      <span class="cnt">${cnt}</span>
+    </div>
+
+    ${parent ? `
+      <div class="mine-box">
+        <div class="mb-top">
+          <span class="chk ${myStatus==='paid'?'paid':myStatus==='pending'?'pending':''}">${svg(I.check,17,3)}</span>
+          <b>${myLabel}</b>
+        </div>
+        <div class="mb-amt num">${money(c.amount)}</div>
+        <div class="mb-note">${c.note ? esc(c.note) + ' · ' : ''}${esc(S.students.find(s=>s.id===S.myId)?.name || '')}</div>
+        ${myStatus === 'none' ? (t.phase === 'soon' ? `
+          <div class="others" style="margin:12px 0 0">${svg(I.clock,15)} Сбор начнётся ${fmtD(parseD(c.start))}</div>` : `
+          <button class="btn pri wide" style="width:100%;margin-top:12px" data-act="ipaid" data-c="${c.id}">
+            ${svg(I.check,16)} Я перевела
+          </button>`) :
+          myStatus === 'pending' ? `
+          <button class="btn wide" style="width:100%;margin-top:12px" data-act="undo" data-c="${c.id}">Отменить отметку</button>` : ''}
+      </div>
+      <div class="others">${svg(I.users,16)} По классу сдали ${st.paid} из ${st.n}${st.pending?`, ещё ${st.pending} ожидают подтверждения`:''}</div>
+    ` : compact ? `
+      <div class="coll-acts">
+        <button class="btn wide" data-act="open" data-c="${c.id}">Открыть список</button>
+        ${st.left ? `<button class="btn sm" data-act="remind" data-c="${c.id}">${svg(I.copy,15)} Напомнить</button>` : ''}
+      </div>
+    ` : (() => {
+      const shown = !!openRoster[c.id];
+      return `
+      <div class="coll-acts">
+        <button class="btn wide" data-act="roster" data-c="${c.id}">
+          ${svg(shown ? I.up : I.down,15)} ${shown ? 'Свернуть список' : `Список класса · ${st.n}`}
+        </button>
+        <button class="btn sm" data-act="edit" data-c="${c.id}" aria-label="Изменить сбор">${svg(I.edit,15)}</button>
+        ${st.left ? `<button class="btn sm" data-act="remind" data-c="${c.id}" aria-label="Напомнить">${svg(I.copy,15)}</button>` : ''}
+      </div>
+      ${shown ? `<div class="roster">
+        <div class="roster-hd"><span>Ученик</span><span class="rh-r">Сдано</span></div>
+        ${S.students.map((s, i) => srow(c, s, i)).join('')}
+      </div>` : ''}`;
+    })()}
+  </div>`;
+}
+
+/* ── строка ученика ────────────────────── */
+function srow(c, s, i){
+  const empty = !s.name.trim();
+  const st = stOf(c, s.id);
+  const mine = s.id === S.myId && S.role === 'parent';
+  if (empty) return `
+    <div class="srow reserve slim">
+      <span class="s-no num">${i+1}</span>
+      <span class="s-name blank">Свободное место в запасе</span>
+      <button class="btn sm ghost" data-act="settings">Добавить</button>
+    </div>`;
+  const sum = st === 'none' ? '' : money(sumOf(c, s.id));
+  return `
+  <div class="srow ${mine?'mine':''}">
+    <span class="s-no num">${i+1}</span>
+    <span class="s-name" data-act="pay" data-c="${c.id}" data-s="${s.id}">${esc(s.name)}
+      ${st==='pending' ? '<span class="tag">отметила перевод — подтвердите</span>' :
+        st==='paid' ? `<span class="tag">${(c.payments[s.id].date ? fmtD(parseD(c.payments[s.id].date)) : '')}</span>` : ''}</span>
+    <span class="s-sum num">${sum}</span>
+    <button class="chk ${st==='paid'?'paid':st==='pending'?'pending':''}" data-act="toggle" data-c="${c.id}" data-s="${s.id}"
+      aria-label="Отметить оплату">${svg(I.check,17,3)}</button>
+  </div>`;
+}
+
+/* ── СПИСОК КЛАССА ─────────────────────── */
+function rosterView(){
+  const n = active().length;
+  return `
+  <div class="card hero">
+    <div class="lbl">Список класса</div>
+    <div class="big num">${n} из ${SEATS}</div>
+    <div class="cap">${SEATS - n} ${plural(SEATS-n,'свободное место','свободных места','свободных мест')} в запасе для новых учеников</div>
+  </div>
+
+  <div class="card">
+    <div class="roster-hd"><span>№ · Ученик</span><span class="rh-r">Изменить</span></div>
+    ${S.students.map((s, i) => `
+      <div class="srow ${!s.name.trim()?'reserve':''}">
+        <span class="s-no num">${i+1}</span>
+        <label class="s-name" style="flex:1">
+          <input value="${esc(s.name)}" data-act="rename" data-s="${s.id}"
+            placeholder="Свободное место — впишите имя"
+            style="width:100%;border:none;background:none;font-size:15px;padding:4px 0;color:inherit">
+        </label>
+        ${s.name.trim() ? `<button class="chk" data-act="clear" data-s="${s.id}" aria-label="Очистить"
+          style="border-color:var(--line);color:var(--muted)">${svg(I.x,15,2.4)}</button>` : ''}
+      </div>`).join('')}
+  </div>
+
+  <div class="sec-title">Класс</div>
+  <div class="card card-pad">
+    <div class="field">
+      <label>Название класса</label>
+      <input value="${esc(S.className)}" data-act="clsname">
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>Срок сбора по умолчанию, дней</label>
+      <input type="number" min="1" max="180" value="${S.defDays}" data-act="defdays">
+      <div class="hint">Предельная дата сдачи = дата начала сбора + это число дней. Для каждого сбора срок можно изменить отдельно.</div>
+    </div>
+  </div>
+
+  <div class="sec-title">Данные</div>
+  <div class="card card-pad">
+    <button class="btn wide" style="width:100%;margin-bottom:8px" data-act="export">${svg(I.copy,15)} Скопировать отчёт по всем сборам</button>
+    <button class="btn ghost wide" style="width:100%;color:var(--danger)" data-act="reset">Сбросить и загрузить демо-данные</button>
+  </div>
+  <p class="fab-note">Прототип работает офлайн. Всё хранится в этом браузере — деньги через приложение не проходят.</p>`;
+}
+
+/* ══ SHEETS ═══════════════════════════════════════════════ */
+function sheetHTML(){
+  const inner =
+    sheet.type === 'pay'  ? paySheet() :
+    sheet.type === 'edit' ? editSheet() : '';
+  return `<div class="backdrop" data-act="close"><div class="sheet" data-stop="1">
+    <div class="grip"></div>${inner}</div></div>`;
+}
+
+function paySheet(){
+  const c = S.collections.find(x => x.id === sheet.c);
+  const s = S.students.find(x => x.id === sheet.s);
+  const cur = c.payments[s.id] || {status:'none', sum:c.amount};
+  const st = cur.status;
+  return `
+  <div class="sheet-hd">
+    <h2>${esc(s.name)}</h2>
+    <button class="icon-btn" data-act="close">${svg(I.x,17)}</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label>Сбор</label>
+      <div style="font-size:15px;padding:2px 0 2px">${esc(c.title)}
+        <span style="color:var(--muted)"> · ${money(c.amount)}</span></div>
+    </div>
+    <div class="field">
+      <label>Статус</label>
+      <div class="seg st">
+        <button data-act="pst" data-v="paid" class="${st==='paid'?'on':''}">Сдано</button>
+        <button data-act="pst" data-v="pending" class="${st==='pending'?'on':''}">Ожидает</button>
+        <button data-act="pst" data-v="none" class="${st==='none'?'on':''}">Не сдано</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Сумма, ₽ <span style="font-weight:400">(можно указать частичную оплату)</span></label>
+      <input type="number" inputmode="numeric" id="f-sum" value="${cur.sum ?? c.amount}">
+    </div>
+    <div class="field">
+      <label>Дата платежа</label>
+      <input type="date" id="f-date" value="${cur.date || isoD(today())}">
+    </div>
+    <button class="btn pri wide" style="width:100%;padding:14px" data-act="savepay">Сохранить</button>
+  </div>`;
+}
+
+function editSheet(){
+  const isNew = !sheet.c;
+  const c = isNew
+    ? {id:'', cat:sheet.cat, occ:sheet.occ || OCCASIONS[sheet.cat][0][0], title:'', amount:500,
+       start:isoD(today()), days:S.defDays, note:''}
+    : S.collections.find(x => x.id === sheet.c);
+  const d = sheet.draft || (sheet.draft = {...c});
+  const dl = addDays(parseD(d.start), +d.days || 0);
+  const left = diffDays(dl, today());
+
+  return `
+  <div class="sheet-hd">
+    <h2>${isNew ? 'Новый сбор' : 'Изменить сбор'}</h2>
+    <button class="icon-btn" data-act="close">${svg(I.x,17)}</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label>Категория</label>
+      <div class="seg">
+        ${Object.entries(CATS).map(([k,v]) =>
+          `<button data-act="dcat" data-v="${k}" class="${d.cat===k?'on':''}">${v.icon} ${v.name}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field">
+      <label>Повод</label>
+      <div class="seg">
+        ${OCCASIONS[d.cat].map(([o,label]) =>
+          `<button data-act="docc" data-v="${o}" class="${d.occ===o?'on':''}">${label}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field">
+      <label>Название сбора</label>
+      <input id="f-title" value="${esc(d.title)}" placeholder="Например: Подарок на 8 марта">
+    </div>
+    <div class="field-2">
+      <div class="field">
+        <label>Сумма с человека, ₽</label>
+        <input type="number" inputmode="numeric" id="f-amount" value="${d.amount}" data-act="dlive">
+      </div>
+      <div class="field">
+        <label>Срок сбора, дней</label>
+        <input type="number" inputmode="numeric" min="1" max="365" id="f-days" value="${d.days}" data-act="dlive">
+      </div>
+    </div>
+    <div class="field">
+      <label>Дата начала сбора</label>
+      <input type="date" id="f-start" value="${d.start}" data-act="dlive">
+    </div>
+
+    <div class="calc">
+      ${svg(I.clock,18)}
+      <div>Предельный срок сдачи: <b>${fmtDY(dl)}</b><br>
+        <span style="color:var(--muted)">${left >= 0 ? `это ${days(left)} от сегодня` : `дата уже прошла (${days(-left)} назад)`} ·
+        итого с класса ${money((+d.amount||0) * active().length)}</span></div>
+    </div>
+
+    <div class="field">
+      <label>Комментарий для родителей</label>
+      <textarea id="f-note" rows="2" placeholder="Например: реквизиты для перевода">${esc(d.note)}</textarea>
+    </div>
+
+    <button class="btn pri wide" style="width:100%;padding:14px;margin-bottom:8px" data-act="savecoll">
+      ${isNew ? 'Создать сбор' : 'Сохранить'}
+    </button>
+    ${!isNew ? `<button class="btn ghost wide" style="width:100%;color:var(--danger)" data-act="delcoll">Удалить сбор</button>` : ''}
+  </div>`;
+}
+
+/* ══ ДЕЙСТВИЯ ═════════════════════════════════════════════ */
+
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2400);
+}
+
+async function copyText(text, msg){
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(msg);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast(msg); } catch(_) { toast('Скопировать не удалось'); }
+    ta.remove();
+  }
+}
+
+function remindText(c){
+  const st = stats(c), t = timing(c);
+  const debt = active().filter(s => stOf(c, s.id) === 'none').map(s => s.name);
+  const when = t.phase === 'late'
+    ? `Срок вышел ${fmtDY(t.dl)}.`
+    : `Просьба сдать до ${fmtDY(t.dl)} (осталось ${days(t.left)}).`;
+  return `📌 ${c.title}\n${money(c.amount)} с человека. ${when}\n`
+    + `Сдали ${st.paid} из ${st.n}, собрано ${money(st.got)} из ${money(st.target)}.\n\n`
+    + (debt.length ? `Ещё не сдали (${debt.length}):\n` + debt.map(n => '• ' + n).join('\n')
+                   : 'Сдали все, спасибо! 🌷')
+    + (c.note ? `\n\n${c.note}` : '');
+}
+
+function exportAll(){
+  const open = S.collections.filter(c => !c.archived);
+  let out = `Отчёт по сборам — ${S.className}\nна ${fmtDY(today())}\n`;
+  Object.entries(CATS).forEach(([k, v]) => {
+    const list = open.filter(c => c.cat === k);
+    if (!list.length) return;
+    out += `\n━━ ${v.full.toUpperCase()} ━━\n`;
+    list.forEach(c => {
+      const st = stats(c);
+      out += `\n${c.title} (${OCC_NAME(c.occ)})\n`
+           + `  ${money(c.amount)} × ${st.n} = ${money(st.target)}\n`
+           + `  Сбор: ${fmtDY(parseD(c.start))} → ${fmtDY(deadlineOf(c))} (${days(c.days)})\n`
+           + `  Собрано ${money(st.got)} · сдали ${st.paid}, ждут ${st.pending}, не сдали ${st.left}\n`;
+    });
+  });
+  return out;
+}
+
+function setPay(cid, sid, status, sum, date){
+  const c = S.collections.find(x => x.id === cid);
+  if (status === 'none') delete c.payments[sid];
+  else c.payments[sid] = {status, sum: sum ?? c.amount, date: date || isoD(today())};
+  save();
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const a = el.dataset.act;
+
+  // клик по подложке закрывает, клик внутри листа — нет
+  if (a === 'close'){
+    if (el.classList.contains('backdrop') && e.target.closest('[data-stop]')) return;
+    sheet = null; render(); return;
+  }
+
+  switch(a){
+    case 'view':
+      scrollMemo[view] = window.scrollY;
+      view = el.dataset.v; render(); break;
+
+    case 'settings':
+      scrollMemo[view] = window.scrollY;
+      view = 'roster'; render(); break;
+
+    case 'role':
+      S.role = el.dataset.v;
+      if (S.role === 'parent' && !active().some(s => s.id === S.myId)) S.myId = active()[0]?.id;
+      save(); render(); break;
+
+    case 'occ':
+      occFilter[el.dataset.cat] = el.dataset.v; render(); break;
+
+    case 'open': {
+      const c = S.collections.find(x => x.id === el.dataset.c);
+      scrollMemo[view] = window.scrollY;
+      view = c.cat; occFilter[c.cat] = c.occ;
+      colsOf(c.cat).forEach(x => openRoster[x.id] = false);
+      openRoster[c.id] = true;
+      render(); break;
+    }
+
+    case 'roster':
+      openRoster[el.dataset.c] = !openRoster[el.dataset.c];
+      scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'toggle': {
+      const cid = el.dataset.c, sid = el.dataset.s;
+      const cur = stOf(S.collections.find(x => x.id === cid), sid);
+      setPay(cid, sid, cur === 'paid' ? 'none' : 'paid');
+      scrollMemo[view] = window.scrollY; render(); break;
+    }
+
+    case 'pay':
+      sheet = {type:'pay', c:el.dataset.c, s:el.dataset.s};
+      scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'pst': {
+      const c = S.collections.find(x => x.id === sheet.c);
+      const sum = +document.getElementById('f-sum').value || c.amount;
+      const date = document.getElementById('f-date').value;
+      setPay(sheet.c, sheet.s, el.dataset.v, sum, date);
+      render(); break;
+    }
+
+    case 'savepay': {
+      const c = S.collections.find(x => x.id === sheet.c);
+      const cur = c.payments[sheet.s];
+      if (cur){
+        cur.sum = +document.getElementById('f-sum').value || c.amount;
+        cur.date = document.getElementById('f-date').value;
+        save();
+      }
+      sheet = null; render(); toast('Сохранено'); break;
+    }
+
+    case 'ipaid':
+      setPay(el.dataset.c, S.myId, 'pending');
+      scrollMemo[view] = window.scrollY; render();
+      toast('Отмечено — казначей подтвердит'); break;
+
+    case 'undo':
+      setPay(el.dataset.c, S.myId, 'none');
+      scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'new':
+      sheet = {type:'edit', c:null, cat:el.dataset.cat, occ:el.dataset.occ || null, draft:null};
+      scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'edit':
+      sheet = {type:'edit', c:el.dataset.c, draft:null};
+      scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'dcat': {
+      readDraft();
+      sheet.draft.cat = el.dataset.v;
+      sheet.draft.occ = OCCASIONS[el.dataset.v][0][0];
+      render(); break;
+    }
+    case 'docc':
+      readDraft(); sheet.draft.occ = el.dataset.v; render(); break;
+
+    case 'savecoll': {
+      readDraft();
+      const d = sheet.draft;
+      if (!d.title.trim()) d.title = OCC_NAME(d.occ);
+      d.amount = Math.max(0, +d.amount || 0);
+      d.days = Math.max(1, +d.days || S.defDays);
+      if (sheet.c){
+        Object.assign(S.collections.find(x => x.id === sheet.c), d);
+      } else {
+        S.collections.push({...d, id:'c' + Date.now(), payments:{}, archived:false});
+      }
+      save(); const cat = d.cat; sheet = null; view = cat; render();
+      toast('Сбор сохранён'); break;
+    }
+
+    case 'delcoll': {
+      if (!confirm('Удалить сбор вместе с отметками об оплате?')) return;
+      S.collections = S.collections.filter(x => x.id !== sheet.c);
+      save(); sheet = null; render(); toast('Сбор удалён'); break;
+    }
+
+    case 'remind': {
+      const c = S.collections.find(x => x.id === el.dataset.c);
+      copyText(remindText(c), 'Напоминание скопировано'); break;
+    }
+
+    case 'export':
+      copyText(exportAll(), 'Отчёт скопирован'); break;
+
+    case 'clear': {
+      const s = S.students.find(x => x.id === el.dataset.s);
+      if (!confirm(`Освободить место? «${s.name}» будет удалён из списка.`)) return;
+      s.name = '';
+      S.collections.forEach(c => delete c.payments[s.id]);
+      save(); scrollMemo[view] = window.scrollY; render(); break;
+    }
+
+    case 'reset':
+      if (!confirm('Все данные будут заменены демо-примером. Продолжить?')) return;
+      S = seed(); save(); view = 'home'; sheet = null; render(); break;
+  }
+});
+
+/* черновик формы сбора: снимаем значения полей перед перерисовкой */
+function readDraft(){
+  if (!sheet || sheet.type !== 'edit') return;
+  const g = id => document.getElementById(id);
+  if (!sheet.draft) return;
+  if (g('f-title'))  sheet.draft.title  = g('f-title').value;
+  if (g('f-amount')) sheet.draft.amount = g('f-amount').value;
+  if (g('f-days'))   sheet.draft.days   = g('f-days').value;
+  if (g('f-start'))  sheet.draft.start  = g('f-start').value;
+  if (g('f-note'))   sheet.draft.note   = g('f-note').value;
+}
+
+/* живой пересчёт предельного срока при вводе */
+document.addEventListener('input', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const a = el.dataset.act;
+
+  if (a === 'dlive'){
+    readDraft();
+    const d = sheet.draft;
+    const start = d.start && /^\d{4}-\d{2}-\d{2}$/.test(d.start) ? parseD(d.start) : today();
+    const dl = addDays(start, Math.max(1, +d.days || 1));
+    const left = diffDays(dl, today());
+    const box = document.querySelector('.calc div');
+    if (box) box.innerHTML = `Предельный срок сдачи: <b>${fmtDY(dl)}</b><br>
+      <span style="color:var(--muted)">${left >= 0 ? `это ${days(left)} от сегодня` : `дата уже прошла (${days(-left)} назад)`} ·
+      итого с класса ${money((+d.amount||0) * active().length)}</span>`;
+    return;
+  }
+  if (a === 'rename'){
+    const s = S.students.find(x => x.id === el.dataset.s);
+    s.name = el.value; save(); return;
+  }
+  if (a === 'clsname'){ S.className = el.value; save();
+    const t = document.querySelector('.brand .cls'); if (t) t.textContent = el.value; return; }
+  if (a === 'defdays'){ S.defDays = Math.max(1, +el.value || 14); save(); return; }
+});
+
+document.addEventListener('change', e => {
+  const el = e.target.closest('[data-act]');
+  if (el && el.dataset.act === 'setme'){ S.myId = el.value; save(); render(); }
+});
+
+render();
 </script>
 </body>
 </html>
