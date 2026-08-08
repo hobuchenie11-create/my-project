@@ -34,18 +34,17 @@ Private Const К_ПЛОЩАДЬ As Long = 5
 Private Const К_ТАРИФ As Long = 6
 Private Const К_НАЧИСЛЕНО As Long = 7
 Private Const К_ДОЛГ As Long = 8
-Private Const К_ПЕНИ As Long = 9
-Private Const К_ПЕРЕРАСЧЕТ As Long = 10
-Private Const К_ИТОГО As Long = 11
-Private Const К_ОПЛАЧЕНО As Long = 12
-Private Const К_ОСТАТОК As Long = 13
-Private Const К_НАКОПЛЕНО As Long = 14
-Private Const К_ПЕРИОД As Long = 15
-Private Const К_ДАТА_ПЕРИОДА As Long = 16
-Private Const К_СРОК As Long = 17
-Private Const К_НОМЕР As Long = 18
+Private Const К_ПЕРЕРАСЧЕТ As Long = 9
+Private Const К_ИТОГО As Long = 10
+Private Const К_ОПЛАЧЕНО As Long = 11
+Private Const К_ОСТАТОК As Long = 12
+Private Const К_НАКОПЛЕНО As Long = 13
+Private Const К_ПЕРИОД As Long = 14
+Private Const К_ДАТА_ПЕРИОДА As Long = 15
+Private Const К_СРОК As Long = 16
+Private Const К_НОМЕР As Long = 17
 
-Private Const ПОСЛЕДНИЙ_СТОЛБЕЦ As Long = 18
+Private Const ПОСЛЕДНИЙ_СТОЛБЕЦ As Long = 17
 
 
 '==========================================================================
@@ -55,10 +54,11 @@ Private Const ПОСЛЕДНИЙ_СТОЛБЕЦ As Long = 18
 ' Записать начисления по одному лицевому счёту.
 ' Строка создаётся, если её ещё нет; существующая — обновляется.
 ' Пустые (Empty) аргументы не затирают то, что уже лежит в листе.
+' Пени в этом доме не начисляются, поэтому их здесь нет — ни в аргументах,
+' ни в листе ДАННЫЕ, ни в бланке.
 Public Sub ПодставитьСуммы(ByVal ЛицевойСчет As Variant, _
                            Optional ByVal Начислено As Variant, _
                            Optional ByVal Долг As Variant, _
-                           Optional ByVal Пени As Variant, _
                            Optional ByVal Перерасчет As Variant, _
                            Optional ByVal Итого As Variant, _
                            Optional ByVal Оплачено As Variant)
@@ -69,7 +69,6 @@ Public Sub ПодставитьСуммы(ByVal ЛицевойСчет As Varian
 
     ЗаписатьЕслиЗадано ws, стр, К_НАЧИСЛЕНО, Начислено
     ЗаписатьЕслиЗадано ws, стр, К_ДОЛГ, Долг
-    ЗаписатьЕслиЗадано ws, стр, К_ПЕНИ, Пени
     ЗаписатьЕслиЗадано ws, стр, К_ПЕРЕРАСЧЕТ, Перерасчет
     ЗаписатьЕслиЗадано ws, стр, К_ИТОГО, Итого
     ЗаписатьЕслиЗадано ws, стр, К_ОПЛАЧЕНО, Оплачено
@@ -79,7 +78,6 @@ Public Sub ПодставитьСуммы(ByVal ЛицевойСчет As Varian
         ws.Cells(стр, К_ИТОГО).Value = Round( _
             Ноль(ws.Cells(стр, К_НАЧИСЛЕНО).Value) + _
             Ноль(ws.Cells(стр, К_ДОЛГ).Value) + _
-            Ноль(ws.Cells(стр, К_ПЕНИ).Value) + _
             Ноль(ws.Cells(стр, К_ПЕРЕРАСЧЕТ).Value), 2)
     End If
 End Sub
@@ -289,7 +287,7 @@ Public Function СтрокаQR() As String
     СтрокаQR = CStr(ЛистПоИмени(ЛИСТ_НАСТРОЕК).Range("КВ_QR").Value)
 End Function
 
-' Заготовка под вставку картинки QR в область G33:H38.
+' Заготовка под вставку картинки QR в зарезервированную область G32:H37.
 ' Готового генератора QR в Excel нет, поэтому подставьте свой:
 '   • офлайн — библиотека/COM-компонент, отдающий PNG по строке;
 '   • онлайн — сервис, возвращающий картинку по HTTP.
@@ -298,7 +296,7 @@ Public Sub ВставитьQR(Optional ByVal ФайлPNG As String = "")
     Dim ws As Worksheet, место As Range, рис As Object
 
     Set ws = ЛистПоИмени(ЛИСТ_КВИТАНЦИИ)
-    Set место = ws.Range("G33:H38")
+    Set место = ws.Range("G32:H37")
 
     УдалитьQR ws
 
