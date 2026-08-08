@@ -238,6 +238,8 @@ button{background:none;border:none;cursor:pointer}
 .srow:first-child{border-top:none}
 .srow.mine{background:var(--accent-soft)}
 .srow.reserve{opacity:.5}
+.srow.skipped .s-name{color:var(--muted)}
+.chk.skip{border-color:var(--line);color:var(--muted);background:var(--surface-2)}
 .srow.slim{min-height:40px;padding-top:5px;padding-bottom:5px}
 .srow.slim .s-name{font-size:13px}
 .srow.slim .btn.sm{padding:5px 10px;font-size:12px}
@@ -258,6 +260,45 @@ button{background:none;border:none;cursor:pointer}
 .chk.paid{background:var(--ok);border-color:var(--ok);color:#fff}
 .chk.pending{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}
 .chk:active{transform:scale(.9)}
+
+/* ── КАССА: собрано / потрачено / остаток ─ */
+.cash{
+  display:flex;margin:14px 18px 0;border:1px solid var(--line-2);
+  border-radius:var(--radius-s);overflow:hidden;background:var(--surface-2);
+}
+.cash>div{flex:1;padding:10px 8px 11px;text-align:center;border-left:1px solid var(--line-2)}
+.cash>div:first-child{border-left:none}
+.cash span{display:block;font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.cash b{display:block;font-family:Georgia,serif;font-weight:400;font-size:15.5px;margin-top:3px;font-variant-numeric:tabular-nums}
+.cash .rest b{color:var(--ok)}
+.cash .rest.over b{color:var(--danger)}
+.cash .out b{color:var(--muted)}
+
+/* ── строка траты ──────────────────────── */
+.erow{
+  display:flex;align-items:center;gap:12px;padding:11px 18px;
+  border-top:1px solid var(--line-2);min-height:56px;width:100%;text-align:left;
+}
+.e-ic{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--gold-soft);color:var(--gold);
+}
+.e-t{flex:1;min-width:0}
+.e-t b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
+.e-t span{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+.e-sum{font-size:14.5px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--danger)}
+.e-add{
+  display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+  padding:13px;border-top:1px solid var(--line-2);font-size:14px;font-weight:600;color:var(--accent);
+}
+
+.coll-foot{display:flex;gap:8px;padding:10px 18px 12px;border-top:1px solid var(--line-2)}
+.coll-foot button{
+  flex:1;padding:9px;border-radius:11px;font-size:13px;font-weight:600;color:var(--muted);
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+}
+.coll-foot button:active{background:var(--surface-2)}
 
 .mine-box{
   margin:0 18px 16px;padding:15px;border-radius:var(--radius-s);
@@ -333,6 +374,8 @@ button{background:none;border:none;cursor:pointer}
   font-size:13.5px;display:flex;align-items:center;gap:10px;
 }
 .calc b{font-weight:700}
+.calc.money{background:var(--gold-soft);border-color:var(--gold)}
+.hint-row{margin-top:-8px}
 .seg{display:flex;gap:7px;flex-wrap:wrap}
 .seg button{
   flex:1;min-width:88px;padding:11px 8px;border-radius:13px;font-size:14px;font-weight:600;
@@ -409,6 +452,7 @@ const OCC_NAME = o => {
 
 /* ── утилиты дат ───────────────────────── */
 const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const MONTHS_N = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const parseD = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
 const isoD = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -455,7 +499,8 @@ function seed(){
   }));
   const y = today().getFullYear();
   const C = (id,cat,occ,title,amount,start,d,note) =>
-    ({id, cat, occ, title, amount, start, days:d, note:note||'', payments:{}, archived:false});
+    ({id, cat, occ, title, mode:'per', amount, total:amount*FILLED, payers:FILLED,
+      start, days:d, note:note||'', payments:{}, expenses:[], archived:false});
 
   const cols = [
     C('c1','repair','repair','Жалюзи и покраска стен', 2500, isoD(addDays(today(),-7)), 30,
@@ -474,6 +519,12 @@ function seed(){
     C('c10','kids','mar8','Подарки девочкам на 8 марта', 700, isoD(addDays(today(),195)), 10),
   ];
 
+  // ремонт задан общей сметой — сумма делится на сдающих
+  Object.assign(cols[0], {mode:'total', total:60000, payers:FILLED});
+  // на подарки мальчикам сдают родители девочек, и наоборот — сдают не все
+  Object.assign(cols[8], {payers:13, note:'Сдают родители девочек — 13 человек'});
+  Object.assign(cols[9], {payers:11, note:'Сдают родители мальчиков — 11 человек'});
+
   // правдоподобные статусы для активных сборов
   const fill = (c, paidIdx, pendingIdx) => {
     paidIdx.forEach(i => c.payments['s'+i] = {status:'paid', sum:c.amount, date:isoD(addDays(today(),-3))});
@@ -482,6 +533,21 @@ function seed(){
   fill(cols[0], [1,2,3,4,6,7,8,9,11,12,14,15,17,18,20,21,23], [5,10]);
   fill(cols[1], [1,3,5,7,9,11,13,15,17,19,21,23], [2,4]);
   fill(cols[2], Array.from({length:21},(_,i)=>i+1), []);   // просрочен: 3 не сдали
+
+  const E = (title, sum, dayShift, who) =>
+    ({id:'e'+Math.random().toString(36).slice(2,8), title, sum, date:isoD(addDays(today(),dayShift)), who});
+  cols[0].expenses = [
+    E('Жалюзи на 3 окна, «Уют-Декор»', 21400, -4, 'Смирнова О. В.'),
+    E('Краска и валики, «Леруа»',       6850, -3, 'Смирнова О. В.'),
+    E('Работа маляра, аванс',          10000, -1, 'Смирнова О. В.'),
+  ];
+  cols[2].expenses = [
+    E('Букет пионов', 3200, -18, 'Волкова И. С.'),
+    E('Подарочный сертификат', 5000, -18, 'Волкова И. С.'),
+  ];
+  cols[1].expenses = [
+    E('Оплата в столовую за сентябрь', 34000, -1, 'Смирнова О. В.'),
+  ];
   return {
     className:'3 «Б» класс',
     role:'treasurer',
@@ -498,12 +564,20 @@ try {
   const raw = localStorage.getItem(STORE_KEY);
   S = raw ? JSON.parse(raw) : seed();
 } catch(e) { S = seed(); }
+// миграция данных, сохранённых прежними версиями
+S.collections.forEach(c => {
+  if (!Array.isArray(c.expenses)) c.expenses = [];
+  if (!c.mode) c.mode = 'per';
+  if (c.total == null) c.total = (+c.amount || 0) * S.students.filter(s => s.name.trim()).length;
+  if (c.payers == null) c.payers = S.students.filter(s => s.name.trim()).length;
+});
 
 const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch(e){} };
 
 let view = 'home';      // home | kids | teachers | repair | meals | roster
 let occFilter = {};     // cat -> occ | 'all'
 let openRoster = {};    // id сбора -> развёрнут ли список класса
+let openExp = {};       // id сбора -> развёрнута ли история трат
 let sheet = null;       // {type, ...}
 
 /* ── выборки ───────────────────────────── */
@@ -511,22 +585,46 @@ const active = () => S.students.filter(s => s.name.trim());
 const stOf = (c, id) => (c.payments[id] || {}).status || 'none';
 const sumOf = (c, id) => (c.payments[id] || {}).sum ?? 0;
 
+/* ── СУММА СБОРА ───────────────────────────────────────────
+   Два способа задать сбор:
+     mode 'per'   — казначей вводит сумму с человека;
+     mode 'total' — вводит общую сумму, она делится на число сдающих.
+   Число сдающих (c.payers) казначей задаёт сам: сдают не всегда все.
+   ────────────────────────────────────────────────────────── */
+const payersOf = c => Math.max(1, +c.payers || active().length);
+const perOf = c => c.mode === 'total'
+  ? Math.ceil((+c.total || 0) / payersOf(c))     // округляем вверх до рубля
+  : Math.max(0, +c.amount || 0);
+const targetOf = c => perOf(c) * payersOf(c);
+/* излишек от округления вверх: 25 000 ₽ / 24 = 1 042 ₽ × 24 = 25 008 ₽ */
+const surplusOf = c => c.mode === 'total' ? targetOf(c) - (+c.total || 0) : 0;
+
 function stats(c){
-  const list = active();
-  let paid = 0, pending = 0, got = 0;
-  list.forEach(s => {
+  const n = payersOf(c);
+  let paid = 0, pending = 0, skip = 0, got = 0;
+  active().forEach(s => {
     const st = stOf(c, s.id);
     if (st === 'paid')    { paid++;    got += sumOf(c, s.id); }
     if (st === 'pending') { pending++; }
+    if (st === 'skip')    { skip++; }
   });
-  const target = c.amount * list.length;
+  const target = targetOf(c);
   return {
-    n: list.length, paid, pending, left: list.length - paid - pending,
+    n, per: perOf(c), paid, pending, skip,
+    left: Math.max(0, n - paid - pending),
     got, target, pct: target ? Math.min(100, Math.round(got / target * 100)) : 0,
   };
 }
 const colsOf = cat => S.collections.filter(c => c.cat === cat && !c.archived);
 const isOpen = c => { const p = timing(c).phase; return p === 'open' || p === 'hot' || p === 'late'; };
+
+/* ── траты ─────────────────────────────── */
+const spent = c => (c.expenses || []).reduce((a, e) => a + (+e.sum || 0), 0);
+const balance = c => stats(c).got - spent(c);
+/* все траты по классу, новые сверху */
+const allExpenses = () => S.collections
+  .flatMap(c => (c.expenses || []).map(e => ({...e, coll:c})))
+  .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
 /* ── ICONS ─────────────────────────────── */
 const I = {
@@ -546,6 +644,9 @@ const I = {
   edit:'<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/>',
   down:'<polyline points="6 9 12 15 18 9"/>',
   up:'<polyline points="18 15 12 9 6 15"/>',
+  right:'<polyline points="9 18 15 12 9 6"/>',
+  minus:'<line x1="6" y1="12" x2="18" y2="12"/>',
+  receipt:'<path d="M5 2v20l2.5-1.6L10 22l2-1.6L14 22l2.5-1.6L19 22V2l-2.5 1.6L14 2l-2 1.6L10 2 7.5 3.6z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/>',
 };
 const svg = (p, sz=20, w=1.7) =>
   `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
@@ -611,8 +712,67 @@ function nav(){
 /* ── тело ──────────────────────────────── */
 function body(){
   if (view === 'roster') return rosterView();
+  if (view === 'spend')  return spendView();
   if (view === 'home')   return homeView();
   return catView(view);
+}
+
+/* ── ИСТОРИЯ ТРАТ ──────────────────────── */
+function spendView(){
+  const all = allExpenses();
+  const out = all.reduce((a,e) => a + e.sum, 0);
+  const got = S.collections.reduce((a,c) => a + stats(c).got, 0);
+  const rest = got - out;
+  const editable = S.role === 'treasurer';
+
+  // группировка по месяцам
+  const groups = [];
+  all.forEach(e => {
+    const d = parseD(e.date);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    let g = groups.find(x => x.key === key);
+    if (!g) groups.push(g = {key, label:`${MONTHS_N[d.getMonth()]} ${d.getFullYear()}`, items:[], sum:0});
+    g.items.push(e); g.sum += e.sum;
+  });
+
+  return `
+  <div class="card hero">
+    <div class="lbl">Потрачено из кассы класса</div>
+    <div class="big num">${money(out)}</div>
+    <div class="cap">собрано ${money(got)} · ${all.length} ${plural(all.length,'трата','траты','трат')}</div>
+    <div class="hero-row">
+      <div class="hero-chip"><b class="num">${money(Math.abs(rest))}</b><span>${rest<0?'ПЕРЕРАСХОД':'ОСТАТОК В КАССЕ'}</span></div>
+    </div>
+  </div>
+
+  ${all.length ? groups.map(g => `
+    <div class="sec-title">${g.label} · ${money(g.sum)}</div>
+    <div class="card">
+      ${g.items.map(e => `
+      <${editable?'button':'div'} class="erow" ${editable?`data-act="editexp" data-c="${e.coll.id}" data-e="${e.id}"`:''}>
+        <span class="e-ic">${CATS[e.coll.cat].icon}</span>
+        <span class="e-t"><b>${esc(e.title)}</b>
+          <span>${fmtD(parseD(e.date))} · ${esc(e.coll.title)}${e.who?' · '+esc(e.who):''}</span></span>
+        <span class="e-sum num">−${money(e.sum)}</span>
+      </${editable?'button':'div'}>`).join('')}
+    </div>`).join('')
+  : `<div class="card"><div class="empty"><div class="e-ic">🧾</div>
+      <p>Трат пока нет. Они добавляются внутри каждого сбора — так видно, из каких денег оплачено.</p></div></div>`}
+
+  <div class="sec-title">По сборам</div>
+  <div class="card">
+    ${S.collections.filter(c => !c.archived && (stats(c).got || spent(c))).map(c => {
+      const r = balance(c);
+      return `<div class="srow" data-act="open" data-c="${c.id}">
+        <div class="coll-ico" style="width:38px;height:38px;font-size:17px">${CATS[c.cat].icon}</div>
+        <div class="s-name"><b style="font-weight:600">${esc(c.title)}</b>
+          <span class="tag">собрано ${money(stats(c).got)} · потрачено ${money(spent(c))}</span></div>
+        <div class="coll-sum"><b class="num" style="color:${r<0?'var(--danger)':'var(--ok)'}">${money(Math.abs(r))}</b>
+          <span>${r<0?'перерасход':'остаток'}</span></div>
+      </div>`;
+    }).join('')}
+  </div>
+  <p class="fab-note">Каждая трата привязана к своему сбору — родителям видно, на что ушли именно их деньги.</p>`;
 }
 
 /* ── ОБЗОР ─────────────────────────────── */
@@ -622,7 +782,7 @@ function homeView(){
 
   if (parent){
     const mine = open.filter(c => stOf(c, S.myId) !== 'paid');
-    const due = mine.filter(c => stOf(c,S.myId)==='none').reduce((a,c) => a + c.amount, 0);
+    const due = mine.filter(c => stOf(c,S.myId)==='none').reduce((a,c) => a + perOf(c), 0);
     const paidCnt = S.collections.filter(c => !c.archived && stOf(c,S.myId)==='paid').length;
     return `
     <div class="card hero">
@@ -634,6 +794,7 @@ function homeView(){
         <div class="hero-chip"><b class="num">${open.length}</b><span>ОТКРЫТО СБОРОВ</span></div>
       </div>
     </div>
+    ${cashCard()}
     ${mine.length ? `<div class="sec-title">Нужно перевести</div>` + mine.map(c => collCard(c, true)).join('') : `
     <div class="card"><div class="empty"><div class="e-ic">✓</div>
       <p>Все текущие сборы закрыты с вашей стороны. Спасибо!</p></div></div>`}
@@ -663,6 +824,8 @@ function homeView(){
     </div>
   </div>
 
+  ${cashCard()}
+
   ${pend ? `<div class="card card-pad" style="display:flex;gap:12px;align-items:center">
     <div class="coll-ico" style="background:var(--gold-soft);color:var(--gold)">${svg(I.clock,20)}</div>
     <div style="flex:1;font-size:14px"><b>${pend} ${plural(pend,'перевод ждёт','перевода ждут','переводов ждут')} подтверждения</b>
@@ -689,6 +852,33 @@ function homeView(){
     }).join('')}
   </div>
   <p class="fab-note">Данные хранятся только в этом браузере. Прототип — без передачи денег.</p>`;
+}
+
+/* ── касса класса: вход в историю трат ─── */
+function cashCard(){
+  const all = allExpenses();
+  const out = all.reduce((a,e) => a + e.sum, 0);
+  const got = S.collections.reduce((a,c) => a + stats(c).got, 0);
+  const rest = got - out;
+  const last = all[0];
+  return `
+  <div class="card" data-act="view" data-v="spend">
+    <div class="coll-head" style="padding-bottom:10px">
+      <div class="coll-ico" style="background:var(--gold-soft);color:var(--gold)">${svg(I.receipt,20)}</div>
+      <div class="coll-t">
+        <h3>Касса класса</h3>
+        <div class="meta">${last ? `последняя трата: ${esc(last.title)}, ${fmtD(parseD(last.date))}`
+          : 'трат пока не было'}</div>
+      </div>
+      <div class="coll-sum" style="align-self:center;color:var(--muted)">${svg(I.right,18)}</div>
+    </div>
+    <div class="cash" style="margin-bottom:16px">
+      <div><span>Собрано</span><b class="num">${money(got)}</b></div>
+      <div class="out"><span>Потрачено</span><b class="num">${out ? '−' + money(out) : '—'}</b></div>
+      <div class="rest ${rest<0?'over':''}"><span>${rest<0?'Перерасход':'Остаток'}</span>
+        <b class="num">${money(Math.abs(rest))}</b></div>
+    </div>
+  </div>`;
 }
 
 /* ── КАТЕГОРИЯ ─────────────────────────── */
@@ -759,7 +949,7 @@ function collCard(c, compact){
       <div class="coll-ico">${CATS[c.cat].icon}</div>
       <div class="coll-t">
         <h3>${esc(c.title)}</h3>
-        <div class="meta">${esc(OCC_NAME(c.occ))} · ${money(c.amount)} с человека</div>
+        <div class="meta">${esc(OCC_NAME(c.occ))} · ${money(st.per)} × ${st.n} ${plural(st.n,'человек','человека','человек')}</div>
       </div>
       <div class="coll-sum"><b class="num">${st.pct}%</b><span>${st.paid}/${st.n}</span></div>
     </div>
@@ -770,6 +960,7 @@ function collCard(c, compact){
       <span class="pill ok">${svg(I.check,12,2.4)} Сдали ${st.paid}</span>
       ${st.pending ? `<span class="pill wait">${svg(I.clock,12,2)} Ждут ${st.pending}</span>` : ''}
       ${st.left ? `<span class="pill bad">Не сдали ${st.left}</span>` : `<span class="pill ok">Все сдали</span>`}
+      ${st.skip ? `<span class="pill">Не сдают ${st.skip}</span>` : ''}
       <span class="pill">${money(st.got)} из ${money(st.target)}</span>
     </div>
 
@@ -785,7 +976,7 @@ function collCard(c, compact){
           <span class="chk ${myStatus==='paid'?'paid':myStatus==='pending'?'pending':''}">${svg(I.check,17,3)}</span>
           <b>${myLabel}</b>
         </div>
-        <div class="mb-amt num">${money(c.amount)}</div>
+        <div class="mb-amt num">${money(st.per)}</div>
         <div class="mb-note">${c.note ? esc(c.note) + ' · ' : ''}${esc(S.students.find(s=>s.id===S.myId)?.name || '')}</div>
         ${myStatus === 'none' ? (t.phase === 'soon' ? `
           <div class="others" style="margin:12px 0 0">${svg(I.clock,15)} Сбор начнётся ${fmtD(parseD(c.start))}</div>` : `
@@ -796,6 +987,8 @@ function collCard(c, compact){
           <button class="btn wide" style="width:100%;margin-top:12px" data-act="undo" data-c="${c.id}">Отменить отметку</button>` : ''}
       </div>
       <div class="others">${svg(I.users,16)} По классу сдали ${st.paid} из ${st.n}${st.pending?`, ещё ${st.pending} ожидают подтверждения`:''}</div>
+      ${cashStrip(c)}
+      ${expenseBlock(c)}
     ` : compact ? `
       <div class="coll-acts">
         <button class="btn wide" data-act="open" data-c="${c.id}">Открыть список</button>
@@ -803,20 +996,65 @@ function collCard(c, compact){
       </div>
     ` : (() => {
       const shown = !!openRoster[c.id];
+      const nExp = (c.expenses || []).length;
       return `
+      ${cashStrip(c)}
       <div class="coll-acts">
         <button class="btn wide" data-act="roster" data-c="${c.id}">
           ${svg(shown ? I.up : I.down,15)} ${shown ? 'Свернуть список' : `Список класса · ${st.n}`}
         </button>
-        <button class="btn sm" data-act="edit" data-c="${c.id}" aria-label="Изменить сбор">${svg(I.edit,15)}</button>
-        ${st.left ? `<button class="btn sm" data-act="remind" data-c="${c.id}" aria-label="Напомнить">${svg(I.copy,15)}</button>` : ''}
+        <button class="btn wide" data-act="exps" data-c="${c.id}">
+          ${svg(openExp[c.id] ? I.up : I.down,15)} Траты${nExp ? ' · ' + nExp : ''}
+        </button>
       </div>
       ${shown ? `<div class="roster">
         <div class="roster-hd"><span>Ученик</span><span class="rh-r">Сдано</span></div>
         ${S.students.map((s, i) => srow(c, s, i)).join('')}
-      </div>` : ''}`;
+      </div>` : ''}
+      ${expenseBlock(c)}
+      <div class="coll-foot">
+        <button data-act="edit" data-c="${c.id}">${svg(I.edit,14)} Изменить сбор</button>
+        ${st.left ? `<button data-act="remind" data-c="${c.id}">${svg(I.copy,14)} Напомнить</button>` : ''}
+      </div>`;
     })()}
   </div>`;
+}
+
+/* ── касса сбора: собрано / потрачено / остаток ── */
+function cashStrip(c){
+  const got = stats(c).got, out = spent(c), rest = got - out;
+  return `
+  <div class="cash">
+    <div><span>Собрано</span><b class="num">${money(got)}</b></div>
+    <div class="out"><span>Потрачено</span><b class="num">${out ? '−' + money(out) : '—'}</b></div>
+    <div class="rest ${rest < 0 ? 'over' : ''}"><span>${rest < 0 ? 'Перерасход' : 'Остаток'}</span>
+      <b class="num">${money(Math.abs(rest))}</b></div>
+  </div>`;
+}
+
+/* ── история трат по сбору ─────────────── */
+function expenseBlock(c){
+  if (!openExp[c.id]) return '';
+  const list = (c.expenses || []).slice().sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  const editable = S.role === 'treasurer';
+  return `
+  <div class="roster">
+    <div class="roster-hd"><span>На что потрачено</span><span class="rh-r">Сумма</span></div>
+    ${list.length ? list.map(e => erow(e, c, editable)).join('')
+      : `<div class="srow" style="color:var(--muted);font-size:13.5px;justify-content:center">
+           Трат пока нет — деньги в кассе</div>`}
+    ${editable ? `<button class="e-add" data-act="newexp" data-c="${c.id}">${svg(I.plus,16)} Добавить трату</button>` : ''}
+  </div>`;
+}
+
+function erow(e, c, editable){
+  const d = e.date ? fmtD(parseD(e.date)) : '';
+  return `
+  <${editable ? 'button' : 'div'} class="erow" ${editable ? `data-act="editexp" data-c="${c.id}" data-e="${e.id}"` : ''}>
+    <span class="e-ic">${svg(I.receipt,17)}</span>
+    <span class="e-t"><b>${esc(e.title)}</b><span>${d}${e.who ? ' · ' + esc(e.who) : ''}</span></span>
+    <span class="e-sum num">−${money(e.sum)}</span>
+  </${editable ? 'button' : 'div'}>`;
 }
 
 /* ── строка ученика ────────────────────── */
@@ -830,16 +1068,18 @@ function srow(c, s, i){
       <span class="s-name blank">Свободное место в запасе</span>
       <button class="btn sm ghost" data-act="settings">Добавить</button>
     </div>`;
-  const sum = st === 'none' ? '' : money(sumOf(c, s.id));
+  const sum = st === 'none' || st === 'skip' ? '' : money(sumOf(c, s.id));
   return `
-  <div class="srow ${mine?'mine':''}">
+  <div class="srow ${mine?'mine':''} ${st==='skip'?'skipped':''}">
     <span class="s-no num">${i+1}</span>
     <span class="s-name" data-act="pay" data-c="${c.id}" data-s="${s.id}">${esc(s.name)}
       ${st==='pending' ? '<span class="tag">отметила перевод — подтвердите</span>' :
+        st==='skip' ? '<span class="tag">не участвует в этом сборе</span>' :
         st==='paid' ? `<span class="tag">${(c.payments[s.id].date ? fmtD(parseD(c.payments[s.id].date)) : '')}</span>` : ''}</span>
     <span class="s-sum num">${sum}</span>
-    <button class="chk ${st==='paid'?'paid':st==='pending'?'pending':''}" data-act="toggle" data-c="${c.id}" data-s="${s.id}"
-      aria-label="Отметить оплату">${svg(I.check,17,3)}</button>
+    <button class="chk ${st==='paid'?'paid':st==='pending'?'pending':st==='skip'?'skip':''}"
+      data-act="${st==='skip'?'pay':'toggle'}" data-c="${c.id}" data-s="${s.id}"
+      aria-label="Отметить оплату">${st==='skip' ? svg(I.minus,17,3) : svg(I.check,17,3)}</button>
   </div>`;
 }
 
@@ -893,7 +1133,8 @@ function rosterView(){
 function sheetHTML(){
   const inner =
     sheet.type === 'pay'  ? paySheet() :
-    sheet.type === 'edit' ? editSheet() : '';
+    sheet.type === 'edit' ? editSheet() :
+    sheet.type === 'exp'  ? expSheet()  : '';
   return `<div class="backdrop" data-act="close"><div class="sheet" data-stop="1">
     <div class="grip"></div>${inner}</div></div>`;
 }
@@ -901,7 +1142,7 @@ function sheetHTML(){
 function paySheet(){
   const c = S.collections.find(x => x.id === sheet.c);
   const s = S.students.find(x => x.id === sheet.s);
-  const cur = c.payments[s.id] || {status:'none', sum:c.amount};
+  const cur = c.payments[s.id] || {status:'none', sum:perOf(c)};
   const st = cur.status;
   return `
   <div class="sheet-hd">
@@ -912,7 +1153,7 @@ function paySheet(){
     <div class="field">
       <label>Сбор</label>
       <div style="font-size:15px;padding:2px 0 2px">${esc(c.title)}
-        <span style="color:var(--muted)"> · ${money(c.amount)}</span></div>
+        <span style="color:var(--muted)"> · ${money(perOf(c))} с человека</span></div>
     </div>
     <div class="field">
       <label>Статус</label>
@@ -920,29 +1161,101 @@ function paySheet(){
         <button data-act="pst" data-v="paid" class="${st==='paid'?'on':''}">Сдано</button>
         <button data-act="pst" data-v="pending" class="${st==='pending'?'on':''}">Ожидает</button>
         <button data-act="pst" data-v="none" class="${st==='none'?'on':''}">Не сдано</button>
+        <button data-act="pst" data-v="skip" class="${st==='skip'?'on':''}">Не сдаёт</button>
       </div>
     </div>
     <div class="field">
       <label>Сумма, ₽ <span style="font-weight:400">(можно указать частичную оплату)</span></label>
-      <input type="number" inputmode="numeric" id="f-sum" value="${cur.sum ?? c.amount}">
+      <input type="number" inputmode="numeric" id="f-sum" value="${cur.sum ?? perOf(c)}">
     </div>
     <div class="field">
       <label>Дата платежа</label>
       <input type="date" id="f-date" value="${cur.date || isoD(today())}">
+      ${c.mode === 'total' ? `<div class="hint">«Не сдаёт» уменьшит число сдающих —
+        общая сумма ${money(+c.total||0)} разделится на остальных.</div>` : ''}
     </div>
     <button class="btn pri wide" style="width:100%;padding:14px" data-act="savepay">Сохранить</button>
   </div>`;
 }
 
+function expSheet(){
+  const c = S.collections.find(x => x.id === sheet.c);
+  const e = sheet.e ? c.expenses.find(x => x.id === sheet.e) : null;
+  const isNew = !e;
+  const rest = balance(c);
+  return `
+  <div class="sheet-hd">
+    <h2>${isNew ? 'Новая трата' : 'Трата'}</h2>
+    <button class="icon-btn" data-act="close">${svg(I.x,17)}</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label>Из какого сбора</label>
+      <div style="font-size:15px;padding:2px 0">${esc(c.title)}
+        <span style="color:var(--muted)"> · в кассе ${money(rest)}</span></div>
+    </div>
+    <div class="field">
+      <label>На что потрачено</label>
+      <input id="x-title" value="${e ? esc(e.title) : ''}" placeholder="Например: букет и открытка">
+    </div>
+    <div class="field-2">
+      <div class="field">
+        <label>Сумма, ₽</label>
+        <input type="number" inputmode="numeric" id="x-sum" value="${e ? e.sum : ''}" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Дата</label>
+        <input type="date" id="x-date" value="${e ? e.date : isoD(today())}">
+      </div>
+    </div>
+    <div class="field">
+      <label>Кто оплатил</label>
+      <input id="x-who" value="${e ? esc(e.who || '') : ''}" placeholder="Имя и фамилия">
+    </div>
+    <button class="btn pri wide" style="width:100%;padding:14px;margin-bottom:8px" data-act="saveexp">
+      ${isNew ? 'Добавить трату' : 'Сохранить'}
+    </button>
+    ${!isNew ? `<button class="btn ghost wide" style="width:100%;color:var(--danger)" data-act="delexp">Удалить трату</button>` : ''}
+  </div>`;
+}
+
+/* живые подсказки в форме сбора */
+function moneyCalc(d){
+  const payers = Math.max(1, +d.payers || 1);
+  const per = d.mode === 'total' ? Math.ceil((+d.total || 0) / payers) : Math.max(0, +d.amount || 0);
+  const target = per * payers;
+  const surplus = d.mode === 'total' ? target - (+d.total || 0) : 0;
+  const ppl = `${payers} ${plural(payers,'человек','человека','человек')}`;
+  return `${svg(I.wallet,18)}
+    <div>${d.mode === 'total'
+      ? `С каждого по <b>${money(per)}</b>`
+      : `Итого нужно собрать: <b>${money(target)}</b>`}<br>
+      <span style="color:var(--muted)">${d.mode === 'total'
+        ? `${money(+d.total||0)} ÷ ${ppl} · соберётся ${money(target)}`
+          + (surplus > 0 ? `, на ${money(surplus)} больше сметы — округлили вверх` : '')
+        : `${money(per)} × ${ppl}`}</span></div>`;
+}
+function dlCalc(d){
+  const start = d.start && /^\d{4}-\d{2}-\d{2}$/.test(d.start) ? parseD(d.start) : today();
+  const dl = addDays(start, Math.max(1, +d.days || 1));
+  const left = diffDays(dl, today());
+  return `${svg(I.clock,18)}
+    <div>Предельный срок сдачи: <b>${fmtDY(dl)}</b><br>
+      <span style="color:var(--muted)">${fmtD(start)} + ${days(Math.max(1, +d.days || 1))} ·
+      ${left >= 0 ? `это ${days(left)} от сегодня` : `дата уже прошла (${days(-left)} назад)`}</span></div>`;
+}
+
 function editSheet(){
   const isNew = !sheet.c;
   const c = isNew
-    ? {id:'', cat:sheet.cat, occ:sheet.occ || OCCASIONS[sheet.cat][0][0], title:'', amount:500,
+    ? {id:'', cat:sheet.cat, occ:sheet.occ || OCCASIONS[sheet.cat][0][0], title:'',
+       mode:'per', amount:500, total:500 * active().length, payers:active().length,
        start:isoD(today()), days:S.defDays, note:''}
     : S.collections.find(x => x.id === sheet.c);
   const d = sheet.draft || (sheet.draft = {...c});
   const dl = addDays(parseD(d.start), +d.days || 0);
   const left = diffDays(dl, today());
+  const total = d.mode === 'total';
 
   return `
   <div class="sheet-hd">
@@ -968,27 +1281,43 @@ function editSheet(){
       <label>Название сбора</label>
       <input id="f-title" value="${esc(d.title)}" placeholder="Например: Подарок на 8 марта">
     </div>
+    <div class="field">
+      <label>Как считаем сумму</label>
+      <div class="seg">
+        <button data-act="dmode" data-v="per" class="${!total?'on':''}">С человека</button>
+        <button data-act="dmode" data-v="total" class="${total?'on':''}">Общая сумма</button>
+      </div>
+    </div>
     <div class="field-2">
       <div class="field">
-        <label>Сумма с человека, ₽</label>
-        <input type="number" inputmode="numeric" id="f-amount" value="${d.amount}" data-act="dlive">
+        <label>${total ? 'Общая сумма сбора, ₽' : 'Сумма с человека, ₽'}</label>
+        ${total
+          ? `<input type="number" inputmode="numeric" id="f-total" value="${d.total}" data-act="dlive">`
+          : `<input type="number" inputmode="numeric" id="f-amount" value="${d.amount}" data-act="dlive">`}
+      </div>
+      <div class="field">
+        <label>Сколько человек сдают</label>
+        <input type="number" inputmode="numeric" min="1" max="${SEATS}" id="f-payers" value="${d.payers}" data-act="dlive">
+      </div>
+    </div>
+    <div class="calc money" id="calc-money">${moneyCalc(d)}</div>
+    <div class="field hint-row">
+      <div class="hint">В классе ${active().length} ${plural(active().length,'ученик','ученика','учеников')}.
+        Если сдают не все — например, только родители девочек — поставьте нужное число, сумма пересчитается.</div>
+    </div>
+
+    <div class="field-2">
+      <div class="field">
+        <label>Дата начала сбора</label>
+        <input type="date" id="f-start" value="${d.start}" data-act="dlive">
       </div>
       <div class="field">
         <label>Срок сбора, дней</label>
         <input type="number" inputmode="numeric" min="1" max="365" id="f-days" value="${d.days}" data-act="dlive">
       </div>
     </div>
-    <div class="field">
-      <label>Дата начала сбора</label>
-      <input type="date" id="f-start" value="${d.start}" data-act="dlive">
-    </div>
 
-    <div class="calc">
-      ${svg(I.clock,18)}
-      <div>Предельный срок сдачи: <b>${fmtDY(dl)}</b><br>
-        <span style="color:var(--muted)">${left >= 0 ? `это ${days(left)} от сегодня` : `дата уже прошла (${days(-left)} назад)`} ·
-        итого с класса ${money((+d.amount||0) * active().length)}</span></div>
-    </div>
+    <div class="calc" id="calc-dl">${dlCalc(d)}</div>
 
     <div class="field">
       <label>Комментарий для родителей</label>
@@ -1031,7 +1360,7 @@ function remindText(c){
   const when = t.phase === 'late'
     ? `Срок вышел ${fmtDY(t.dl)}.`
     : `Просьба сдать до ${fmtDY(t.dl)} (осталось ${days(t.left)}).`;
-  return `📌 ${c.title}\n${money(c.amount)} с человека. ${when}\n`
+  return `📌 ${c.title}\n${money(st.per)} с человека. ${when}\n`
     + `Сдали ${st.paid} из ${st.n}, собрано ${money(st.got)} из ${money(st.target)}.\n\n`
     + (debt.length ? `Ещё не сдали (${debt.length}):\n` + debt.map(n => '• ' + n).join('\n')
                    : 'Сдали все, спасибо! 🌷')
@@ -1048,18 +1377,34 @@ function exportAll(){
     list.forEach(c => {
       const st = stats(c);
       out += `\n${c.title} (${OCC_NAME(c.occ)})\n`
-           + `  ${money(c.amount)} × ${st.n} = ${money(st.target)}\n`
+           + `  ${money(st.per)} × ${st.n} ${plural(st.n,'человек','человека','человек')} = ${money(st.target)}\n`
            + `  Сбор: ${fmtDY(parseD(c.start))} → ${fmtDY(deadlineOf(c))} (${days(c.days)})\n`
            + `  Собрано ${money(st.got)} · сдали ${st.paid}, ждут ${st.pending}, не сдали ${st.left}\n`;
+      const exp = (c.expenses || []).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+      if (exp.length){
+        out += `  Потрачено ${money(spent(c))}, остаток ${money(balance(c))}:\n`;
+        exp.forEach(e => {
+          out += `    ${fmtD(parseD(e.date))} — ${e.title}: ${money(e.sum)}${e.who ? ` (${e.who})` : ''}\n`;
+        });
+      }
     });
   });
+  const totOut = allExpenses().reduce((a,e) => a + e.sum, 0);
+  const totGot = S.collections.reduce((a,c) => a + stats(c).got, 0);
+  out += `\n━━ ИТОГО ━━\n  Собрано ${money(totGot)}\n  Потрачено ${money(totOut)}\n  Остаток в кассе ${money(totGot - totOut)}\n`;
   return out;
 }
 
 function setPay(cid, sid, status, sum, date){
   const c = S.collections.find(x => x.id === cid);
+  const was = stOf(c, sid);
+  // «не сдаёт» меняет число сдающих — в режиме общей суммы доля остальных пересчитается
+  if (was !== 'skip' && status === 'skip') c.payers = Math.max(1, payersOf(c) - 1);
+  if (was === 'skip' && status !== 'skip') c.payers = Math.min(SEATS, payersOf(c) + 1);
+
   if (status === 'none') delete c.payments[sid];
-  else c.payments[sid] = {status, sum: sum ?? c.amount, date: date || isoD(today())};
+  else if (status === 'skip') c.payments[sid] = {status:'skip'};
+  else c.payments[sid] = {status, sum: sum ?? perOf(c), date: date || isoD(today())};
   save();
 }
 
@@ -1104,6 +1449,38 @@ document.addEventListener('click', e => {
       openRoster[el.dataset.c] = !openRoster[el.dataset.c];
       scrollMemo[view] = window.scrollY; render(); break;
 
+    case 'exps':
+      openExp[el.dataset.c] = !openExp[el.dataset.c];
+      scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'newexp':
+      sheet = {type:'exp', c:el.dataset.c, e:null};
+      scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'editexp':
+      sheet = {type:'exp', c:el.dataset.c, e:el.dataset.e};
+      scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'saveexp': {
+      const c = S.collections.find(x => x.id === sheet.c);
+      const g = id => document.getElementById(id);
+      const title = g('x-title').value.trim();
+      const sum = Math.max(0, +g('x-sum').value || 0);
+      if (!title || !sum){ toast('Укажите название и сумму'); return; }
+      const data = {title, sum, date:g('x-date').value || isoD(today()), who:g('x-who').value.trim()};
+      if (sheet.e) Object.assign(c.expenses.find(x => x.id === sheet.e), data);
+      else c.expenses.push({id:'e' + Date.now(), ...data});
+      openExp[c.id] = true;
+      save(); sheet = null; render(); toast('Трата сохранена'); break;
+    }
+
+    case 'delexp': {
+      if (!confirm('Удалить эту трату?')) return;
+      const c = S.collections.find(x => x.id === sheet.c);
+      c.expenses = c.expenses.filter(x => x.id !== sheet.e);
+      save(); sheet = null; render(); toast('Трата удалена'); break;
+    }
+
     case 'toggle': {
       const cid = el.dataset.c, sid = el.dataset.s;
       const cur = stOf(S.collections.find(x => x.id === cid), sid);
@@ -1117,7 +1494,7 @@ document.addEventListener('click', e => {
 
     case 'pst': {
       const c = S.collections.find(x => x.id === sheet.c);
-      const sum = +document.getElementById('f-sum').value || c.amount;
+      const sum = +document.getElementById('f-sum').value || perOf(c);
       const date = document.getElementById('f-date').value;
       setPay(sheet.c, sheet.s, el.dataset.v, sum, date);
       render(); break;
@@ -1127,7 +1504,7 @@ document.addEventListener('click', e => {
       const c = S.collections.find(x => x.id === sheet.c);
       const cur = c.payments[sheet.s];
       if (cur){
-        cur.sum = +document.getElementById('f-sum').value || c.amount;
+        cur.sum = +document.getElementById('f-sum').value || perOf(c);
         cur.date = document.getElementById('f-date').value;
         save();
       }
@@ -1160,11 +1537,25 @@ document.addEventListener('click', e => {
     case 'docc':
       readDraft(); sheet.draft.occ = el.dataset.v; render(); break;
 
+    case 'dmode': {
+      readDraft();
+      const d = sheet.draft, payers = Math.max(1, +d.payers || 1);
+      // переносим введённое значение в другой режим, чтобы сумма не «прыгала»
+      if (el.dataset.v === 'total') d.total = Math.max(0, +d.amount || 0) * payers;
+      else d.amount = Math.ceil(Math.max(0, +d.total || 0) / payers);
+      d.mode = el.dataset.v;
+      render(); break;
+    }
+
     case 'savecoll': {
       readDraft();
       const d = sheet.draft;
       if (!d.title.trim()) d.title = OCC_NAME(d.occ);
+      d.payers = Math.min(SEATS, Math.max(1, +d.payers || active().length));
       d.amount = Math.max(0, +d.amount || 0);
+      d.total  = Math.max(0, +d.total  || 0);
+      if (d.mode === 'total') d.amount = Math.ceil(d.total / d.payers);
+      else d.total = d.amount * d.payers;
       d.days = Math.max(1, +d.days || S.defDays);
       if (sheet.c){
         Object.assign(S.collections.find(x => x.id === sheet.c), d);
@@ -1210,6 +1601,8 @@ function readDraft(){
   if (!sheet.draft) return;
   if (g('f-title'))  sheet.draft.title  = g('f-title').value;
   if (g('f-amount')) sheet.draft.amount = g('f-amount').value;
+  if (g('f-total'))  sheet.draft.total  = g('f-total').value;
+  if (g('f-payers')) sheet.draft.payers = g('f-payers').value;
   if (g('f-days'))   sheet.draft.days   = g('f-days').value;
   if (g('f-start'))  sheet.draft.start  = g('f-start').value;
   if (g('f-note'))   sheet.draft.note   = g('f-note').value;
@@ -1223,14 +1616,10 @@ document.addEventListener('input', e => {
 
   if (a === 'dlive'){
     readDraft();
-    const d = sheet.draft;
-    const start = d.start && /^\d{4}-\d{2}-\d{2}$/.test(d.start) ? parseD(d.start) : today();
-    const dl = addDays(start, Math.max(1, +d.days || 1));
-    const left = diffDays(dl, today());
-    const box = document.querySelector('.calc div');
-    if (box) box.innerHTML = `Предельный срок сдачи: <b>${fmtDY(dl)}</b><br>
-      <span style="color:var(--muted)">${left >= 0 ? `это ${days(left)} от сегодня` : `дата уже прошла (${days(-left)} назад)`} ·
-      итого с класса ${money((+d.amount||0) * active().length)}</span>`;
+    const m = document.getElementById('calc-money');
+    const t = document.getElementById('calc-dl');
+    if (m) m.innerHTML = moneyCalc(sheet.draft);
+    if (t) t.innerHTML = dlCalc(sheet.draft);
     return;
   }
   if (a === 'rename'){
