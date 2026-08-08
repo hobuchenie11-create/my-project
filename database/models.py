@@ -58,7 +58,14 @@ MIGRATIONS = [
     ("users", "username", "TEXT NOT NULL DEFAULT ''"),
     ("users", "last_seen", "TEXT NOT NULL DEFAULT ''"),
     ("readings", "late", "INTEGER NOT NULL DEFAULT 0"),
+    ("tasks", "utility_amount", "REAL"),
+    ("tasks", "utility_paid_at", "TEXT NOT NULL DEFAULT ''"),
+    ("task_templates", "amount_field", "TEXT NOT NULL DEFAULT 'amount'"),
+    ("task_templates", "priority", "TEXT NOT NULL DEFAULT 'normal'"),
 ]
+
+# За сколько дней до срока задача считается «горящей» (подсветка и напоминание)
+TASK_SOON_DAYS = 3
 
 # Пометка в ведомости для показаний, переданных после срока сбора
 LATE_NOTE = "Переданы после срока сбора показаний"
@@ -79,6 +86,7 @@ TASK_OPEN_STATUSES = ("new", "in_progress", "waiting")
 
 TASK_CATEGORIES = {
     "finance": "Спецсчёт и финансы",
+    "nonresidential": "Сопровождение нежилого помещения",
     "meters": "Показания и ресурсники",
     "repair": "Текущий ремонт",
     "improvement": "Благоустройство",
@@ -99,6 +107,7 @@ DEFAULT_TASK_TEMPLATES = [
         "category": "finance",
         "day_start": 2, "day_end": 5,
         "needs_amount": 0,
+        "amount_field": "", "priority": "normal",
         "description": "Получить банковскую выписку по специальному счёту "
                        "за прошедший месяц.",
     },
@@ -108,17 +117,31 @@ DEFAULT_TASK_TEMPLATES = [
         "category": "finance",
         "day_start": 5, "day_end": 10,
         "needs_amount": 0,
+        "amount_field": "", "priority": "normal",
         "description": "Разнести поступления по лицевым счетам, сформировать "
                        "и распечатать квитанции.",
     },
     {
         "code": "nonresidential_payment",
-        "title": "Оплата по нежилому помещению",
-        "category": "finance",
-        "day_start": 1, "day_end": 18,
-        "needs_amount": 1,          # при завершении спросим сумму и дату оплаты
-        "description": "Провести оплату по нежилому помещению. "
-                       "Указать сумму и дату оплаты.",
+        "title": "Аренда за нежилое помещение — поступление",
+        "category": "nonresidential",
+        "day_start": 1, "day_end": 10,
+        "needs_amount": 1,          # сумма аренды и дата поступления
+        "amount_field": "amount",
+        "priority": "normal",
+        "description": "Проконтролировать, что арендатор внёс арендную плату "
+                       "(срок — до 10 числа). Указать сумму и дату.",
+    },
+    {
+        "code": "nonresidential_utilities",
+        "title": "❗ Оплата коммунальных услуг по нежилому помещению",
+        "category": "nonresidential",
+        "day_start": 10, "day_end": 18,
+        "needs_amount": 1,          # сумма коммуналки и дата оплаты
+        "amount_field": "utility_amount",
+        "priority": "high",
+        "description": "Важно: оплатить коммунальные услуги по нежилому "
+                       "помещению строго до 18 числа. Указать сумму и дату оплаты.",
     },
     {
         "code": "submit_readings_rso",
@@ -126,6 +149,7 @@ DEFAULT_TASK_TEMPLATES = [
         "category": "meters",
         "day_start": 20, "day_end": 25,
         "needs_amount": 0,
+        "amount_field": "", "priority": "normal",
         "description": "Передать собранные показания в Росводоканал и ОЭК.",
     },
 ]
@@ -207,6 +231,8 @@ CREATE TABLE IF NOT EXISTS task_templates (
     day_start    INTEGER NOT NULL DEFAULT 1,
     day_end      INTEGER NOT NULL DEFAULT 28,
     needs_amount INTEGER NOT NULL DEFAULT 0,
+    amount_field TEXT NOT NULL DEFAULT 'amount',  -- amount | utility_amount
+    priority     TEXT NOT NULL DEFAULT 'normal',
     assignee     TEXT NOT NULL DEFAULT '',
     is_active    INTEGER NOT NULL DEFAULT 1,
     sort_order   INTEGER NOT NULL DEFAULT 0
@@ -224,8 +250,10 @@ CREATE TABLE IF NOT EXISTS tasks (
     assignee     TEXT NOT NULL DEFAULT '',
     start_date   TEXT NOT NULL DEFAULT '',        -- с какого числа можно делать
     due_date     TEXT NOT NULL DEFAULT '',        -- до какого числа
-    amount       REAL,                            -- сумма (для оплат)
-    paid_at      TEXT NOT NULL DEFAULT '',        -- дата оплаты
+    amount       REAL,                            -- сумма аренды (нежилое)
+    paid_at      TEXT NOT NULL DEFAULT '',        -- дата поступления аренды
+    utility_amount REAL,                          -- сумма оплаты коммуналки
+    utility_paid_at TEXT NOT NULL DEFAULT '',     -- дата оплаты коммуналки
     apartment_id INTEGER REFERENCES apartments (id),
     source       TEXT NOT NULL DEFAULT 'chairman',
     created_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),

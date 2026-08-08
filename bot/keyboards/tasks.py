@@ -5,6 +5,7 @@ from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
 BTN_TASKS = "🗂 Задачи"
 BTN_MONTH_PLAN = "📅 План на месяц"
 BTN_URGENT = "⏰ Текущие и просроченные"
+BTN_ONE_OFF = "📌 Мои задачи"
 BTN_NEW_TASK = "➕ Новая задача"
 BTN_YEAR_PLAN = "📊 Годовой план (Excel)"
 BTN_COUNCIL = "📤 Сводка для Совета дома"
@@ -15,7 +16,8 @@ def tasks_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=BTN_URGENT), KeyboardButton(text=BTN_MONTH_PLAN)],
-            [KeyboardButton(text=BTN_NEW_TASK), KeyboardButton(text=BTN_YEAR_PLAN)],
+            [KeyboardButton(text=BTN_ONE_OFF), KeyboardButton(text=BTN_NEW_TASK)],
+            [KeyboardButton(text=BTN_YEAR_PLAN)],
             [KeyboardButton(text=BTN_COUNCIL)],
             [KeyboardButton(text=BTN_TASKS_BACK)],
         ],

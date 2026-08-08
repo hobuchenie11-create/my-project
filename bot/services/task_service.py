@@ -12,7 +12,8 @@ from datetime import date, timedelta
 
 from database import repository
 from database.models import (DEFAULT_TASK_TEMPLATES, TASK_CATEGORIES,
-                             TASK_OPEN_STATUSES, TASK_PRIORITIES, TASK_STATUSES)
+                             TASK_OPEN_STATUSES, TASK_PRIORITIES, TASK_SOON_DAYS,
+                             TASK_STATUSES)
 
 # На сколько месяцев вперёд держим созданные задачи
 MONTHS_AHEAD = 3
@@ -26,7 +27,11 @@ def ensure_templates(conn: sqlite3.Connection) -> None:
     for order, tpl in enumerate(DEFAULT_TASK_TEMPLATES, start=1):
         repository.upsert_task_template(
             conn, tpl["code"], tpl["title"], tpl["description"], tpl["category"],
-            tpl["day_start"], tpl["day_end"], tpl["needs_amount"], order)
+            tpl["day_start"], tpl["day_end"], tpl["needs_amount"], order,
+            amount_field=tpl.get("amount_field", "amount"),
+            priority=tpl.get("priority", "normal"))
+    # уточнения регламента подхватывают и уже созданные задачи
+    repository.sync_tasks_with_templates(conn)
 
 
 def _month_period(d: date) -> str:
@@ -70,7 +75,7 @@ def generate_tasks(conn: sqlite3.Connection, today: date | None = None,
                 conn, tpl["title"],
                 template_id=tpl["id"], period=period,
                 description=tpl["description"], category=tpl["category"],
-                priority="normal", status="new", assignee=tpl["assignee"],
+                priority=tpl["priority"], status="new", assignee=tpl["assignee"],
                 start_date=start.isoformat(), due_date=due.isoformat(),
                 source="regular")
             created += 1
@@ -93,7 +98,7 @@ def generate_year(conn: sqlite3.Connection, year: int) -> int:
                 conn, tpl["title"],
                 template_id=tpl["id"], period=period,
                 description=tpl["description"], category=tpl["category"],
-                priority="normal", status="new", assignee=tpl["assignee"],
+                priority=tpl["priority"], status="new", assignee=tpl["assignee"],
                 start_date=start.isoformat(), due_date=due.isoformat(),
                 source="regular")
             created += 1
@@ -140,6 +145,12 @@ class TaskView:
         return not self.is_overdue
 
     @property
+    def is_soon(self) -> bool:
+        """До срока осталось TASK_SOON_DAYS дней или меньше — пора поторопиться."""
+        return bool(self.is_active_now and self.days_left is not None
+                    and 0 <= self.days_left <= TASK_SOON_DAYS)
+
+    @property
     def mark(self) -> str:
         if self.row["status"] == "done":
             return "✅"
@@ -147,6 +158,8 @@ class TaskView:
             return "🚫"
         if self.is_overdue:
             return "🔴"
+        if self.is_soon:
+            return "🟠"          # срок на носу
         if self.is_active_now:
             return "🟡"
         return "⚪"
@@ -188,10 +201,16 @@ def task_line(row: sqlite3.Row, today: date | None = None) -> str:
         parts.append(f"до {_fmt_date(row['due_date'])}")
     if v.is_overdue:
         parts.append(f"просрочено на {abs(v.days_left)} дн.")
-    elif v.is_open and v.days_left is not None and v.days_left <= 3:
-        parts.append(f"осталось {v.days_left} дн.")
-    if row["status"] == "done" and row["amount"] is not None:
-        parts.append(f"сумма {row['amount']:g} ₽")
+    elif v.is_open and v.days_left is not None and v.days_left <= TASK_SOON_DAYS:
+        parts.append("сегодня последний день" if v.days_left == 0
+                     else f"осталось {v.days_left} дн.")
+    if row["amount"] is not None:
+        parts.append(f"аренда {row['amount']:g} ₽"
+                     + (f" от {_fmt_date(row['paid_at'])}" if row["paid_at"] else ""))
+    if row["utility_amount"] is not None:
+        parts.append(f"коммуналка {row['utility_amount']:g} ₽"
+                     + (f" от {_fmt_date(row['utility_paid_at'])}"
+                        if row["utility_paid_at"] else ""))
     return " · ".join(parts)
 
 
@@ -238,6 +257,21 @@ def urgent_text(conn: sqlite3.Connection, today: date | None = None) -> str:
         lines += ["⚪ <b>Скоро начнётся</b>", ""]
         lines += [f"{r['title']} — с {_fmt_date(r['start_date'])}" for r in soon]
     return "\n".join(lines).strip()
+
+
+def one_off_text(conn: sqlite3.Connection, today: date | None = None) -> str:
+    """Разовые задачи председателя — то, что он планирует сам."""
+    today = today or date.today()
+    rows = repository.one_off_tasks(conn)
+    if not rows:
+        return ("📌 Разовых задач нет.\n\n"
+                "Нажмите «➕ Новая задача», чтобы запланировать своё дело — "
+                "срок бот будет отсчитывать сам.")
+    lines = ["📌 <b>Мои задачи</b>", ""]
+    for row in rows:
+        lines.append(task_line(row, today))
+        lines.append(f"    <i>{category_label(row['category'])}</i>")
+    return "\n".join(lines)
 
 
 def council_digest(conn: sqlite3.Connection, today: date | None = None) -> str:
@@ -296,26 +330,35 @@ def reminders_for_today(conn: sqlite3.Connection,
             messages.append(
                 f"🟡 <b>Пора начинать:</b> {row['title']}\n"
                 f"Срок — до {_fmt_date(row['due_date'])}.")
-        elif v.is_active_now and v.days_left is not None and v.days_left <= 1:
-            when = "сегодня" if v.days_left == 0 else "завтра"
+        elif v.is_soon:
+            when = ("сегодня последний день" if v.days_left == 0
+                    else "завтра" if v.days_left == 1
+                    else f"осталось {v.days_left} дн.")
+            urgent = "❗ " if row["priority"] == "high" else ""
             messages.append(
-                f"⏰ <b>Заканчивается срок:</b> {row['title']} — {when}.")
+                f"🟠 {urgent}<b>Скоро срок:</b> {row['title']} — {when} "
+                f"(до {_fmt_date(row['due_date'])}).")
     return messages
 
 
 def complete_task(conn: sqlite3.Connection, task_id: int, tg_id: int | None,
-                  amount: float | None = None, paid_at: str | None = None) -> None:
+                  amount: float | None = None, paid_at: str | None = None,
+                  amount_field: str = "amount") -> None:
+    """Закрывает задачу. Сумма попадает в своё поле: аренда или коммуналка."""
+    date_field = "paid_at" if amount_field == "amount" else "utility_paid_at"
     fields = {"status": "done", "done_at": date.today().isoformat()}
     if amount is not None:
-        fields["amount"] = amount
+        fields[amount_field] = amount
     if paid_at:
-        fields["paid_at"] = paid_at
+        fields[date_field] = paid_at
     repository.update_task(conn, task_id, **fields)
+
+    kind = "аренда" if amount_field == "amount" else "коммуналка"
     details = "выполнена"
     if amount is not None:
-        details += f", сумма {amount:g} ₽"
+        details += f", {kind} {amount:g} ₽"
     if paid_at:
-        details += f", оплачено {paid_at}"
+        details += f", дата {paid_at}"
     repository.log_task_event(conn, task_id, tg_id, "status", details)
 
 

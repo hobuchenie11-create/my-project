@@ -266,23 +266,44 @@ def save_report(conn: sqlite3.Connection, period: str, file_path: str) -> None:
 
 def upsert_task_template(conn: sqlite3.Connection, code: str, title: str,
                          description: str, category: str, day_start: int,
-                         day_end: int, needs_amount: int, sort_order: int) -> int:
+                         day_end: int, needs_amount: int, sort_order: int,
+                         amount_field: str = "amount",
+                         priority: str = "normal") -> int:
     conn.execute(
         """INSERT INTO task_templates
                (code, title, description, category, day_start, day_end,
-                needs_amount, sort_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                needs_amount, amount_field, priority, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(code) DO UPDATE SET title = excluded.title,
                description = excluded.description, category = excluded.category,
                day_start = excluded.day_start, day_end = excluded.day_end,
                needs_amount = excluded.needs_amount,
+               amount_field = excluded.amount_field,
+               priority = excluded.priority,
                sort_order = excluded.sort_order""",
         (code, title, description, category, day_start, day_end,
-         needs_amount, sort_order),
+         needs_amount, amount_field, priority, sort_order),
     )
     conn.commit()
     return conn.execute("SELECT id FROM task_templates WHERE code = ?",
                         (code,)).fetchone()["id"]
+
+
+def sync_tasks_with_templates(conn: sqlite3.Connection) -> int:
+    """Подтягивает в задачи изменения шаблонов (название, категория, приоритет).
+
+    Нужна, когда регламент уточняется: уже созданные задачи не должны остаться
+    со старой категорией или формулировкой.
+    """
+    cur = conn.execute(
+        """UPDATE tasks SET
+               title = (SELECT t.title FROM task_templates t WHERE t.id = tasks.template_id),
+               category = (SELECT t.category FROM task_templates t WHERE t.id = tasks.template_id),
+               priority = (SELECT t.priority FROM task_templates t WHERE t.id = tasks.template_id),
+               description = (SELECT t.description FROM task_templates t WHERE t.id = tasks.template_id)
+           WHERE template_id IS NOT NULL""")
+    conn.commit()
+    return cur.rowcount
 
 
 def active_task_templates(conn: sqlite3.Connection) -> list[sqlite3.Row]:
@@ -336,6 +357,16 @@ def open_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     return conn.execute(
         """SELECT * FROM tasks WHERE status IN ('new', 'in_progress', 'waiting')
            ORDER BY (due_date = ''), due_date, id"""
+    ).fetchall()
+
+
+def one_off_tasks(conn: sqlite3.Connection, include_done: bool = False) -> list[sqlite3.Row]:
+    """Разовые задачи (не из годового цикла) — то, что председатель ставит сам."""
+    where = "template_id IS NULL"
+    if not include_done:
+        where += " AND status IN ('new', 'in_progress', 'waiting')"
+    return conn.execute(
+        f"SELECT * FROM tasks WHERE {where} ORDER BY (due_date = ''), due_date, id"
     ).fetchall()
 
 

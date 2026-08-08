@@ -10,8 +10,8 @@ from aiogram.types import CallbackQuery, FSInputFile, Message
 from bot.config import config
 from bot.keyboards.admin_menu import admin_menu
 from bot.keyboards.tasks import (BTN_COUNCIL, BTN_MONTH_PLAN, BTN_NEW_TASK,
-                                 BTN_TASKS, BTN_TASKS_BACK, BTN_URGENT,
-                                 BTN_YEAR_PLAN, categories_keyboard,
+                                 BTN_ONE_OFF, BTN_TASKS, BTN_TASKS_BACK,
+                                 BTN_URGENT, BTN_YEAR_PLAN, categories_keyboard,
                                  task_actions, tasks_menu)
 from bot.services import task_service
 from bot.states.tasks import CompleteTask, NewTask
@@ -83,6 +83,29 @@ async def show_urgent(message: Message) -> None:
             reply_markup=task_actions(row["id"], row["status"]))
 
 
+@router.message(F.text == BTN_ONE_OFF)
+async def show_one_off(message: Message) -> None:
+    """Разовые задачи председателя — с кнопками управления у каждой."""
+    conn = repository.connect()
+    try:
+        text = task_service.one_off_text(conn)
+        rows = repository.one_off_tasks(conn)
+    finally:
+        conn.close()
+
+    if not rows:
+        await message.answer(text)
+        return
+
+    await message.answer("📌 <b>Мои задачи</b>")
+    today = date.today()
+    for row in rows:
+        await message.answer(
+            f"{task_service.task_line(row, today)}\n"
+            f"<i>{task_service.category_label(row['category'])}</i>",
+            reply_markup=task_actions(row["id"], row["status"]))
+
+
 @router.message(F.text == BTN_COUNCIL)
 async def send_council_digest(message: Message) -> None:
     conn = repository.connect()
@@ -144,10 +167,13 @@ async def change_task_status(callback: CallbackQuery, state: FSMContext) -> None
 
         # Задача с суммой (оплата) — спросим сумму и дату
         if action == "done" and template and template["needs_amount"]:
-            await state.update_data(task_id=task_id, title=task["title"])
+            field = template["amount_field"] or "amount"
+            kind = "аренды" if field == "amount" else "оплаты коммунальных услуг"
+            await state.update_data(task_id=task_id, title=task["title"],
+                                    amount_field=field)
             await state.set_state(CompleteTask.amount)
             await callback.message.answer(
-                f"💰 <b>{task['title']}</b>\nВведите сумму оплаты в рублях "
+                f"💰 <b>{task['title']}</b>\nВведите сумму {kind} в рублях "
                 "(например: 4520,30):")
             await callback.answer()
             return
@@ -198,15 +224,18 @@ async def process_paid_at(message: Message, state: FSMContext) -> None:
 
     conn = repository.connect()
     try:
+        field = data.get("amount_field", "amount")
         task_service.complete_task(conn, data["task_id"], message.from_user.id,
-                                   amount=data["amount"], paid_at=paid.isoformat())
+                                   amount=data["amount"], paid_at=paid.isoformat(),
+                                   amount_field=field)
     finally:
         conn.close()
 
+    label = "Аренда" if field == "amount" else "Оплата коммунальных услуг"
     await message.answer(
         f"✅ <b>{data['title']}</b> — выполнено.\n"
-        f"Сумма: {data['amount']:g} ₽\n"
-        f"Дата оплаты: {paid.strftime('%d.%m.%Y')}",
+        f"{label}: {data['amount']:g} ₽\n"
+        f"Дата: {paid.strftime('%d.%m.%Y')}",
         reply_markup=tasks_menu())
 
 
@@ -264,7 +293,7 @@ async def new_task_due(message: Message, state: FSMContext) -> None:
         task_id = repository.create_task(
             conn, data["title"], category=data["category"], priority="normal",
             status="new", due_date=due, source="chairman",
-            period=_period_now() if due else "")
+            period=due[:7] if due else "")
         repository.log_task_event(conn, task_id, message.from_user.id,
                                   "created", data["title"])
         row = repository.get_task(conn, task_id)

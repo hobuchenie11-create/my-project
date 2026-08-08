@@ -22,12 +22,17 @@ SHEET_PLAN = "Годовой план"
 SHEET_RULES = "Регламент"
 
 COLUMNS = ["Месяц", "Задача", "Категория", "Срок", "Статус",
-           "Сумма, ₽", "Дата оплаты", "Примечание"]
-WIDTHS = [14, 42, 22, 12, 14, 13, 14, 30]
+           "Аренда, ₽", "Дата поступления",
+           "Оплата коммуналки, ₽", "Дата оплаты", "Примечание"]
+WIDTHS = [14, 42, 20, 12, 14, 13, 17, 20, 14, 30]
+
+# Столбцы с суммами (для формата и итогов)
+COL_RENT, COL_RENT_DATE, COL_UTIL, COL_UTIL_DATE = 6, 7, 8, 9
 
 FILL_DONE = PatternFill("solid", fgColor="D9EAD3")      # выполнено
 FILL_OVERDUE = PatternFill("solid", fgColor="F4CCCC")   # просрочено
 FILL_ACTIVE = PatternFill("solid", fgColor="FFF2CC")    # в работе сейчас
+FILL_SOON = PatternFill("solid", fgColor="FCE5CD")      # срок через 3 дня и меньше
 FILL_MONTH = PatternFill("solid", fgColor="EFEFEF")
 
 
@@ -85,28 +90,35 @@ def _sheet_plan(ws, conn: sqlite3.Connection, year: int) -> None:
                 task_service.status_label(row["status"]),
                 row["amount"] if row["amount"] is not None else "",
                 _fmt(row["paid_at"]),
+                row["utility_amount"] if row["utility_amount"] is not None else "",
+                _fmt(row["utility_paid_at"]),
                 row["description"],
             ]
             fill = (FILL_DONE if row["status"] == "done"
                     else FILL_OVERDUE if v.is_overdue
+                    else FILL_SOON if v.is_soon
                     else FILL_ACTIVE if v.is_active_now else None)
             for col, value in enumerate(cells, start=1):
                 cell = ws.cell(row=r, column=col, value=value)
                 cell.border = style.BORDER
-                cell.alignment = (style.LEFT if col in (2, 3, 8) else style.CENTER)
-                if fill and col == 5:
+                cell.alignment = (style.LEFT if col in (2, 3, 10) else style.CENTER)
+                # Подсветкой отмечаем задачу целиком: срок, статус и суммы
+                if fill and col in (4, 5, COL_RENT, COL_UTIL):
                     cell.fill = fill
-                if col == 6:
+                if col in (COL_RENT, COL_UTIL):
                     cell.number_format = "# ##0.00"
+                if row["priority"] == "high" and col == 2:
+                    cell.font = style.FONT_BOLD
             r += 1
 
     # Итоги по суммам оплат за год
     r += 1
-    ws.cell(row=r, column=2, value="Итого оплачено за год, ₽").font = style.FONT_BOLD
-    total = ws.cell(row=r, column=6,
-                    value=f"=SUM(F3:F{r - 2})")
-    total.font = style.FONT_BOLD
-    total.number_format = "# ##0.00"
+    ws.cell(row=r, column=2, value="Итого за год, ₽").font = style.FONT_BOLD
+    for col in (COL_RENT, COL_UTIL):
+        letter = get_column_letter(col)
+        total = ws.cell(row=r, column=col, value=f"=SUM({letter}3:{letter}{r - 2})")
+        total.font = style.FONT_BOLD
+        total.number_format = "# ##0.00"
 
     ws.freeze_panes = "A3"
     ws.auto_filter.ref = f"A2:{get_column_letter(ncols)}{r - 2}"
@@ -149,7 +161,19 @@ def _sheet_rules(ws) -> None:
             cell.alignment = Alignment(horizontal="left", vertical="center",
                                        wrap_text=True)
 
-    note_row = len(DEFAULT_TASK_TEMPLATES) + 4
+    legend_row = len(DEFAULT_TASK_TEMPLATES) + 4
+    ws.cell(row=legend_row, column=1, value="Подсветка в плане").font = style.FONT_BOLD
+    for i, (label, fill) in enumerate([
+        ("Выполнено", FILL_DONE),
+        ("Срок через 3 дня и меньше", FILL_SOON),
+        ("Просрочено", FILL_OVERDUE),
+        ("В работе", FILL_ACTIVE),
+    ], start=legend_row + 1):
+        cell = ws.cell(row=i, column=1, value=label)
+        cell.fill = fill
+        cell.border = style.BORDER
+
+    note_row = len(DEFAULT_TASK_TEMPLATES) + 10
     ws.cell(row=note_row, column=1,
             value="Задачи на каждый месяц создаются автоматически; цикл "
                   "продолжается в следующем году без перенастройки.").font = Font(italic=True)
