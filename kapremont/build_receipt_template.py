@@ -63,18 +63,21 @@ QR_ВКЛЮЧЁН = False
 # ЦВЕТ — то, что уходит жителю в PDF по электронной почте.
 # Роли используются и здесь, и в листе СХЕМА, который читает макрос.
 # --------------------------------------------------------------------------
+# В ЧБ-схеме заливок нет вообще: сплошные фоны съедают тонер, а на дом их
+# уходит по листу на квартиру. Структуру держат рамки, акценты — кегль
+# и полужирный. Цветная схема (только для PDF) заливки сохраняет.
 PALETTE = {
     # роль        ЧБ(заливка, шрифт)        ЦВЕТ(заливка, шрифт)
-    "title":     (("000000", "FFFFFF"), ("0F6B70", "FFFFFF")),
+    "title":     (("FFFFFF", "000000"), ("0F6B70", "FFFFFF")),
     "subtitle":  (("FFFFFF", "000000"), ("DDEFF0", "0F6B70")),
-    "section":   (("D9D9D9", "000000"), ("0F6B70", "FFFFFF")),
-    "thead":     (("BFBFBF", "000000"), ("263238", "FFFFFF")),
-    "label":     (("F2F2F2", "000000"), ("F3F5F5", "263238")),
+    "section":   (("FFFFFF", "000000"), ("0F6B70", "FFFFFF")),
+    "thead":     (("FFFFFF", "000000"), ("263238", "FFFFFF")),
+    "label":     (("FFFFFF", "000000"), ("F3F5F5", "263238")),
     "value":     (("FFFFFF", "000000"), ("FFFFFF", "263238")),
     "input":     (("FFFFFF", "000000"), ("E8F3F3", "0F6B70")),
-    "total":     (("000000", "FFFFFF"), ("0F6B70", "FFFFFF")),
+    "total":     (("FFFFFF", "000000"), ("0F6B70", "FFFFFF")),
     "totalsum":  (("FFFFFF", "000000"), ("E8F3F3", "0F6B70")),
-    "note":      (("F2F2F2", "000000"), ("E8F3F3", "263238")),
+    "note":      (("FFFFFF", "000000"), ("E8F3F3", "263238")),
     "qr":        (("FFFFFF", "000000"), ("F3F5F5", "0F6B70")),
     "plain":     (("FFFFFF", "000000"), ("FFFFFF", "263238")),
 }
@@ -150,6 +153,19 @@ def outline(ws, ref, side=MEDIUM):
                 top=side if ri == 0 else b.top,
                 bottom=side if ri == last_r else b.bottom,
             )
+
+
+def edge(ws, ref, top=None, bottom=None):
+    """Усилить горизонтальные границы полосы.
+
+    Без заливок именно линии отделяют заголовок раздела от его содержимого,
+    поэтому заголовки подчёркиваются жирной чертой.
+    """
+    for row in ws[ref]:
+        for c in row:
+            b = c.border
+            c.border = Border(left=b.left, right=b.right,
+                              top=top or b.top, bottom=bottom or b.bottom)
 
 
 def d(col_letter):
@@ -397,7 +413,8 @@ spacer(ws, 4)
 # --- 1. Получатель платежа ------------------------------------------------
 ws.row_dimensions[5].height = 16
 put(ws, "B5:H5", "1. ПОЛУЧАТЕЛЬ ПЛАТЕЖА — ВЛАДЕЛЕЦ СПЕЦИАЛЬНОГО СЧЁТА",
-    role="section", size=9, bold=True, indent=1)
+    role="section", size=10, bold=True, indent=1)
+edge(ws, "B5:H5", bottom=MEDIUM)
 
 ws.row_dimensions[6].height = 26
 put(ws, "B6", "Получатель платежа", role="label", size=8, bold=True,
@@ -441,7 +458,8 @@ spacer(ws, 12)
 # --- 2. Плательщик и помещение -------------------------------------------
 ws.row_dimensions[13].height = 16
 put(ws, "B13:H13", "2. ПЛАТЕЛЬЩИК И ПОМЕЩЕНИЕ", role="section",
-    size=9, bold=True, indent=1)
+    size=10, bold=True, indent=1)
+edge(ws, "B13:H13", bottom=MEDIUM)
 
 ws.row_dimensions[14].height = 19
 put(ws, "B14", "Лицевой счёт", role="label", size=8, bold=True, indent=1)
@@ -485,13 +503,15 @@ spacer(ws, 18)
 # --- 3. Расчёт ------------------------------------------------------------
 ws.row_dimensions[19].height = 16
 put(ws, "B19:H19", "3. РАСЧЁТ РАЗМЕРА ВЗНОСА И СУММЫ К ОПЛАТЕ",
-    role="section", size=9, bold=True, indent=1)
+    role="section", size=10, bold=True, indent=1)
+edge(ws, "B19:H19", bottom=MEDIUM)
 
 ws.row_dimensions[20].height = 18
 put(ws, "B20:E20", "Вид платежа", role="thead", size=9, bold=True, align="center")
 put(ws, "F20:G20", "Расчётный период", role="thead", size=9, bold=True,
     align="center")
 put(ws, "H20", "Сумма, руб.", role="thead", size=9, bold=True, align="center")
+edge(ws, "B20:H20", bottom=MEDIUM)
 
 # Пени в этом доме не начисляются — строки под них в бланке нет.
 CALC_ROWS = [
@@ -511,10 +531,11 @@ for row, title, period, amount in CALC_ROWS:
 
 # Итог: берём готовое значение из разноски, а если его нет — считаем сами.
 ws.row_dimensions[24].height = 28
-put(ws, "B24:G24", "ИТОГО К ОПЛАТЕ", role="total", size=13, bold=True, indent=1)
+put(ws, "B24:G24", "ИТОГО К ОПЛАТЕ", role="total", size=14, bold=True, indent=1)
 put(ws, "H24", f'=IF({lookup("$J")}="",ROUND(H21+H22+H23,2),{d("$J")})',
-    role="totalsum", size=14, bold=True, align="right", fmt=MONEY,
+    role="totalsum", size=16, bold=True, align="right", fmt=MONEY,
     border=BOX_MED, indent=1)
+edge(ws, "B24:H24", top=MEDIUM)
 
 outline(ws, "B19:H24")
 spacer(ws, 25)
@@ -523,7 +544,8 @@ spacer(ws, 25)
 ws.row_dimensions[26].height = 16
 put(ws, "B26:H26",
     "4. СПРАВОЧНАЯ ИНФОРМАЦИЯ ПО СПЕЦИАЛЬНОМУ СЧЁТУ (ч. 7 ст. 177 ЖК РФ)",
-    role="section", size=9, bold=True, indent=1)
+    role="section", size=10, bold=True, indent=1)
+edge(ws, "B26:H26", bottom=MEDIUM)
 
 REF_ROWS = [
     (27, f'="Поступило оплат по лицевому счёту с начала "&YEAR({PERIOD_DATE})'
@@ -546,15 +568,17 @@ spacer(ws, 30)
 # --- 5. Порядок оплаты и QR ----------------------------------------------
 ws.row_dimensions[31].height = 16
 if QR_ВКЛЮЧЁН:
-    put(ws, "B31:F31", "5. ПОРЯДОК ОПЛАТЫ", role="section", size=9, bold=True,
+    put(ws, "B31:F31", "5. ПОРЯДОК ОПЛАТЫ", role="section", size=10, bold=True,
         indent=1)
-    put(ws, "G31:H31", "QR-КОД ДЛЯ ОПЛАТЫ", role="section", size=9, bold=True,
+    put(ws, "G31:H31", "QR-КОД ДЛЯ ОПЛАТЫ", role="section", size=10, bold=True,
         align="center")
 else:
     # Заголовка над пустой рамкой быть не должно — иначе житель решит,
     # что квитанция напечаталась с ошибкой.
-    put(ws, "B31:H31", "5. ПОРЯДОК ОПЛАТЫ", role="section", size=9, bold=True,
+    put(ws, "B31:H31", "5. ПОРЯДОК ОПЛАТЫ", role="section", size=10, bold=True,
         indent=1)
+
+edge(ws, "B31:H31", bottom=MEDIUM)
 
 PAY_LINES = [
     (32, 14, "1) без комиссии — в отделениях АО «Россельхозбанк» "
@@ -600,20 +624,21 @@ spacer(ws, 38)
 # Ключевое предупреждение: платёж идёт на счёт дома только по номеру
 # расчётного счёта. Оплата через поиск «капремонт» уводит деньги на общий
 # счёт регионального оператора, откуда их потом приходится разыскивать.
-ws.row_dimensions[39].height = 30
+ws.row_dimensions[39].height = 32
 put(ws, "B39:H39",
     f'="ВНИМАНИЕ! ПЛАТИТЕ ТОЛЬКО ПО НОМЕРУ РАСЧЁТНОГО СЧЁТА "'
     f'&{CFG_REF["Расчётный счёт (спец. счёт МКД)"]}'
     f'&" — ЭТО СПЕЦИАЛЬНЫЙ СЧЁТ ВАШЕГО ДОМА"',
-    role="total", size=10, bold=True, align="center", wrap=True,
+    role="total", size=11, bold=True, align="center", wrap=True,
     border=BOX_MED)
 
 ws.row_dimensions[40].height = 44
 put(ws, "B40:H40",
-    f'="В отделении банка и в мобильном приложении выбирайте оплату '
-    f'по реквизитам — вкладку «Специальный счёт». Не платите через поиск '
-    f'«Капитальный ремонт»: такой платёж уходит на общий счёт Регионального '
-    f'фонда капитального ремонта и на счёт вашего дома не поступает."'
+    f'="В отделении банка и в мобильном приложении во вкладках ищите "'
+    f'&"«РФКР МКД_капремонт, оплата по расчётному счёту» и указывайте номер '
+    f'расчётного счёта, приведённый выше. Оплата через общий поиск '
+    f'«Капитальный ремонт» уходит на общий счёт Регионального фонда '
+    f'капитального ремонта и на счёт вашего дома не поступает."'
     f'&CHAR(10)&"Лицевой счёт № "&КВ_ЛС&" при оплате НЕ вводится — он указан '
     f'справочно, только для учёта начислений."',
     role="note", size=9, align="center", wrap=True)
