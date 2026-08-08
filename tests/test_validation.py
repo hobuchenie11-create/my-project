@@ -34,3 +34,18 @@ def test_normal_delta_no_warning():
     result = check_reading("cws_kitchen", 150, 100)
     assert result.ok
     assert not result.warning
+
+
+def test_question_detection_during_readings():
+    """Вопрос посреди передачи показаний должен распознаваться как вопрос."""
+    from bot.handlers.readings import _looks_like_question as is_question
+
+    assert is_question("Как оплатить квитанцию?")
+    assert is_question("где взять пульт от ворот")
+    assert is_question("подскажите телефон УК")
+    assert is_question("не работает домофон")
+
+    # Показания вопросом не считаются
+    assert not is_question("12345")
+    assert not is_question("56,78")
+    assert not is_question("0000076")

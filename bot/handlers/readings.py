@@ -17,6 +17,22 @@ router = Router()
 router.message.filter(F.chat.type == "private")
 
 
+# Слова, по которым видно, что человек спрашивает, а не диктует показание
+_QUESTION_WORDS = ("как", "где", "когда", "почему", "зачем", "что", "кто",
+                   "куда", "можно", "нужно", "подскажите", "помогите",
+                   "не работает", "сломал", "не могу")
+
+
+def _looks_like_question(text: str) -> bool:
+    lowered = text.strip().lower()
+    if "?" in lowered:
+        return True
+    if len(lowered.split()) < 2:
+        return False
+    return any(lowered.startswith(w) or f" {w} " in lowered
+               for w in _QUESTION_WORDS)
+
+
 async def _ask_next_meter(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     queue: list[str] = data["queue"]
@@ -98,9 +114,20 @@ async def cancel_submission(message: Message, state: FSMContext) -> None:
 
 @router.message(SubmitReadings.value)
 async def process_value(message: Message, state: FSMContext) -> None:
-    value = parse_value(message.text or "")
+    text = message.text or ""
+    value = parse_value(text)
     if value is None:
-        await message.answer("Не похоже на показание. Введите число, например: 1234 или 56,78")
+        # Житель посреди передачи показаний задал вопрос — не оставляем его
+        # в тупике, а объясняем, как выйти из диалога.
+        if _looks_like_question(text):
+            await message.answer(
+                "Похоже, это вопрос, а сейчас идёт передача показаний.\n\n"
+                "Нажмите «❌ Отмена», чтобы выйти и задать вопрос, — "
+                "введённые показания уже сохранены. "
+                "Или введите показание числом, и продолжим.")
+        else:
+            await message.answer("Не похоже на показание. Введите число, "
+                                 "например: 1234 или 56,78")
         return
 
     data = await state.get_data()
