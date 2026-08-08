@@ -32,6 +32,8 @@ class Config:
     # Когда автоматически формировать ведомость непередавших
     debtors_day: int = int(os.getenv("DEBTORS_DAY", "20"))
     debtors_hour: int = int(os.getenv("DEBTORS_HOUR", "9"))
+    # Во сколько присылать напоминания по задачам председателя
+    tasks_reminder_hour: int = int(os.getenv("TASKS_REMINDER_HOUR", "9"))
 
     base_dir: Path = BASE_DIR
     db_path: Path = BASE_DIR / "database" / "dhos.db"

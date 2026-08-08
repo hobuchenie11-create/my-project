@@ -1,6 +1,8 @@
 """Клавиатура администратора (председателя)."""
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
+from bot.keyboards.tasks import BTN_TASKS
+
 BTN_ADMIN = "🛠 Меню председателя"
 BTN_REGISTRY = "📋 Реестр квартир"
 BTN_STATEMENT = "📄 Ведомость передачи"
@@ -19,6 +21,7 @@ BTN_BACK = "⬅️ Главное меню"
 def admin_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
+            [KeyboardButton(text=BTN_TASKS)],
             [KeyboardButton(text=BTN_REGISTRY), KeyboardButton(text=BTN_STATEMENT)],
             [KeyboardButton(text=BTN_WORKBOOK), KeyboardButton(text=BTN_STATS)],
             [KeyboardButton(text=BTN_DEBTORS), KeyboardButton(text=BTN_DEBTORS_DOC)],

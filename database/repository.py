@@ -262,6 +262,106 @@ def save_report(conn: sqlite3.Connection, period: str, file_path: str) -> None:
     conn.commit()
 
 
+# ---------- задачи председателя ----------
+
+def upsert_task_template(conn: sqlite3.Connection, code: str, title: str,
+                         description: str, category: str, day_start: int,
+                         day_end: int, needs_amount: int, sort_order: int) -> int:
+    conn.execute(
+        """INSERT INTO task_templates
+               (code, title, description, category, day_start, day_end,
+                needs_amount, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(code) DO UPDATE SET title = excluded.title,
+               description = excluded.description, category = excluded.category,
+               day_start = excluded.day_start, day_end = excluded.day_end,
+               needs_amount = excluded.needs_amount,
+               sort_order = excluded.sort_order""",
+        (code, title, description, category, day_start, day_end,
+         needs_amount, sort_order),
+    )
+    conn.commit()
+    return conn.execute("SELECT id FROM task_templates WHERE code = ?",
+                        (code,)).fetchone()["id"]
+
+
+def active_task_templates(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM task_templates WHERE is_active = 1 ORDER BY sort_order, id"
+    ).fetchall()
+
+
+def create_task(conn: sqlite3.Connection, title: str, **fields) -> int:
+    columns = ["title"] + list(fields)
+    values = [title] + list(fields.values())
+    placeholders = ", ".join("?" * len(columns))
+    cur = conn.execute(
+        f"INSERT INTO tasks ({', '.join(columns)}) VALUES ({placeholders})", values
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def task_exists(conn: sqlite3.Connection, template_id: int, period: str) -> bool:
+    return conn.execute(
+        "SELECT 1 FROM tasks WHERE template_id = ? AND period = ?",
+        (template_id, period),
+    ).fetchone() is not None
+
+
+def get_task(conn: sqlite3.Connection, task_id: int) -> sqlite3.Row | None:
+    return conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+
+
+def update_task(conn: sqlite3.Connection, task_id: int, **fields) -> None:
+    if not fields:
+        return
+    assignments = ", ".join(f"{name} = ?" for name in fields)
+    conn.execute(
+        f"UPDATE tasks SET {assignments}, updated_at = datetime('now', 'localtime') "
+        f"WHERE id = ?",
+        (*fields.values(), task_id),
+    )
+    conn.commit()
+
+
+def tasks_for_period(conn: sqlite3.Connection, period: str) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM tasks WHERE period = ? ORDER BY due_date, id", (period,)
+    ).fetchall()
+
+
+def open_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Все незакрытые задачи — по сроку, ближайшие первыми."""
+    return conn.execute(
+        """SELECT * FROM tasks WHERE status IN ('new', 'in_progress', 'waiting')
+           ORDER BY (due_date = ''), due_date, id"""
+    ).fetchall()
+
+
+def tasks_in_year(conn: sqlite3.Connection, year: int) -> list[sqlite3.Row]:
+    return conn.execute(
+        """SELECT * FROM tasks WHERE period LIKE ? OR (period = '' AND due_date LIKE ?)
+           ORDER BY due_date, id""",
+        (f"{year}-%", f"{year}-%"),
+    ).fetchall()
+
+
+def log_task_event(conn: sqlite3.Connection, task_id: int, tg_id: int | None,
+                   action: str, details: str = "") -> None:
+    conn.execute(
+        "INSERT INTO task_events (task_id, tg_id, action, details) VALUES (?, ?, ?, ?)",
+        (task_id, tg_id, action, details),
+    )
+    conn.commit()
+
+
+def task_history(conn: sqlite3.Connection, task_id: int) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM task_events WHERE task_id = ? ORDER BY id", (task_id,)
+    ).fetchall()
+
+
 def log_event(conn: sqlite3.Connection, tg_id: int | None, action: str, details: str = "") -> None:
     conn.execute(
         "INSERT INTO events (tg_id, action, details) VALUES (?, ?, ?)",

@@ -8,7 +8,8 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
 from bot.config import config
-from bot.handlers import admin, common, group, readings, registration, reports, start
+from bot.handlers import (admin, common, group, readings, registration, reports,
+                          start, tasks)
 from bot.proxy import make_session
 from bot.scheduler import run_scheduler
 from bot.utils.logger import setup_logging
@@ -49,6 +50,7 @@ async def main() -> None:
 
     # Порядок важен: FSM-сценарии раньше общих обработчиков меню
     dp.include_router(common.router)
+    dp.include_router(tasks.router)
     dp.include_router(admin.router)
     dp.include_router(registration.router)
     dp.include_router(readings.router)

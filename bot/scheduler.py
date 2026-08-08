@@ -56,6 +56,13 @@ async def _tick(bot: Bot, now: datetime, done: set[str]) -> None:
             await send_monthly_statement(bot)
             done.add(key)
 
+    # Задачи председателя: напоминания раз в день
+    if now.hour >= config.tasks_reminder_hour:
+        key = f"tasks:{today}"
+        if key not in done:
+            await send_task_reminders(bot)
+            done.add(key)
+
 
 async def send_reminders(bot: Bot) -> int:
     """Разослать напоминания должникам за текущий период. Возвращает число отправленных."""
@@ -118,6 +125,32 @@ async def send_monthly_statement(bot: Bot) -> None:
         except TelegramAPIError as exc:
             logger.warning("Не удалось отправить ведомость админу %s: %s", admin_id, exc)
     logger.info("Ведомость сформирована: %s (собрано %s из %s)", path, submitted, total)
+
+
+async def send_task_reminders(bot: Bot) -> int:
+    """Напоминания председателю по задачам: пора начинать, срок, просрочка."""
+    from bot.services import task_service
+
+    conn = repository.connect()
+    try:
+        task_service.generate_tasks(conn)      # цикл всегда заполнен вперёд
+        messages = task_service.reminders_for_today(conn)
+    finally:
+        conn.close()
+
+    if not messages:
+        return 0
+
+    text = "🗂 <b>Задачи на сегодня</b>\n\n" + "\n\n".join(messages)
+    sent = 0
+    for admin_id in config.admin_ids:
+        try:
+            await bot.send_message(admin_id, text)
+            sent += 1
+        except TelegramAPIError as exc:
+            logger.warning("Не удалось отправить напоминание по задачам %s: %s",
+                           admin_id, exc)
+    return sent
 
 
 # Обратная совместимость с прежним названием

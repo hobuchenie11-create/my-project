@@ -63,6 +63,73 @@ MIGRATIONS = [
 # Пометка в ведомости для показаний, переданных после срока сбора
 LATE_NOTE = "Переданы после срока сбора показаний"
 
+# ---------------------------------------------------------------------------
+# Модуль «Задачи председателя»
+# ---------------------------------------------------------------------------
+
+# Статусы задачи. «Просрочена» не хранится — вычисляется по сроку.
+TASK_STATUSES = {
+    "new": "Новая",
+    "in_progress": "В работе",
+    "waiting": "Ожидает",
+    "done": "Выполнена",
+    "cancelled": "Отменена",
+}
+TASK_OPEN_STATUSES = ("new", "in_progress", "waiting")
+
+TASK_CATEGORIES = {
+    "finance": "Спецсчёт и финансы",
+    "meters": "Показания и ресурсники",
+    "repair": "Текущий ремонт",
+    "improvement": "Благоустройство",
+    "docs": "Документы и отчётность",
+    "meetings": "Собрания",
+    "other": "Прочее",
+}
+
+TASK_PRIORITIES = {"high": "Высокий", "normal": "Обычный", "low": "Низкий"}
+
+# Регулярные задачи председателя — годовой цикл. Каждый месяц из этих шаблонов
+# создаются задачи со своими сроками, статусом и напоминаниями.
+# day_start/day_end — окно выполнения в числах месяца.
+DEFAULT_TASK_TEMPLATES = [
+    {
+        "code": "bank_statement",
+        "title": "Взять выписку из банка по спецсчёту",
+        "category": "finance",
+        "day_start": 2, "day_end": 5,
+        "needs_amount": 0,
+        "description": "Получить банковскую выписку по специальному счёту "
+                       "за прошедший месяц.",
+    },
+    {
+        "code": "posting_invoices",
+        "title": "Разноска платежей и печать квитанций",
+        "category": "finance",
+        "day_start": 5, "day_end": 10,
+        "needs_amount": 0,
+        "description": "Разнести поступления по лицевым счетам, сформировать "
+                       "и распечатать квитанции.",
+    },
+    {
+        "code": "nonresidential_payment",
+        "title": "Оплата по нежилому помещению",
+        "category": "finance",
+        "day_start": 1, "day_end": 18,
+        "needs_amount": 1,          # при завершении спросим сумму и дату оплаты
+        "description": "Провести оплату по нежилому помещению. "
+                       "Указать сумму и дату оплаты.",
+    },
+    {
+        "code": "submit_readings_rso",
+        "title": "Передать показания ресурсоснабжающим организациям",
+        "category": "meters",
+        "day_start": 20, "day_end": 25,
+        "needs_amount": 0,
+        "description": "Передать собранные показания в Росводоканал и ОЭК.",
+    },
+]
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS apartments (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -124,6 +191,56 @@ CREATE TABLE IF NOT EXISTS reports (
 
 CREATE TABLE IF NOT EXISTS events (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    tg_id      INTEGER,
+    action     TEXT NOT NULL,
+    details    TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+-- Шаблоны регулярных задач председателя (годовой цикл)
+CREATE TABLE IF NOT EXISTS task_templates (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    code         TEXT NOT NULL UNIQUE,
+    title        TEXT NOT NULL,
+    description  TEXT NOT NULL DEFAULT '',
+    category     TEXT NOT NULL DEFAULT 'other',
+    day_start    INTEGER NOT NULL DEFAULT 1,
+    day_end      INTEGER NOT NULL DEFAULT 28,
+    needs_amount INTEGER NOT NULL DEFAULT 0,
+    assignee     TEXT NOT NULL DEFAULT '',
+    is_active    INTEGER NOT NULL DEFAULT 1,
+    sort_order   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_id  INTEGER REFERENCES task_templates (id),
+    period       TEXT NOT NULL DEFAULT '',        -- 'YYYY-MM' у регулярных
+    title        TEXT NOT NULL,
+    description  TEXT NOT NULL DEFAULT '',
+    category     TEXT NOT NULL DEFAULT 'other',
+    priority     TEXT NOT NULL DEFAULT 'normal',
+    status       TEXT NOT NULL DEFAULT 'new',
+    assignee     TEXT NOT NULL DEFAULT '',
+    start_date   TEXT NOT NULL DEFAULT '',        -- с какого числа можно делать
+    due_date     TEXT NOT NULL DEFAULT '',        -- до какого числа
+    amount       REAL,                            -- сумма (для оплат)
+    paid_at      TEXT NOT NULL DEFAULT '',        -- дата оплаты
+    apartment_id INTEGER REFERENCES apartments (id),
+    source       TEXT NOT NULL DEFAULT 'chairman',
+    created_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    updated_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    done_at      TEXT NOT NULL DEFAULT '',
+    UNIQUE (template_id, period)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tasks_period ON tasks (period);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks (status);
+
+-- Журнал изменений по задачам
+CREATE TABLE IF NOT EXISTS task_events (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id    INTEGER NOT NULL REFERENCES tasks (id),
     tg_id      INTEGER,
     action     TEXT NOT NULL,
     details    TEXT NOT NULL DEFAULT '',
