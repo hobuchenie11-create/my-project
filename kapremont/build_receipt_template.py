@@ -23,6 +23,8 @@ import datetime as dt
 from pathlib import Path
 
 from openpyxl import Workbook
+from openpyxl.cell.rich_text import CellRichText, TextBlock
+from openpyxl.cell.text import InlineFont
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.workbook.defined_name import DefinedName
@@ -159,6 +161,23 @@ def d(col_letter):
 def lookup(col_letter, empty='""'):
     """То же, но с подавлением ошибки, если лицевой счёт не найден."""
     return f'IFERROR({d(col_letter)},{empty})'
+
+
+def rich(*parts, role="value", size=9):
+    """Строка, в которой часть слов набрана полужирным.
+
+    Цвет прогонов берётся из текущей схемы. Макрос ПрименитьСхему красит
+    ячейку целиком, поэтому при переключении ЧБ/ЦВЕТ полужирность
+    сохраняется, а цвет выравнивается по всей строке.
+
+    parts: чередование ("текст", True/False) — второй элемент включает жирный.
+    """
+    color = PALETTE[role][SCHEME_COL][1]
+    blocks = []
+    for text, bold in parts:
+        blocks.append(TextBlock(
+            InlineFont(rFont=FONT, sz=size, b=bold, color=color), text))
+    return CellRichText(*blocks)
 
 
 def ru_date(expr):
@@ -530,10 +549,12 @@ else:
 PAY_LINES = [
     (32, 14, "1) без комиссии — в отделениях АО «Россельхозбанк» "
              "(банк, в котором открыт специальный счёт дома);"),
-    (33, 26, "2) по тарифам банка — переводом по указанным выше реквизитам "
-             "в отделениях и мобильных приложениях ПАО Сбербанк, "
-             "АО «АЛЬФА-БАНК», Банка ВТБ (ПАО), АО «ТБанк», а также любого "
-             "другого банка;"),
+    (33, 26, rich(
+        ("2) по тарифам банка — ", False),
+        ("только по номеру расчётного счёта", True),
+        (", указанного в разделе 1, в отделениях и мобильных приложениях "
+         "ПАО Сбербанк, АО «АЛЬФА-БАНК», Банка ВТБ (ПАО), АО «ТБанк», "
+         "а также любого другого банка;", False))),
     # Третий пункт зарезервирован под напоминание об оплате по QR-коду.
     (34, 14, "3) в мобильном приложении любого банка — по QR-коду "
              "(ГОСТ Р 56042-2014)." if QR_ВКЛЮЧЁН else None),
@@ -566,30 +587,46 @@ outline(ws, "B31:H37")
 spacer(ws, 38)
 
 # --- Подвал ---------------------------------------------------------------
-ws.row_dimensions[39].height = 24
-put(ws, "B39:D39", "Подпись плательщика  ______________________",
-    role="plain", size=9, align="center", border=None)
-put(ws, "E39:F39", "Кассир  ______________", role="plain", size=9,
-    align="center", border=None)
-put(ws, "G39:H39", "Дата  ____________", role="plain", size=9,
-    align="center", border=None)
+# Ключевое предупреждение: платёж идёт на счёт дома только по номеру
+# расчётного счёта. Оплата через поиск «капремонт» уводит деньги на общий
+# счёт регионального оператора, откуда их потом приходится разыскивать.
+ws.row_dimensions[39].height = 30
+put(ws, "B39:H39",
+    f'="ВНИМАНИЕ! ПЛАТИТЕ ТОЛЬКО ПО НОМЕРУ РАСЧЁТНОГО СЧЁТА "'
+    f'&{CFG_REF["Расчётный счёт (спец. счёт МКД)"]}'
+    f'&" — ЭТО СПЕЦИАЛЬНЫЙ СЧЁТ ВАШЕГО ДОМА"',
+    role="total", size=10, bold=True, align="center", wrap=True,
+    border=BOX_MED)
 
-ws.row_dimensions[40].height = 28
+ws.row_dimensions[40].height = 44
 put(ws, "B40:H40",
-    "ВНИМАНИЕ! При оплате в банке обязательно проверяйте расчётный счёт "
-    "и назначение платежа — во избежание ошибочного зачисления средств "
-    "на счёт другого дома.",
-    role="note", size=9, bold=True, align="center", wrap=True)
+    f'="В отделении банка и в мобильном приложении выбирайте оплату '
+    f'по реквизитам — вкладку «Специальный счёт». Не платите через поиск '
+    f'«Капитальный ремонт»: такой платёж уходит на общий счёт Регионального '
+    f'фонда капитального ремонта и на счёт вашего дома не поступает."'
+    f'&CHAR(10)&"Лицевой счёт № "&КВ_ЛС&" при оплате НЕ вводится — он указан '
+    f'справочно, только для учёта начислений."',
+    role="note", size=9, align="center", wrap=True)
 
-ws.row_dimensions[41].height = 24
-put(ws, "B41:H41",
+spacer(ws, 41, 6)
+
+ws.row_dimensions[42].height = 24
+put(ws, "B42:D42", "Подпись плательщика  ______________________",
+    role="plain", size=9, align="center", border=None)
+put(ws, "E42:F42", "Кассир  ______________", role="plain", size=9,
+    align="center", border=None)
+put(ws, "G42:H42", "Дата  ____________", role="plain", size=9,
+    align="center", border=None)
+
+ws.row_dimensions[43].height = 22
+put(ws, "B43:H43",
     f'="По вопросам начислений обращайтесь к председателю совета дома, тел. "'
     f'&{CFG_REF["Контактный телефон"]}&".    Документ № "'
     f'&IF({lookup("$Q")}="","—",{d("$Q")})',
     role="value", size=8, italic=True, align="center", wrap=True)
 
 # --- Параметры печати -----------------------------------------------------
-ws.print_area = "$A$1:$I$41"
+ws.print_area = "$A$1:$I$43"
 ws.page_setup.orientation = "portrait"
 ws.page_setup.paperSize = ws.PAPERSIZE_A4
 ws.page_setup.fitToWidth = 1
