@@ -7,6 +7,7 @@ BTN_MONTH_PLAN = "📅 План на месяц"
 BTN_URGENT = "⏰ Текущие и просроченные"
 BTN_ONE_OFF = "📌 Мои задачи"
 BTN_NEW_TASK = "➕ Новая задача"
+BTN_VERIFICATION = "🔧 Поверка приборов"
 BTN_YEAR_PLAN = "📊 Годовой план (Excel)"
 BTN_COUNCIL = "📤 Сводка для Совета дома"
 BTN_TASKS_BACK = "⬅️ Меню председателя"
@@ -17,7 +18,7 @@ def tasks_menu() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=BTN_URGENT), KeyboardButton(text=BTN_MONTH_PLAN)],
             [KeyboardButton(text=BTN_ONE_OFF), KeyboardButton(text=BTN_NEW_TASK)],
-            [KeyboardButton(text=BTN_YEAR_PLAN)],
+            [KeyboardButton(text=BTN_VERIFICATION), KeyboardButton(text=BTN_YEAR_PLAN)],
             [KeyboardButton(text=BTN_COUNCIL)],
             [KeyboardButton(text=BTN_TASKS_BACK)],
         ],
@@ -46,3 +47,13 @@ def categories_keyboard(categories: dict[str, str]) -> InlineKeyboardMarkup:
     buttons = [[InlineKeyboardButton(text=label, callback_data=f"newtask:cat:{code}")]
                for code, label in categories.items()]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def meter_actions(meter_id: int) -> InlineKeyboardMarkup:
+    """Кнопки под общедомовым прибором."""
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="📅 Внести поверку",
+                             callback_data=f"meter:{meter_id}:verify"),
+        InlineKeyboardButton(text="⚙️ Интервал",
+                             callback_data=f"meter:{meter_id}:interval"),
+    ]])

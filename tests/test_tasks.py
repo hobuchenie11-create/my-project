@@ -209,7 +209,8 @@ def test_year_plan_export(conn, tmp_path):
     out = export_year_plan(conn, 2027, tmp_path / "plan.xlsx")
 
     wb = load_workbook(out)
-    assert wb.sheetnames == ["Годовой план", "Мои задачи", "Регламент"]
+    assert wb.sheetnames == ["Годовой план", "Мои задачи",
+                             "Поверка приборов", "Регламент"]
     ws = wb["Годовой план"]
     assert "2027" in ws.cell(1, 1).value
     # Четыре столбца по нежилому помещению: аренда и коммуналка

@@ -62,10 +62,31 @@ MIGRATIONS = [
     ("tasks", "utility_paid_at", "TEXT NOT NULL DEFAULT ''"),
     ("task_templates", "amount_field", "TEXT NOT NULL DEFAULT 'amount'"),
     ("task_templates", "priority", "TEXT NOT NULL DEFAULT 'normal'"),
+    ("tasks", "house_meter_id", "INTEGER"),
 ]
 
 # За сколько дней до срока задача считается «горящей» (подсветка и напоминание)
 TASK_SOON_DAYS = 3
+
+# ---------------------------------------------------------------------------
+# Поверка общедомовых приборов учёта
+# ---------------------------------------------------------------------------
+
+# Межповерочный интервал по умолчанию, лет. У каждого прибора он свой —
+# в справочнике можно указать любой.
+VERIFICATION_INTERVAL_YEARS = 4
+
+# За сколько дней до срока поверки заводить задачу и начинать напоминать.
+# Поверку нужно организовать заранее: заявка, доступ, акт.
+VERIFICATION_LEAD_DAYS = 180
+
+# Общедомовые приборы, которые заводятся при первом запуске.
+# Даты последней поверки председатель вносит сам — до этого срок не считается.
+DEFAULT_HOUSE_METERS = [
+    {"code": "heat", "name": "Тепловая энергия (отопление)"},
+    {"code": "hws_house", "name": "ГВС — горячее водоснабжение"},
+    {"code": "cws_house", "name": "ХВС — холодное водоснабжение"},
+]
 
 # Пометка в ведомости для показаний, переданных после срока сбора
 LATE_NOTE = "Переданы после срока сбора показаний"
@@ -88,6 +109,7 @@ TASK_CATEGORIES = {
     "finance": "Спецсчёт и финансы",
     "nonresidential": "Сопровождение нежилого помещения",
     "meters": "Показания и ресурсники",
+    "verification": "Поверка приборов учёта",
     "repair": "Текущий ремонт",
     "improvement": "Благоустройство",
     "docs": "Документы и отчётность",
@@ -255,6 +277,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     utility_amount REAL,                          -- сумма оплаты коммуналки
     utility_paid_at TEXT NOT NULL DEFAULT '',     -- дата оплаты коммуналки
     apartment_id INTEGER REFERENCES apartments (id),
+    house_meter_id INTEGER REFERENCES house_meters (id),
     source       TEXT NOT NULL DEFAULT 'chairman',
     created_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
     updated_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
@@ -264,6 +287,31 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 CREATE INDEX IF NOT EXISTS idx_tasks_period ON tasks (period);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks (status);
+
+-- Общедомовые приборы учёта и их поверка
+CREATE TABLE IF NOT EXISTS house_meters (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    code           TEXT NOT NULL UNIQUE,
+    name           TEXT NOT NULL,
+    serial         TEXT NOT NULL DEFAULT '',
+    location       TEXT NOT NULL DEFAULT '',
+    last_verified  TEXT NOT NULL DEFAULT '',      -- дата последней поверки
+    interval_years INTEGER NOT NULL DEFAULT 4,    -- межповерочный интервал
+    note           TEXT NOT NULL DEFAULT '',
+    is_active      INTEGER NOT NULL DEFAULT 1,
+    sort_order     INTEGER NOT NULL DEFAULT 0
+);
+
+-- Журнал поверок: сохраняем каждую, чтобы была история по прибору
+CREATE TABLE IF NOT EXISTS verifications (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    house_meter_id INTEGER NOT NULL REFERENCES house_meters (id),
+    verified_at    TEXT NOT NULL,
+    next_due       TEXT NOT NULL DEFAULT '',
+    document       TEXT NOT NULL DEFAULT '',      -- номер акта/свидетельства
+    note           TEXT NOT NULL DEFAULT '',
+    created_at     TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
 
 -- Журнал изменений по задачам
 CREATE TABLE IF NOT EXISTS task_events (

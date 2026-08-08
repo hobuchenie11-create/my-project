@@ -12,3 +12,14 @@ class CompleteTask(StatesGroup):
     """Завершение задачи, требующей суммы (например, оплата нежилого)."""
     amount = State()
     paid_at = State()
+
+
+class Verification(StatesGroup):
+    """Внесение проведённой поверки общедомового прибора."""
+    verified_at = State()
+    document = State()
+
+
+class MeterInterval(StatesGroup):
+    """Изменение межповерочного интервала прибора."""
+    years = State()

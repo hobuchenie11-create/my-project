@@ -11,10 +11,11 @@ from bot.config import config
 from bot.keyboards.admin_menu import admin_menu
 from bot.keyboards.tasks import (BTN_COUNCIL, BTN_MONTH_PLAN, BTN_NEW_TASK,
                                  BTN_ONE_OFF, BTN_TASKS, BTN_TASKS_BACK,
-                                 BTN_URGENT, BTN_YEAR_PLAN, categories_keyboard,
+                                 BTN_URGENT, BTN_VERIFICATION, BTN_YEAR_PLAN,
+                                 categories_keyboard, meter_actions,
                                  task_actions, tasks_menu)
-from bot.services import task_service
-from bot.states.tasks import CompleteTask, NewTask
+from bot.services import task_service, verification_service
+from bot.states.tasks import CompleteTask, MeterInterval, NewTask, Verification
 from database import repository
 from database.models import TASK_CATEGORIES
 
@@ -35,6 +36,8 @@ async def open_tasks_menu(message: Message) -> None:
     conn = repository.connect()
     try:
         task_service.generate_tasks(conn)      # держим цикл заполненным вперёд
+        verification_service.ensure_house_meters(conn)
+        verification_service.sync_verification_tasks(conn)
         text = task_service.urgent_text(conn)
     finally:
         conn.close()
@@ -104,6 +107,144 @@ async def show_one_off(message: Message) -> None:
             f"{task_service.task_line(row, today)}\n"
             f"<i>{task_service.category_label(row['category'])}</i>",
             reply_markup=task_actions(row["id"], row["status"]))
+
+
+@router.message(F.text == BTN_VERIFICATION)
+async def show_verification(message: Message) -> None:
+    """Общедомовые приборы и сроки их поверки."""
+    conn = repository.connect()
+    try:
+        verification_service.ensure_house_meters(conn)
+        verification_service.sync_verification_tasks(conn)
+        rows = repository.house_meters(conn)
+    finally:
+        conn.close()
+
+    await message.answer(
+        "🔧 <b>Поверка общедомовых приборов</b>\n\n"
+        "Срок следующей поверки считается сам: дата последней поверки плюс "
+        "межповерочный интервал. За полгода до срока появится задача.")
+
+    today = date.today()
+    for row in rows:
+        v = verification_service.view(row, today)
+        lines = [f"{v.mark} <b>{row['name']}</b>"]
+        lines.append(f"Последняя поверка: "
+                     f"{verification_service._fmt(row['last_verified'])}")
+        if v.next_due:
+            lines.append(f"Следующая: {verification_service._fmt(v.next_due)} "
+                         f"({v.status_text})")
+        else:
+            lines.append("<i>Внесите дату последней поверки — "
+                         "и срок посчитается автоматически.</i>")
+        lines.append(f"Интервал: {row['interval_years']} г.")
+        if row["serial"]:
+            lines.append(f"Заводской №: {row['serial']}")
+        await message.answer("\n".join(lines), reply_markup=meter_actions(row["id"]))
+
+
+@router.callback_query(F.data.startswith("meter:"))
+async def meter_action(callback: CallbackQuery, state: FSMContext) -> None:
+    _, meter_id_raw, action = callback.data.split(":")
+    meter_id = int(meter_id_raw)
+
+    conn = repository.connect()
+    try:
+        meter = repository.get_house_meter(conn, meter_id)
+    finally:
+        conn.close()
+    if meter is None:
+        await callback.answer("Прибор не найден")
+        return
+
+    await state.update_data(meter_id=meter_id, meter_name=meter["name"])
+    if action == "verify":
+        await state.set_state(Verification.verified_at)
+        await callback.message.answer(
+            f"📅 <b>{meter['name']}</b>\nКогда проведена поверка? "
+            "Отправьте дату в виде 15.09.2026 (или «сегодня»).")
+    else:
+        await state.set_state(MeterInterval.years)
+        await callback.message.answer(
+            f"⚙️ <b>{meter['name']}</b>\nМежповерочный интервал сейчас "
+            f"{meter['interval_years']} г. Введите новый в годах (например: 4).")
+    await callback.answer()
+
+
+@router.message(Verification.verified_at)
+async def verification_date(message: Message, state: FSMContext) -> None:
+    parsed = _parse_date(message.text)
+    if parsed is None:
+        await message.answer("Не разобрал дату. Пример: 15.09.2026 "
+                             "или напишите «сегодня».")
+        return
+    await state.update_data(verified_at=parsed.isoformat())
+    await state.set_state(Verification.document)
+    await message.answer("Номер акта или свидетельства о поверке? "
+                         "Отправьте номер или «пропустить».")
+
+
+@router.message(Verification.document)
+async def verification_document(message: Message, state: FSMContext) -> None:
+    document = (message.text or "").strip()
+    if document.lower() in ("пропустить", "-", "нет"):
+        document = ""
+    data = await state.get_data()
+    await state.clear()
+
+    verified_at = date.fromisoformat(data["verified_at"])
+    conn = repository.connect()
+    try:
+        following = verification_service.register_verification(
+            conn, data["meter_id"], verified_at, document)
+        verification_service.sync_verification_tasks(conn)
+    finally:
+        conn.close()
+
+    await message.answer(
+        f"✅ Поверка записана: <b>{data['meter_name']}</b>\n"
+        f"Проведена: {verified_at.strftime('%d.%m.%Y')}\n"
+        f"Следующая поверка: <b>{following.strftime('%d.%m.%Y')}</b>"
+        + (f"\nДокумент: {document}" if document else "")
+        + "\n\nСрок посчитан автоматически — напомню заранее.",
+        reply_markup=tasks_menu())
+
+
+@router.message(MeterInterval.years)
+async def meter_interval(message: Message, state: FSMContext) -> None:
+    text = (message.text or "").strip()
+    if not text.isdigit() or not 1 <= int(text) <= 20:
+        await message.answer("Введите интервал в годах числом, например: 4")
+        return
+    years = int(text)
+    data = await state.get_data()
+    await state.clear()
+
+    conn = repository.connect()
+    try:
+        repository.update_house_meter(conn, data["meter_id"], interval_years=years)
+        meter = repository.get_house_meter(conn, data["meter_id"])
+        following = verification_service.next_due(meter["last_verified"], years)
+        verification_service.sync_verification_tasks(conn)
+    finally:
+        conn.close()
+
+    answer = (f"⚙️ <b>{data['meter_name']}</b>\n"
+              f"Межповерочный интервал: {years} г.")
+    if following:
+        answer += f"\nСледующая поверка: <b>{following.strftime('%d.%m.%Y')}</b>"
+    await message.answer(answer, reply_markup=tasks_menu())
+
+
+def _parse_date(text: str | None) -> date | None:
+    value = (text or "").strip().lower()
+    if value in ("сегодня", "today"):
+        return date.today()
+    try:
+        day, month, year = value.replace("/", ".").split(".")
+        return date(int(year), int(month), int(day))
+    except (ValueError, TypeError):
+        return None
 
 
 @router.message(F.text == BTN_COUNCIL)

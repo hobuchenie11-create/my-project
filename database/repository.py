@@ -404,6 +404,71 @@ def task_history(conn: sqlite3.Connection, task_id: int) -> list[sqlite3.Row]:
     ).fetchall()
 
 
+# ---------- общедомовые приборы и поверка ----------
+
+def ensure_house_meter(conn: sqlite3.Connection, code: str, name: str,
+                       sort_order: int, interval_years: int) -> int:
+    conn.execute(
+        """INSERT INTO house_meters (code, name, sort_order, interval_years)
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(code) DO NOTHING""",
+        (code, name, sort_order, interval_years),
+    )
+    conn.commit()
+    return conn.execute("SELECT id FROM house_meters WHERE code = ?",
+                        (code,)).fetchone()["id"]
+
+
+def house_meters(conn: sqlite3.Connection, only_active: bool = True) -> list[sqlite3.Row]:
+    where = "WHERE is_active = 1" if only_active else ""
+    return conn.execute(
+        f"SELECT * FROM house_meters {where} ORDER BY sort_order, id").fetchall()
+
+
+def get_house_meter(conn: sqlite3.Connection, meter_id: int) -> sqlite3.Row | None:
+    return conn.execute("SELECT * FROM house_meters WHERE id = ?",
+                        (meter_id,)).fetchone()
+
+
+def update_house_meter(conn: sqlite3.Connection, meter_id: int, **fields) -> None:
+    if not fields:
+        return
+    assignments = ", ".join(f"{name} = ?" for name in fields)
+    conn.execute(f"UPDATE house_meters SET {assignments} WHERE id = ?",
+                 (*fields.values(), meter_id))
+    conn.commit()
+
+
+def add_verification(conn: sqlite3.Connection, house_meter_id: int,
+                     verified_at: str, next_due: str, document: str = "",
+                     note: str = "") -> int:
+    cur = conn.execute(
+        """INSERT INTO verifications (house_meter_id, verified_at, next_due,
+                                      document, note)
+           VALUES (?, ?, ?, ?, ?)""",
+        (house_meter_id, verified_at, next_due, document, note),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def verification_history(conn: sqlite3.Connection,
+                         house_meter_id: int) -> list[sqlite3.Row]:
+    return conn.execute(
+        """SELECT * FROM verifications WHERE house_meter_id = ?
+           ORDER BY verified_at DESC""",
+        (house_meter_id,),
+    ).fetchall()
+
+
+def verification_task(conn: sqlite3.Connection, house_meter_id: int,
+                      due_date: str) -> sqlite3.Row | None:
+    return conn.execute(
+        "SELECT * FROM tasks WHERE house_meter_id = ? AND due_date = ?",
+        (house_meter_id, due_date),
+    ).fetchone()
+
+
 def log_event(conn: sqlite3.Connection, tg_id: int | None, action: str, details: str = "") -> None:
     conn.execute(
         "INSERT INTO events (tg_id, action, details) VALUES (?, ?, ?)",

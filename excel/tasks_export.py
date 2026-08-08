@@ -20,7 +20,13 @@ from excel import style
 
 SHEET_PLAN = "Годовой план"
 SHEET_ONE_OFF = "Мои задачи"
+SHEET_VERIFICATION = "Поверка приборов"
 SHEET_RULES = "Регламент"
+
+VERIFICATION_COLUMNS = ["Прибор учёта", "Заводской №", "Последняя поверка",
+                        "Интервал, лет", "Следующая поверка", "Осталось",
+                        "Примечание"]
+VERIFICATION_WIDTHS = [38, 18, 18, 14, 20, 22, 30]
 
 # Лист «Мои задачи» — разовые дела председателя, вне регулярного цикла
 ONE_OFF_COLUMNS = ["Задача", "Категория", "Срок", "Осталось", "Статус",
@@ -48,6 +54,7 @@ def export_year_plan(conn: sqlite3.Connection, year: int,
     wb = Workbook()
     _sheet_plan(wb.active, conn, year)
     _sheet_one_off(wb.create_sheet(SHEET_ONE_OFF), conn)
+    _sheet_verification(wb.create_sheet(SHEET_VERIFICATION), conn)
     _sheet_rules(wb.create_sheet(SHEET_RULES))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)
@@ -208,6 +215,62 @@ def _sheet_one_off(ws, conn: sqlite3.Connection) -> None:
     ws.page_setup.fitToHeight = 0
     ws.sheet_properties.pageSetUpPr.fitToPage = True
     ws.print_title_rows = "2:2"
+
+
+def _sheet_verification(ws, conn: sqlite3.Connection) -> None:
+    """Поверка общедомовых приборов: сроки считаются автоматически."""
+    from bot.services import verification_service
+
+    ws.title = SHEET_VERIFICATION
+    ncols = len(VERIFICATION_COLUMNS)
+
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ncols)
+    title = ws.cell(row=1, column=1, value="Поверка общедомовых приборов учёта")
+    title.font = style.FONT_TITLE
+    title.fill = style.FILL_TITLE
+    title.alignment = style.CENTER
+    ws.row_dimensions[1].height = 24
+
+    for col, name in enumerate(VERIFICATION_COLUMNS, start=1):
+        ws.cell(row=2, column=col, value=name)
+    style.style_header(ws, 2, ncols, VERIFICATION_WIDTHS)
+
+    today = date.today()
+    rows = repository.house_meters(conn, only_active=False)
+    r = 3
+    for row in rows:
+        v = verification_service.view(row, today)
+        cells = [
+            row["name"],
+            row["serial"],
+            _fmt(row["last_verified"]),
+            row["interval_years"],
+            v.next_due.strftime("%d.%m.%Y") if v.next_due else "",
+            v.status_text,
+            row["note"],
+        ]
+        fill = (FILL_OVERDUE if v.is_overdue
+                else FILL_SOON if (v.days_left is not None and v.days_left <= 30)
+                else FILL_ACTIVE if v.is_due_soon
+                else FILL_DONE if v.next_due else None)
+        for col, value in enumerate(cells, start=1):
+            cell = ws.cell(row=r, column=col, value=value)
+            cell.border = style.BORDER
+            cell.alignment = (style.LEFT if col in (1, 7) else style.CENTER)
+            if fill and col in (5, 6):
+                cell.fill = fill
+        r += 1
+
+    note = ws.cell(row=r + 1, column=1,
+                   value="Следующая поверка = дата последней поверки + интервал. "
+                         "Задача появляется за полгода до срока.")
+    note.font = Font(italic=True)
+
+    ws.freeze_panes = "A3"
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToWidth = 1
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
 
 
 def _sheet_rules(ws) -> None:

@@ -129,11 +129,13 @@ async def send_monthly_statement(bot: Bot) -> None:
 
 async def send_task_reminders(bot: Bot) -> int:
     """Напоминания председателю по задачам: пора начинать, срок, просрочка."""
-    from bot.services import task_service
+    from bot.services import task_service, verification_service
 
     conn = repository.connect()
     try:
         task_service.generate_tasks(conn)      # цикл всегда заполнен вперёд
+        verification_service.ensure_house_meters(conn)
+        verification_service.sync_verification_tasks(conn)
         messages = task_service.reminders_for_today(conn)
     finally:
         conn.close()
