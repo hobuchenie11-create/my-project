@@ -38,13 +38,12 @@ Private Const К_ПЕРЕРАСЧЕТ As Long = 9
 Private Const К_ИТОГО As Long = 10
 Private Const К_ОПЛАЧЕНО As Long = 11
 Private Const К_ОСТАТОК As Long = 12
-Private Const К_НАКОПЛЕНО As Long = 13
-Private Const К_ПЕРИОД As Long = 14
-Private Const К_ДАТА_ПЕРИОДА As Long = 15
-Private Const К_СРОК As Long = 16
-Private Const К_НОМЕР As Long = 17
+Private Const К_ПЕРИОД As Long = 13
+Private Const К_ДАТА_ПЕРИОДА As Long = 14
+Private Const К_СРОК As Long = 15
+Private Const К_НОМЕР As Long = 16
 
-Private Const ПОСЛЕДНИЙ_СТОЛБЕЦ As Long = 17
+Private Const ПОСЛЕДНИЙ_СТОЛБЕЦ As Long = 16
 
 
 '==========================================================================
@@ -287,7 +286,7 @@ Public Function СтрокаQR() As String
     СтрокаQR = CStr(ЛистПоИмени(ЛИСТ_НАСТРОЕК).Range("КВ_QR").Value)
 End Function
 
-' Заготовка под вставку картинки QR в зарезервированную область G32:H37.
+' Заготовка под вставку картинки QR в зарезервированную область G31:H36.
 ' Готового генератора QR в Excel нет, поэтому подставьте свой:
 '   • офлайн — библиотека/COM-компонент, отдающий PNG по строке;
 '   • онлайн — сервис, возвращающий картинку по HTTP.
@@ -296,7 +295,7 @@ Public Sub ВставитьQR(Optional ByVal ФайлPNG As String = "")
     Dim ws As Worksheet, место As Range, рис As Object
 
     Set ws = ЛистПоИмени(ЛИСТ_КВИТАНЦИИ)
-    Set место = ws.Range("G32:H37")
+    Set место = ws.Range("G31:H36")
 
     УдалитьQR ws
 
