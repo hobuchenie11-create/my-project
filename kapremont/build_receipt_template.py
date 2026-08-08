@@ -164,19 +164,21 @@ def lookup(col_letter, empty='""'):
 
 
 def rich(*parts, role="value", size=9):
-    """Строка, в которой часть слов набрана полужирным.
+    """Строка, в которой часть слов набрана полужирным или другим кеглем.
 
     Цвет прогонов берётся из текущей схемы. Макрос ПрименитьСхему красит
-    ячейку целиком, поэтому при переключении ЧБ/ЦВЕТ полужирность
-    сохраняется, а цвет выравнивается по всей строке.
+    ячейку целиком, поэтому при переключении ЧБ/ЦВЕТ полужирность и размер
+    сохраняются, а цвет выравнивается по всей строке.
 
-    parts: чередование ("текст", True/False) — второй элемент включает жирный.
+    parts: кортежи ("текст", жирный) или ("текст", жирный, кегль).
     """
     color = PALETTE[role][SCHEME_COL][1]
     blocks = []
-    for text, bold in parts:
+    for part in parts:
+        text, bold = part[0], part[1]
+        sz = part[2] if len(part) > 2 else size
         blocks.append(TextBlock(
-            InlineFont(rFont=FONT, sz=size, b=bold, color=color), text))
+            InlineFont(rFont=FONT, sz=sz, b=bold, color=color), text))
     return CellRichText(*blocks)
 
 
@@ -371,10 +373,18 @@ DUE_DATE = (f'IF({lookup("$P")}="",{CFG_REF["Срок оплаты"]},{d("$P")})
 
 # --- Шапка ---------------------------------------------------------------
 spacer(ws, 1, 6)
-ws.row_dimensions[2].height = 30
+# Наименование документа по ЖК РФ — «платёжный документ» (ч. 2 ст. 155,
+# ч. 1 и 3 ст. 171; примерная форма — приказ Минстроя от 26.01.2018 № 43/пр).
+# Слово «квитанция» в кодексе не употребляется, но привычно жителям,
+# поэтому оставлено в скобках вторым названием.
+ws.row_dimensions[2].height = 40
 put(ws, "B2:H2",
-    "ВЗНОС НА КАПИТАЛЬНЫЙ РЕМОНТ ОБЩЕГО ИМУЩЕСТВА В МНОГОКВАРТИРНОМ ДОМЕ",
-    role="title", size=12, bold=True, align="center", border=BOX_MED)
+    rich(("ПЛАТЁЖНЫЙ ДОКУМЕНТ (КВИТАНЦИЯ)\n", True, 13),
+         ("на внесение взноса на капитальный ремонт общего имущества "
+          "в многоквартирном доме", True, 9),
+         role="title"),
+    role="title", size=13, bold=True, align="center", valign="center",
+    wrap=True, border=BOX_MED)
 
 ws.row_dimensions[3].height = 20
 put(ws, "B3:E3", f'="Специальный счёт МКД · "&{CFG_REF["Адрес МКД"]}',
