@@ -409,6 +409,9 @@ button{background:none;border:none;cursor:pointer}
   color:var(--muted);font-size:10.5px;font-weight:600;letter-spacing:.1px;min-height:58px;
 }
 .nav button.on{color:var(--accent)}
+@media (max-width:360px){
+  .nav button{font-size:9.5px;letter-spacing:-.2px;padding-left:0;padding-right:0}
+}
 .nav .dot{
   position:absolute;top:5px;right:calc(50% - 18px);width:7px;height:7px;border-radius:50%;
   background:var(--danger);border:1.5px solid var(--surface);
@@ -437,13 +440,19 @@ const CATS = {
   teachers: {name:'Учителям', full:'Подарки учителям', icon:'💐', nav:'Учителям'},
   repair:   {name:'Ремонт',   full:'Ремонт класса',    icon:'🪟', nav:'Ремонт'},
   meals:    {name:'Питание',  full:'Питание детей',    icon:'🍎', nav:'Питание'},
+  fund:     {name:'Фонд',     full:'Фонд класса',      icon:'🏦', nav:'Фонд'},
 };
 const OCCASIONS = {
   kids:     [['ny','Новый год'],['feb23','23 февраля'],['mar8','8 марта']],
   teachers: [['bday','День рождения'],['tday','День учителя'],['ny','Новый год'],['mar8','8 марта'],['grad','Выпускной']],
   repair:   [['repair','Ремонт и оснащение']],
   meals:    [['meals','Питание']],
+  fund:     [['sep','Сентябрь'],['oct','Октябрь'],['nov','Ноябрь'],['dec','Декабрь'],
+             ['jan','Январь'],['feb','Февраль'],['mar','Март'],['apr','Апрель'],
+             ['may','Май'],['jun','Июнь'],['jul','Июль'],['aug','Август']],
 };
+/* ключ повода для фонда по номеру месяца */
+const MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 const OCC_NAME = o => {
   for (const list of Object.values(OCCASIONS)) {
     const f = list.find(x => x[0] === o);
@@ -521,6 +530,20 @@ function seed(){
     C('c10','kids','mar8','Подарки девочкам на 8 марта', 700, isoD(addDays(today(),195)), 10),
   ];
 
+  // фонд класса: ежемесячный взнос, по сбору на каждый месяц
+  const FUND = 500;
+  for (let back = 3; back >= 0; back--){
+    const d = new Date(today().getFullYear(), today().getMonth() - back, 1);
+    const f = C('f' + back, 'fund', MONTH_KEYS[d.getMonth()],
+      `Фонд класса — ${MONTHS_N[d.getMonth()].toLowerCase()} ${d.getFullYear()}`,
+      FUND, isoD(d), 10, 'Ежемесячный взнос на текущие нужды класса');
+    // чем старше месяц, тем больше сдали
+    const paid = back === 0 ? 15 : back === 1 ? 22 : FILLED;
+    for (let i = 1; i <= paid; i++)
+      f.payments['s'+i] = {status:'paid', sum:FUND, date:isoD(addDays(d, 3))};
+    cols.push(f);
+  }
+
   // ремонт задан общей сметой — сумма делится на сдающих
   Object.assign(cols[0], {mode:'total', total:60000, payers:FILLED});
   // на подарки мальчикам сдают родители девочек, и наоборот — сдают не все
@@ -538,6 +561,13 @@ function seed(){
 
   const E = (title, sum, dayShift, who) =>
     ({id:'e'+Math.random().toString(36).slice(2,8), title, sum, date:isoD(addDays(today(),dayShift)), who});
+  cols.find(c => c.id === 'f3').expenses = [
+    E('Питьевая вода, 6 бутылей', 2400, -70, 'Смирнова О. В.'),
+    E('Канцелярия и бумага для принтера', 3150, -66, 'Волкова И. С.'),
+  ];
+  cols.find(c => c.id === 'f2').expenses = [
+    E('Аптечка в класс', 1800, -40, 'Смирнова О. В.'),
+  ];
   cols[0].expenses = [
     E('Жалюзи на 3 окна, «Уют-Декор»', 21400, -4, 'Смирнова О. В.'),
     E('Краска и валики, «Леруа»',       6850, -3, 'Смирнова О. В.'),
@@ -699,6 +729,7 @@ function nav(){
     ['teachers','Учителям',I.heart],
     ['repair','Ремонт',I.brush],
     ['meals','Питание',I.cup],
+    ['fund','Фонд',I.wallet],
   ];
   return `<nav class="nav"><div class="nav-in">${items.map(([v,label,ic]) => {
     const alert = v !== 'home' && colsOf(v).some(c => {
@@ -883,10 +914,59 @@ function cashCard(){
   </div>`;
 }
 
+/* ── ФОНД: кто за какие месяцы не сдал ─── */
+function fundDebts(){
+  const months = colsOf('fund').filter(c => timing(c).phase !== 'soon');
+  if (!months.length) return '';
+  const rows = active().map(s => {
+    const owe = months.filter(c => stOf(c, s.id) === 'none');
+    return {s, owe, sum: owe.reduce((a,c) => a + perOf(c), 0)};
+  }).filter(r => r.owe.length).sort((a,b) => b.owe.length - a.owe.length);
+
+  const totalDebt = rows.reduce((a,r) => a + r.sum, 0);
+  const parent = S.role === 'parent';
+  if (parent){
+    const mine = rows.find(r => r.s.id === S.myId);
+    return `
+    <div class="card card-pad" style="display:flex;gap:12px;align-items:center">
+      <div class="coll-ico" style="background:${mine?'var(--danger-soft)':'var(--ok-soft)'};color:${mine?'var(--danger)':'var(--ok)'}">
+        ${svg(mine ? I.clock : I.check,20)}</div>
+      <div style="flex:1;font-size:14px">
+        <b>${mine ? `Ваш долг по фонду: ${money(mine.sum)}` : 'Долгов по фонду нет'}</b>
+        <div style="color:var(--muted);font-size:12.5px">${mine
+          ? 'не сдано за ' + mine.owe.map(c => OCC_NAME(c.occ).toLowerCase()).join(', ')
+          : 'взносы сданы за все месяцы, спасибо!'}</div>
+      </div>
+    </div>`;
+  }
+  if (!rows.length) return `
+    <div class="card card-pad" style="display:flex;gap:12px;align-items:center">
+      <div class="coll-ico" style="background:var(--ok-soft);color:var(--ok)">${svg(I.check,20)}</div>
+      <div style="flex:1;font-size:14px"><b>Долгов по фонду нет</b>
+        <div style="color:var(--muted);font-size:12.5px">все взносы сданы за ${months.length} ${plural(months.length,'месяц','месяца','месяцев')}</div></div>
+    </div>`;
+  return `
+  <div class="sec-title">Долги по фонду · ${money(totalDebt)}</div>
+  <div class="card">
+    ${rows.map(r => `
+      <div class="srow">
+        <div class="s-name">${esc(r.s.name)}
+          <span class="tag">${r.owe.map(c => OCC_NAME(c.occ).toLowerCase()).join(', ')}</span></div>
+        <div class="s-sum num" style="color:var(--danger);font-weight:600">${money(r.sum)}</div>
+      </div>`).join('')}
+    <button class="e-add" data-act="remindfund">${svg(I.copy,16)} Скопировать список должников</button>
+  </div>`;
+}
+
 /* ── КАТЕГОРИЯ ─────────────────────────── */
 function catView(cat){
   const meta = CATS[cat];
   const all = colsOf(cat);
+  // в фонде по умолчанию открыт текущий месяц, а не все сразу
+  if (cat === 'fund' && !occFilter.fund){
+    const cur = MONTH_KEYS[today().getMonth()];
+    occFilter.fund = all.some(c => c.occ === cur) ? cur : 'all';
+  }
   const sel = occFilter[cat] || 'all';
   const list = sel === 'all' ? all : all.filter(c => c.occ === sel);
   const got = all.reduce((a,c) => a + stats(c).got, 0);
@@ -911,19 +991,27 @@ function catView(cat){
     <button class="chip ${sel==='all'?'on':''}" data-act="occ" data-cat="${cat}" data-v="all">Все<span class="n">${all.length}</span></button>
     ${OCCASIONS[cat].map(([o,label]) => {
       const n = all.filter(c => c.occ === o).length;
+      if (cat === 'fund' && !n) return '';   // показываем только начатые месяцы
       return `<button class="chip ${sel===o?'on':''}" data-act="occ" data-cat="${cat}" data-v="${o}">${label}<span class="n">${n}</span></button>`;
     }).join('')}
   </div>` : '<div style="height:6px"></div>'}
+
+  ${cat === 'fund' ? fundDebts() : ''}
 
   ${list.length ? list.map(c => collCard(c, false)).join('')
     : `<div class="card"><div class="empty"><div class="e-ic">${meta.icon}</div>
         <p>В этой категории пока нет сборов.</p></div></div>`}
 
-  ${S.role === 'treasurer' ? `
+  ${S.role === 'treasurer' ? (cat === 'fund' ? `
+  <button class="btn pri wide" style="width:100%;margin:4px 0 8px;padding:14px" data-act="nextmonth">
+    ${svg(I.plus,17)} Открыть следующий месяц
+  </button>` : `
   <button class="btn pri wide" style="width:100%;margin:4px 0 8px;padding:14px" data-act="new" data-cat="${cat}" data-occ="${sel!=='all'?sel:''}">
     ${svg(I.plus,17)} Новый сбор — ${esc(meta.name.toLowerCase())}
-  </button>` : ''}
-  <p class="fab-note">Предельный срок считается автоматически: дата начала + срок сбора в днях.</p>`;
+  </button>`) : ''}
+  <p class="fab-note">${cat === 'fund'
+    ? 'Взнос в фонд повторяется каждый месяц. Кнопка выше заводит следующий месяц с той же суммой.'
+    : 'Предельный срок считается автоматически: дата начала + срок сбора в днях.'}</p>`;
 }
 
 /* ── карточка сбора ────────────────────── */
@@ -1525,6 +1613,41 @@ document.addEventListener('click', e => {
     case 'new':
       sheet = {type:'edit', c:null, cat:el.dataset.cat, occ:el.dataset.occ || null, draft:null};
       scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'nextmonth': {
+      const fund = colsOf('fund');
+      // следующий месяц после самого позднего заведённого
+      const last = fund.map(c => parseD(c.start)).sort((a,b) => b - a)[0] || today();
+      const d = new Date(last.getFullYear(), last.getMonth() + 1, 1);
+      const occ = MONTH_KEYS[d.getMonth()];
+      if (fund.some(c => c.occ === occ && parseD(c.start).getFullYear() === d.getFullYear())){
+        toast('Этот месяц уже заведён'); return;
+      }
+      const amount = fund.length ? perOf(fund[fund.length - 1]) : 500;
+      S.collections.push({
+        id:'c' + Date.now(), cat:'fund', occ,
+        title:`Фонд класса — ${MONTHS_N[d.getMonth()].toLowerCase()} ${d.getFullYear()}`,
+        mode:'per', amount, total:amount * active().length, payers:active().length,
+        start:isoD(d), days:10, note:'Ежемесячный взнос на текущие нужды класса',
+        payments:{}, expenses:[], archived:false,
+      });
+      occFilter.fund = occ;
+      save(); scrollMemo[view] = window.scrollY; render();
+      toast(`Открыт ${MONTHS_N[d.getMonth()].toLowerCase()}`); break;
+    }
+
+    case 'remindfund': {
+      const months = colsOf('fund').filter(c => timing(c).phase !== 'soon');
+      const rows = active().map(s => {
+        const owe = months.filter(c => stOf(c, s.id) === 'none');
+        return {s, owe, sum: owe.reduce((a,x) => a + perOf(x), 0)};
+      }).filter(r => r.owe.length);
+      const txt = `📌 Фонд класса — напоминание\n`
+        + `Взнос ${money(perOf(months[months.length-1]))} в месяц.\n\n`
+        + rows.map(r => `• ${r.s.name} — ${r.owe.map(c => OCC_NAME(c.occ).toLowerCase()).join(', ')}: ${money(r.sum)}`).join('\n')
+        + `\n\nИтого не сдано: ${money(rows.reduce((a,r) => a + r.sum, 0))}`;
+      copyText(txt, 'Список должников скопирован'); break;
+    }
 
     case 'edit':
       sheet = {type:'edit', c:el.dataset.c, draft:null};
