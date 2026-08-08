@@ -116,6 +116,8 @@ python -m reports.print_statement             # ведомость в консо
 python -m database.backup                     # резервная копия базы
 python -m excel.import_registry --template    # шаблон реестра квартир (xlsx)
 python -m excel.import_registry               # импорт реестра из data/apartments.xlsx
+python -m bot.whoami                          # под каким именем бот виден в Telegram
+python -m bot.netcheck                        # проверка связи с Telegram (и прокси)
 pytest                                        # тесты
 ```
 
