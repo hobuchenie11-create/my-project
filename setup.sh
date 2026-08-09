@@ -61,6 +61,9 @@ echo "installed into $ROOT/.venv"
 
 # --- Remotion --------------------------------------------------------------
 step "Installing Remotion"
+# Our config makes the headless browser environment-driven; the upstream
+# checkout ships none, so install it after every clone/pull.
+cp "$ROOT/montage/remotion/remotion.config.ts" "$ENGINE/remotion-composer/remotion.config.ts"
 (cd "$ENGINE/remotion-composer" && npm install --no-audit --no-fund)
 echo "remotion $(cd "$ENGINE/remotion-composer" && node -p "require('remotion/package.json').version")"
 
