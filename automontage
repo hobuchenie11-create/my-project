@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# automontage — raw video in, edited video out.
+#
+#   ./automontage raw.mp4
+#   ./automontage raw.mp4 --target 45 --title "Launch Recap"
+#   ./automontage raw.mp4 --select llm --brief "punchy product teaser"
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="$ROOT/.venv/bin/python"
+
+if [ ! -x "$PY" ]; then
+  echo "Engine not provisioned yet. Run: $ROOT/setup.sh" >&2
+  exit 1
+fi
+
+exec "$PY" "$ROOT/montage/pipeline.py" "$@"

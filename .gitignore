@@ -141,3 +141,11 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# automontage
+.venv/
+# third-party checkouts, provisioned by setup.sh
+engine/
+output/
+.montage-work/
+samples/*.mp4

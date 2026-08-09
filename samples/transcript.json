@@ -1,0 +1,168 @@
+{
+  "segments": [
+    {
+      "start": 0.35,
+      "end": 6.4,
+      "text": "Welcome to the automatic montage engine. This pipeline turns a raw video file into a finished edit.",
+      "words": [
+        {
+          "word": "Welcome",
+          "start": 0.35,
+          "end": 0.677
+        },
+        {
+          "word": "to",
+          "start": 0.706,
+          "end": 1.033
+        },
+        {
+          "word": "the",
+          "start": 1.062,
+          "end": 1.389
+        },
+        {
+          "word": "automatic",
+          "start": 1.418,
+          "end": 1.745
+        },
+        {
+          "word": "montage",
+          "start": 1.774,
+          "end": 2.101
+        },
+        {
+          "word": "engine.",
+          "start": 2.129,
+          "end": 2.457
+        },
+        {
+          "word": "This",
+          "start": 2.485,
+          "end": 2.813
+        },
+        {
+          "word": "pipeline",
+          "start": 2.841,
+          "end": 3.169
+        },
+        {
+          "word": "turns",
+          "start": 3.197,
+          "end": 3.524
+        },
+        {
+          "word": "a",
+          "start": 3.553,
+          "end": 3.88
+        },
+        {
+          "word": "raw",
+          "start": 3.909,
+          "end": 4.236
+        },
+        {
+          "word": "video",
+          "start": 4.265,
+          "end": 4.592
+        },
+        {
+          "word": "file",
+          "start": 4.621,
+          "end": 4.948
+        },
+        {
+          "word": "into",
+          "start": 4.976,
+          "end": 5.304
+        },
+        {
+          "word": "a",
+          "start": 5.332,
+          "end": 5.66
+        },
+        {
+          "word": "finished",
+          "start": 5.688,
+          "end": 6.016
+        },
+        {
+          "word": "edit.",
+          "start": 6.044,
+          "end": 6.372
+        }
+      ]
+    },
+    {
+      "start": 9.0,
+      "end": 15.3,
+      "text": "It transcribes the audio, finds the strongest moments, and cuts them together automatically.",
+      "words": [
+        {
+          "word": "It",
+          "start": 9.0,
+          "end": 9.446
+        },
+        {
+          "word": "transcribes",
+          "start": 9.485,
+          "end": 9.93
+        },
+        {
+          "word": "the",
+          "start": 9.969,
+          "end": 10.415
+        },
+        {
+          "word": "audio,",
+          "start": 10.454,
+          "end": 10.9
+        },
+        {
+          "word": "finds",
+          "start": 10.938,
+          "end": 11.384
+        },
+        {
+          "word": "the",
+          "start": 11.423,
+          "end": 11.869
+        },
+        {
+          "word": "strongest",
+          "start": 11.908,
+          "end": 12.354
+        },
+        {
+          "word": "moments,",
+          "start": 12.392,
+          "end": 12.838
+        },
+        {
+          "word": "and",
+          "start": 12.877,
+          "end": 13.323
+        },
+        {
+          "word": "cuts",
+          "start": 13.362,
+          "end": 13.807
+        },
+        {
+          "word": "them",
+          "start": 13.846,
+          "end": 14.292
+        },
+        {
+          "word": "together",
+          "start": 14.331,
+          "end": 14.777
+        },
+        {
+          "word": "automatically.",
+          "start": 14.815,
+          "end": 15.261
+        }
+      ]
+    }
+  ]
+}
