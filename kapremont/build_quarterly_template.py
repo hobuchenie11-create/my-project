@@ -220,9 +220,17 @@ src.title = SRC
 src.sheet_view.showGridLines = False
 
 # 104 знака ≈ 19,8 см — ровно ширина книжного А4 с полями 1 см.
-for col, width in {"A": 3, "B": 26, "C": 30, "D": 22, "E": 13,
+for col, width in {"A": 3, "B": 26, "C": 28, "D": 32, "E": 13,
                    "F": 13, "G": 13}.items():
     src.column_dimensions[col].width = width
+
+
+# Лист ввода на печать не идёт, поэтому он всегда в фирменной бирюзовой
+# гамме — той же, что и цветная квитанция для жителей.
+ACCENT = "0F6B70"       # заголовки блоков
+ACCENT_LIGHT = "E8F3F3"  # ячейки для ввода
+GREY = "F3F5F5"          # названия параметров
+TXT = "263238"
 
 
 def заголовок_блока(row, text):
@@ -232,22 +240,24 @@ def заголовок_блока(row, text):
     for i in range(2, 8):
         cc = src.cell(row, i)
         cc.font = Font(name=FONT, size=10, bold=True, color="FFFFFF")
-        cc.fill = PatternFill("solid", fgColor="263238")
+        cc.fill = PatternFill("solid", fgColor=ACCENT)
         cc.border = BOX
         cc.alignment = Alignment(vertical="center", indent=1)
     return c
 
 
 def параметр(row, name, value, note="", fmt=None, вводимый=True):
-    src.row_dimensions[row].height = 18
+    src.row_dimensions[row].height = 30
     n = src.cell(row, 2, name)
-    n.font = Font(name=FONT, size=10, bold=True)
+    n.font = Font(name=FONT, size=10, bold=True, color=TXT)
+    n.fill = PatternFill("solid", fgColor=GREY)
     v = src.cell(row, 3, value)
-    v.font = Font(name=FONT, size=10, bold=вводимый)
+    v.font = Font(name=FONT, size=10, bold=вводимый,
+                  color=ACCENT if вводимый else TXT)
     if fmt:
         v.number_format = fmt
     if вводимый:
-        v.fill = PatternFill("solid", fgColor="FFF3CD")
+        v.fill = PatternFill("solid", fgColor=ACCENT_LIGHT)
     h = src.cell(row, 4, note)
     h.font = Font(name=FONT, size=9, italic=True, color="666666")
     for i in (2, 3, 4):
@@ -258,11 +268,12 @@ def параметр(row, name, value, note="", fmt=None, вводимый=True)
 
 src.row_dimensions[1].height = 26
 t = src.cell(1, 2, "ИСХОДНЫЕ ДАННЫЕ ДЛЯ КВИТАНЦИЙ И ПИСЕМ")
-t.font = Font(name=FONT, size=14, bold=True, color="0F6B70")
+t.font = Font(name=FONT, size=14, bold=True, color=ACCENT)
 src.merge_cells("B1:G1")
 
-src.cell(2, 2, "Жёлтые ячейки — для ввода. Всё остальное в книге считается "
-               "формулами от них; квитанции и письма пересчитаются сами.")
+src.cell(2, 2, "Ячейки на бирюзовом фоне — для ввода. Всё остальное в книге "
+               "считается формулами от них; квитанции и письма пересчитаются "
+               "сами.")
 src.cell(2, 2).font = Font(name=FONT, size=9, italic=True, color="666666")
 src.merge_cells("B2:G2")
 src.row_dimensions[2].height = 16
@@ -309,23 +320,23 @@ R_ПРЕД_АДРЕС = параметр(20, "Адрес проживания",
 R_ПРЕД_ТЕЛ = параметр(21, "Телефон", "8-908-108-02-00", "")
 R_ПРЕД_ПОЧТА = параметр(22, "Электронная почта", "e.yavorsuk@mail.ru", "")
 
-заголовок_блока(23, "4. АДРЕСАТ ПИСЬМА (МЕНЯЕТСЯ ПРИ СМЕНЕ РУКОВОДИТЕЛЯ)")
+заголовок_блока(24, "4. АДРЕСАТ ПИСЬМА (МЕНЯЕТСЯ ПРИ СМЕНЕ РУКОВОДИТЕЛЯ)")
 R_АДРЕСАТ_ОРГ = параметр(
-    24, "Организация",
+    25, "Организация",
     "Департамент жилищной политики Администрации города Омска", "")
-R_АДРЕСАТ_ДОЛЖН = параметр(25, "Должность руководителя", "Директору",
+R_АДРЕСАТ_ДОЛЖН = параметр(26, "Должность руководителя", "Директору",
                            "В дательном падеже: «Директору»")
-R_АДРЕСАТ_ФИО = параметр(26, "ФИО руководителя", "",
+R_АДРЕСАТ_ФИО = параметр(27, "ФИО руководителя", "",
                          "Оставьте пустым — строка не напечатается")
 
-заголовок_блока(28, "5. ПО КВАРТАЛАМ: ЗАДОЛЖЕННОСТЬ И ДАТЫ")
+заголовок_блока(29, "5. ПО КВАРТАЛАМ: ЗАДОЛЖЕННОСТЬ И ДАТЫ")
 HDR = ["Квартал", "Задолженность, руб.", "Описание задолженности",
        "Дата формирования", "Поступило с начала года, руб."]
-src.row_dimensions[29].height = 32
+src.row_dimensions[30].height = 32
 for i, name in enumerate(HDR, start=2):
-    c = src.cell(29, i, name)
+    c = src.cell(30, i, name)
     c.font = Font(name=FONT, size=9, bold=True, color="FFFFFF")
-    c.fill = PatternFill("solid", fgColor="263238")
+    c.fill = PatternFill("solid", fgColor=ACCENT)
     c.border = BOX
     c.alignment = Alignment(horizontal="center", vertical="center",
                             wrap_text=True)
@@ -339,29 +350,30 @@ for i, name in enumerate(HDR, start=2):
     ("IV квартал", 0, "", dt.datetime(2026, 10, 15), None),
 ]
 for k, (имя, долг, описание, дата, опл) in enumerate(ДАННЫЕ_КВ):
-    row = 30 + k
+    row = 31 + k
     src.row_dimensions[row].height = 30
     values = [имя, долг, описание, дата, опл]
     formats = [None, MONEY, None, DATEFMT, MONEY]
     for i, (v, f) in enumerate(zip(values, formats), start=2):
         c = src.cell(row, i, v)
-        c.font = Font(name=FONT, size=10, bold=(i == 2))
+        c.font = Font(name=FONT, size=10, bold=(i == 2),
+                      color=TXT if i == 2 else ACCENT)
         c.border = BOX
         c.alignment = Alignment(vertical="center", wrap_text=True)
         if f:
             c.number_format = f
-        if i > 2:
-            c.fill = PatternFill("solid", fgColor="FFF3CD")
+        c.fill = PatternFill("solid",
+                             fgColor=GREY if i == 2 else ACCENT_LIGHT)
 
-src.cell(35, 2,
+src.cell(36, 2,
          "Задолженность и даты — единственное, что меняется от квартала "
          "к кварталу. Столбец «Поступило» можно не заполнять: в квитанции "
          "тогда встанет прочерк.")
-src.cell(35, 2).font = Font(name=FONT, size=9, italic=True, color="666666")
-src.merge_cells("B35:G36")
-src.cell(35, 2).alignment = Alignment(wrap_text=True, vertical="top")
+src.cell(36, 2).font = Font(name=FONT, size=9, italic=True, color="666666")
+src.merge_cells("B36:G37")
+src.cell(36, 2).alignment = Alignment(wrap_text=True, vertical="top")
 
-заголовок_блока(38, "6. РЕКВИЗИТЫ СПЕЦИАЛЬНОГО СЧЁТА (НЕ МЕНЯЮТСЯ)")
+заголовок_блока(39, "6. РЕКВИЗИТЫ СПЕЦИАЛЬНОГО СЧЁТА (НЕ МЕНЯЮТСЯ)")
 REQ = [
     ("Получатель платежа", "РЕГИОНАЛЬНЫЙ ФОНД КАПИТАЛЬНОГО РЕМОНТА "
                            "МНОГОКВАРТИРНЫХ ДОМОВ ОМСКОЙ ОБЛАСТИ (СПЕЦ. СЧЕТ)"),
@@ -378,17 +390,19 @@ REQ = [
 ]
 R = {}
 for i, (name, value) in enumerate(REQ):
-    row = 39 + i
-    src.row_dimensions[row].height = 18
+    row = 40 + i
+    # Наименование получателя длинное и переносится на три строки.
+    src.row_dimensions[row].height = 44 if i == 0 else 30
     n = src.cell(row, 2, name)
-    n.font = Font(name=FONT, size=10, bold=True)
+    n.font = Font(name=FONT, size=10, bold=True, color=TXT)
+    n.fill = PatternFill("solid", fgColor=GREY)
     v = src.cell(row, 3, value)
-    v.font = Font(name=FONT, size=10)
+    v.font = Font(name=FONT, size=10, color=TXT)
     for j in (2, 3, 4):
         src.cell(row, j).border = BOX
         src.cell(row, j).alignment = Alignment(vertical="center", wrap_text=True)
     R[name] = f"'{SRC}'!$C${row}"
-src.cell(49, 4, "Единый срок по ч. 1 ст. 155 и ч. 2 ст. 171 ЖК РФ "
+src.cell(50, 4, "Единый срок по ч. 1 ст. 155 и ч. 2 ст. 171 ЖК РФ "
                 "(ФЗ от 24.06.2025 № 177-ФЗ)").font = Font(
     name=FONT, size=9, italic=True, color="666666")
 
@@ -397,7 +411,7 @@ src.cell(49, 4, "Единый срок по ч. 1 ст. 155 и ч. 2 ст. 171 �
 
 # Лист ввода тоже иногда печатают — вписываем его в страницу, иначе
 # при выгрузке всей книги в PDF он расползается на несколько листов.
-src.print_area = "$B$1:$F$50"
+src.print_area = "$B$1:$F$52"
 src.page_setup.orientation = "portrait"
 src.page_setup.paperSize = src.PAPERSIZE_A4
 src.page_setup.fitToWidth = 1
@@ -411,7 +425,7 @@ src.page_margins.bottom = 0.4
 
 def кв(q, col):
     """Ссылка на ячейку строки квартала q (1..4) в таблице по кварталам."""
-    return f"'{SRC}'!${col}${29 + q}"
+    return f"'{SRC}'!${col}${30 + q}"
 
 
 # --------------------------------------------------------------------------
@@ -759,10 +773,12 @@ def сделать_квитанцию(q, римская, месяцы):
 def сделать_письмо(q, римская, месяцы):
     ws = wb.create_sheet(f"Письмо {q} кв")
     ws.sheet_view.showGridLines = False
-    # Ширина подобрана так, чтобы лист помещался на А4 без автосжатия:
-    # 93,6 знака ≈ 17,8 см при доступных 18 см (поля 2 см слева, 1 см справа).
-    for col, w in {"A": 0.8, "B": 22.0, "C": 17.0, "D": 17.0, "E": 17.0,
-                   "F": 19.0, "G": 0.8}.items():
+    # Ширина взята с запасом: 84 знака ≈ 16,2 см при доступных 18,5 см
+    # (поля 1,5 см слева и 1 см справа). Запас нужен потому, что Excel
+    # пересчитывает ширину колонок под шрифт книги по умолчанию, и подгонка
+    # впритык у него выходила на вторую страницу.
+    for col, w in {"A": 0.8, "B": 20.0, "C": 16.0, "D": 16.0, "E": 16.0,
+                   "F": 16.0, "G": 0.8}.items():
         ws.column_dimensions[col].width = w
 
     период = f'"{римская} квартал "&{ГОД}&" г."'
@@ -860,16 +876,16 @@ def сделать_письмо(q, римская, месяцы):
     строка(27, "D27:F27", f'="___________________  /"&{R_ПРЕД_ФИО_К}&"/"',
            size=11, align="right", height=16)
 
-    ws.print_area = "$A$1:$G$28"
+    ws.print_area = "$B$1:$F$27"
     ws.page_setup.orientation = "portrait"
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 1
     ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
-    ws.page_margins.left = 0.79   # 2 см
+    ws.page_margins.left = 0.59   # 1,5 см
     ws.page_margins.right = 0.39  # 1 см
-    ws.page_margins.top = 0.59
-    ws.page_margins.bottom = 0.59
+    ws.page_margins.top = 0.51
+    ws.page_margins.bottom = 0.51
     return ws
 
 
@@ -966,7 +982,7 @@ NAMES = {
     "ИД_НАЧИСЛЕНО_МЕС": f"'{SRC}'!$C$8",
     "ИД_ЛС": f"'{SRC}'!$C$11",
     "ИД_КВАРТИРА": f"'{SRC}'!$C$12",
-    "ИД_КВАРТАЛЫ": f"'{SRC}'!$B$30:$F$33",
+    "ИД_КВАРТАЛЫ": f"'{SRC}'!$B$31:$F$34",
 }
 for name, ref in NAMES.items():
     wb.defined_names.add(DefinedName(name, attr_text=ref))
