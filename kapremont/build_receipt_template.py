@@ -848,6 +848,22 @@ NAMES = {
 for name, ref in NAMES.items():
     wb.defined_names.add(DefinedName(name, attr_text=ref))
 
+# Служебные листы тоже ограничиваем областью печати: без этого при выгрузке
+# всей книги в PDF они разъезжаются на несколько страниц.
+for лист, область, поля in ((cfg, f"$A$1:$C${QR_ROW}", 0.4),
+                            (data, "$A$1:$P$6", 0.3),
+                            (doc, f"$A$1:$F${r - 1}", 0.4)):
+    лист.print_area = область
+    лист.page_setup.paperSize = лист.PAPERSIZE_A4
+    лист.page_setup.orientation = ("landscape" if лист is data else "portrait")
+    лист.page_setup.fitToWidth = 1
+    лист.page_setup.fitToHeight = 1
+    лист.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+    лист.page_margins.left = поля
+    лист.page_margins.right = поля
+    лист.page_margins.top = поля
+    лист.page_margins.bottom = поля
+
 wb.active = 0
 OUT.parent.mkdir(parents=True, exist_ok=True)
 wb.save(OUT)

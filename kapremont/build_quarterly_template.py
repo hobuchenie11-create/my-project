@@ -219,8 +219,9 @@ src = wb.active
 src.title = SRC
 src.sheet_view.showGridLines = False
 
-for col, width in {"A": 3, "B": 40, "C": 46, "D": 30, "E": 22,
-                   "F": 22, "G": 26}.items():
+# 104 знака ≈ 19,8 см — ровно ширина книжного А4 с полями 1 см.
+for col, width in {"A": 3, "B": 26, "C": 30, "D": 22, "E": 13,
+                   "F": 13, "G": 13}.items():
     src.column_dimensions[col].width = width
 
 
@@ -339,7 +340,7 @@ for i, name in enumerate(HDR, start=2):
 ]
 for k, (имя, долг, описание, дата, опл) in enumerate(ДАННЫЕ_КВ):
     row = 30 + k
-    src.row_dimensions[row].height = 18
+    src.row_dimensions[row].height = 30
     values = [имя, долг, описание, дата, опл]
     formats = [None, MONEY, None, DATEFMT, MONEY]
     for i, (v, f) in enumerate(zip(values, formats), start=2):
@@ -397,7 +398,7 @@ src.cell(49, 4, "Единый срок по ч. 1 ст. 155 и ч. 2 ст. 171 �
 # Лист ввода тоже иногда печатают — вписываем его в страницу, иначе
 # при выгрузке всей книги в PDF он расползается на несколько листов.
 src.print_area = "$B$1:$F$50"
-src.page_setup.orientation = "landscape"
+src.page_setup.orientation = "portrait"
 src.page_setup.paperSize = src.PAPERSIZE_A4
 src.page_setup.fitToWidth = 1
 src.page_setup.fitToHeight = 1
@@ -758,8 +759,10 @@ def сделать_квитанцию(q, римская, месяцы):
 def сделать_письмо(q, римская, месяцы):
     ws = wb.create_sheet(f"Письмо {q} кв")
     ws.sheet_view.showGridLines = False
-    for col, w in {"A": 2.0, "B": 26.0, "C": 20.0, "D": 20.0, "E": 20.0,
-                   "F": 22.0, "G": 2.0}.items():
+    # Ширина подобрана так, чтобы лист помещался на А4 без автосжатия:
+    # 93,6 знака ≈ 17,8 см при доступных 18 см (поля 2 см слева, 1 см справа).
+    for col, w in {"A": 0.8, "B": 22.0, "C": 17.0, "D": 17.0, "E": 17.0,
+                   "F": 19.0, "G": 0.8}.items():
         ws.column_dimensions[col].width = w
 
     период = f'"{римская} квартал "&{ГОД}&" г."'
@@ -798,14 +801,14 @@ def сделать_письмо(q, римская, месяцы):
            f'&{R_КВ}&" по адресу: "&{R_АДРЕС_МКД}&", сообщаю Вам '
            f'о необходимости оплатить "&{деньги(всего)}&" руб., '
            f'в том числе:"',
-           size=11, height=46)
+           size=11, height=54)
     spacer(ws, 9, 8)
 
     строка(10, "B10:F10",
            f'="— текущий платёж за период с {с_месяца} по {по_месяц} "&{ГОД}'
            f'&" года ("&{период}&") в размере "'
            f'&{деньги(начислено)}&" рублей"',
-           size=11, height=32)
+           size=11, height=38)
     строка(11, "B11:F11", f'="("&{прописью_формула(начислено)}&")."',
            size=11, italic=True, height=18)
     spacer(ws, 12, 6)
@@ -828,14 +831,14 @@ def сделать_письмо(q, римская, месяцы):
            f'&") по состоянию расчётов на "&{ru_date(кв(q, "E"))}'
            f'&" и с учётом начислений по "&"{месяцы[2]} "&{ГОД}'
            f'&" года включительно."',
-           size=11, height=76)
+           size=11, height=90)
     spacer(ws, 17, 10)
 
     строка(18, "B18:F18",
            f'="В случае возникновения дополнительных вопросов прошу связаться '
            f'со мной по электронной почте "&{R_ПРЕД_ПОЧТА}&" или по телефону "'
            f'&{R_ПРЕД_ТЕЛ}&"."',
-           size=11, height=46)
+           size=11, height=54)
     spacer(ws, 19, 14)
 
     строка(20, "B20:F20", "ПРИЛОЖЕНИЯ:", size=11, bold=True, height=20)
@@ -863,8 +866,8 @@ def сделать_письмо(q, римская, месяцы):
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 1
     ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
-    ws.page_margins.left = 0.79
-    ws.page_margins.right = 0.59
+    ws.page_margins.left = 0.79   # 2 см
+    ws.page_margins.right = 0.39  # 1 см
     ws.page_margins.top = 0.59
     ws.page_margins.bottom = 0.59
     return ws
@@ -941,15 +944,19 @@ for kind, text in LINES:
     c.alignment = Alignment(wrap_text=True, vertical="top")
     doc.merge_cells(start_row=r, start_column=1, end_row=r, end_column=6)
     r += 1
-doc.column_dimensions["A"].width = 22
+doc.column_dimensions["A"].width = 20
 for col in "BCDEF":
-    doc.column_dimensions[col].width = 18
+    doc.column_dimensions[col].width = 13
 doc.print_area = f"$A$1:$F${r - 1}"
 doc.page_setup.orientation = "portrait"
 doc.page_setup.paperSize = doc.PAPERSIZE_A4
 doc.page_setup.fitToWidth = 1
 doc.page_setup.fitToHeight = 1
 doc.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+doc.page_margins.left = 0.4
+doc.page_margins.right = 0.4
+doc.page_margins.top = 0.4
+doc.page_margins.bottom = 0.4
 
 # --------------------------------------------------------------------------
 NAMES = {
