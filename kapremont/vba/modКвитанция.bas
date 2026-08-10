@@ -404,7 +404,7 @@ Private Function ЦветИзHex(ByVal Hex6 As Variant) As Long
                     CLng("&H" & Mid$(s, 5, 2)))
 End Function
 
-' КР_2026-07_л-с-31202_кв-49.pdf
+' КР_2026-07_л-с-3120249_кв-49.pdf
 Private Function ИмяФайлаКвитанции(ByVal ws As Worksheet) As String
     Dim период As String, лс As String, кв As String
 

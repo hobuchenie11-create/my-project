@@ -338,7 +338,7 @@ for i, (name, width, _) in enumerate(DATA_COLS, start=1):
 data.row_dimensions[1].height = 34
 
 # Демонстрационная строка — цифры из образца и прототипа.
-DEMO = [31202, 49, "Иванов Иван Иванович",
+DEMO = [3120249, 49, "Иванов Иван Иванович",
         "г. Омск, ул. Магистральная, 2, кв. 49", 63.1, None,
         674.99, 19501.38, 0, 20176.37, 13441.28, None,
         "Июль 2026", dt.datetime(2026, 7, 1), None]
@@ -360,6 +360,8 @@ hint = data.cell(4, 1,
                  "по одной строке на лицевой счёт за расчётный период. "
                  "Ключ поиска — столбец A (лицевой счёт): по нему лист КВИТАНЦИЯ "
                  "подтягивает все значения формулами ИНДЕКС/ПОИСКПОЗ. "
+                 "Лицевой счёт складывается из номера дома и номера квартиры: "
+                 "31202 + 49 = 3120249. "
                  "Столбцы F, J, L и O можно оставить пустыми — бланк рассчитает "
                  "их сам либо поставит прочерк.")
 hint.font = Font(name=FONT, size=9, italic=True, color="666666")
@@ -463,7 +465,7 @@ edge(ws, "B13:H13", bottom=MEDIUM)
 
 ws.row_dimensions[14].height = 19
 put(ws, "B14", "Лицевой счёт", role="label", size=8, bold=True, indent=1)
-put(ws, "C14", 31202, role="input", size=11, bold=True, align="center",
+put(ws, "C14", 3120249, role="input", size=11, bold=True, align="center",
     border=BOX_MED)
 put(ws, "D14", "Квартира №", role="label", size=8, bold=True, indent=1)
 put(ws, "E14", f"={lookup('$B')}", role="value", size=10, bold=True,
