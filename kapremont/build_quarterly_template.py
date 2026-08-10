@@ -286,7 +286,8 @@ for i in (2, 3, 4):
 R_НАЧ_МЕС = f"'{SRC}'!$C$8"
 
 заголовок_блока(10, "2. ПЛАТЕЛЬЩИК И ПОМЕЩЕНИЕ")
-R_ЛС = параметр(11, "Лицевой счёт", 31202, "Из образца")
+R_ЛС = параметр(11, "Лицевой счёт", 3120247,
+                "Лицевой счёт помещения по этому адресу")
 R_КВ = параметр(12, "Квартира №", 47, "Из образца")
 R_ПЛАТЕЛЬЩИК = параметр(
     13, "Плательщик (собственник)",
@@ -318,8 +319,7 @@ R_АДРЕСАТ_ФИО = параметр(26, "ФИО руководителя"
 
 заголовок_блока(28, "5. ПО КВАРТАЛАМ: ЗАДОЛЖЕННОСТЬ И ДАТЫ")
 HDR = ["Квартал", "Задолженность, руб.", "Описание задолженности",
-       "Дата формирования", "Поступило с начала года, руб.",
-       "Остаток на спец. счёте, руб."]
+       "Дата формирования", "Поступило с начала года, руб."]
 src.row_dimensions[29].height = 32
 for i, name in enumerate(HDR, start=2):
     c = src.cell(29, i, name)
@@ -332,16 +332,16 @@ for i, name in enumerate(HDR, start=2):
 # Значения 1 квартала — из образца; остальные кварталы заполняются по факту.
 ДАННЫЕ_КВ = [
     ("I квартал", 4042.38, "за III и IV кварталы 2025 года",
-     dt.datetime(2026, 1, 29), None, None),
-    ("II квартал", 0, "", dt.datetime(2026, 4, 15), None, None),
-    ("III квартал", 0, "", dt.datetime(2026, 7, 15), None, None),
-    ("IV квартал", 0, "", dt.datetime(2026, 10, 15), None, None),
+     dt.datetime(2026, 1, 29), None),
+    ("II квартал", 0, "", dt.datetime(2026, 4, 15), None),
+    ("III квартал", 0, "", dt.datetime(2026, 7, 15), None),
+    ("IV квартал", 0, "", dt.datetime(2026, 10, 15), None),
 ]
-for k, (имя, долг, описание, дата, опл, ост) in enumerate(ДАННЫЕ_КВ):
+for k, (имя, долг, описание, дата, опл) in enumerate(ДАННЫЕ_КВ):
     row = 30 + k
     src.row_dimensions[row].height = 18
-    values = [имя, долг, описание, дата, опл, ост]
-    formats = [None, MONEY, None, DATEFMT, MONEY, MONEY]
+    values = [имя, долг, описание, дата, опл]
+    formats = [None, MONEY, None, DATEFMT, MONEY]
     for i, (v, f) in enumerate(zip(values, formats), start=2):
         c = src.cell(row, i, v)
         c.font = Font(name=FONT, size=10, bold=(i == 2))
@@ -354,8 +354,8 @@ for k, (имя, долг, описание, дата, опл, ост) in enumera
 
 src.cell(35, 2,
          "Задолженность и даты — единственное, что меняется от квартала "
-         "к кварталу. Столбцы «Поступило» и «Остаток» можно не заполнять: "
-         "в квитанции тогда встанет прочерк.")
+         "к кварталу. Столбец «Поступило» можно не заполнять: в квитанции "
+         "тогда встанет прочерк.")
 src.cell(35, 2).font = Font(name=FONT, size=9, italic=True, color="666666")
 src.merge_cells("B35:G36")
 src.cell(35, 2).alignment = Alignment(wrap_text=True, vertical="top")
@@ -396,7 +396,7 @@ src.cell(49, 4, "Единый срок по ч. 1 ст. 155 и ч. 2 ст. 171 �
 
 # Лист ввода тоже иногда печатают — вписываем его в страницу, иначе
 # при выгрузке всей книги в PDF он расползается на несколько листов.
-src.print_area = "$B$1:$G$50"
+src.print_area = "$B$1:$F$50"
 src.page_setup.orientation = "landscape"
 src.page_setup.paperSize = src.PAPERSIZE_A4
 src.page_setup.fitToWidth = 1
@@ -654,70 +654,66 @@ def сделать_квитанцию(q, римская, месяцы):
     put(ws, "G29:H29", f'=IF({кв(q, "F")}="","—",{кв(q, "F")})', role="value",
         size=10, bold=True, align="right", fmt=MONEY, indent=1)
 
-    ws.row_dimensions[30].height = 15
-    put(ws, "B30:F30",
-        "Остаток средств на специальном счёте многоквартирного дома, руб.",
-        role="value", size=9, indent=1)
-    put(ws, "G30:H30", f'=IF({кв(q, "G")}="","—",{кв(q, "G")})', role="value",
-        size=10, bold=True, align="right", fmt=MONEY, indent=1)
-    outline(ws, "B28:H30")
-    spacer(ws, 31)
+    # Остатка средств на счёте здесь нет: квитанция выставляется раз
+    # в квартал, и к моменту оплаты цифра успевает устареть.
+    outline(ws, "B28:H29")
+    spacer(ws, 30)
 
     # --- 5. Порядок оплаты
-    ws.row_dimensions[32].height = 16
-    put(ws, "B32:H32", "5. ПОРЯДОК ОПЛАТЫ", role="section", size=10, bold=True,
+    ws.row_dimensions[31].height = 16
+    put(ws, "B31:H31", "5. ПОРЯДОК ОПЛАТЫ", role="section", size=10, bold=True,
         indent=1)
-    edge(ws, "B32:H32", bottom=MEDIUM)
+    edge(ws, "B31:H31", bottom=MEDIUM)
 
-    ws.row_dimensions[33].height = 14
-    put(ws, "B33:F33", "1) без комиссии — в отделениях АО «Россельхозбанк» "
+    ws.row_dimensions[32].height = 14
+    put(ws, "B32:F32", "1) без комиссии — в отделениях АО «Россельхозбанк» "
                        "(банк, в котором открыт специальный счёт дома);",
         role="value", size=9, wrap=True, indent=1)
-    ws.row_dimensions[34].height = 26
-    put(ws, "B34:F34", rich(
+    ws.row_dimensions[33].height = 26
+    put(ws, "B33:F33", rich(
         ("2) по тарифам банка — ", False),
         ("только по номеру расчётного счёта", True),
         (", указанного в разделе 1, в отделениях и мобильных приложениях "
          "ПАО Сбербанк, АО «АЛЬФА-БАНК», Банка ВТБ (ПАО), АО «ТБанк», "
          "а также любого другого банка;", False)),
         role="value", size=9, wrap=True, indent=1)
-    ws.row_dimensions[35].height = 14
-    put(ws, "B35:F35",
+    ws.row_dimensions[34].height = 14
+    put(ws, "B34:F34",
         "3) в мобильном приложении любого банка — по QR-коду "
         "(ГОСТ Р 56042-2014)." if QR_ВКЛЮЧЁН else None,
         role="value", size=9, wrap=True, indent=1)
 
-    ws.row_dimensions[36].height = 14
-    put(ws, "B36:F36", "Назначение платежа:", role="label", size=8, bold=True,
+    ws.row_dimensions[35].height = 14
+    put(ws, "B35:F35", "Назначение платежа:", role="label", size=8, bold=True,
         indent=1)
-    ws.row_dimensions[37].height = 30
-    put(ws, "B37:F37",
+    ws.row_dimensions[36].height = 30
+    put(ws, "B36:F36",
         f'="Взнос на капитальный ремонт, л/с № "&{R_ЛС}&", кв. № "&{R_КВ}'
         f'&", за "&{период}',
         role="value", size=9, wrap=True, indent=1)
-    ws.row_dimensions[38].height = 26
-    put(ws, "B38:F38",
+    ws.row_dimensions[37].height = 26
+    put(ws, "B37:F37",
         f'="Срок оплаты: до "&{СРОК_ДЕНЬ}&" числа месяца, следующего за '
         f'расчётным (за "&{период}&" — до "&{ru_date(срок)}&")."'
         f'&CHAR(10)&"Основание: ч. 1 ст. 155, ч. 2 ст. 171 ЖК РФ."',
         role="note", size=9, bold=True, align="center", wrap=True)
 
-    put(ws, "G33:H38", "QR-код\nформируется\nмакросом" if QR_ВКЛЮЧЁН else None,
+    put(ws, "G32:H37", "QR-код\nформируется\nмакросом" if QR_ВКЛЮЧЁН else None,
         role="qr", size=9, bold=True, align="center", wrap=True)
-    outline(ws, "B32:H38")
-    spacer(ws, 39)
+    outline(ws, "B31:H37")
+    spacer(ws, 38)
 
     # --- Предупреждение
-    ws.row_dimensions[40].height = 32
-    put(ws, "B40:H40",
+    ws.row_dimensions[39].height = 32
+    put(ws, "B39:H39",
         f'="ВНИМАНИЕ! ПЛАТИТЕ ТОЛЬКО ПО НОМЕРУ РАСЧЁТНОГО СЧЁТА "'
         f'&{R["Расчётный счёт (спец. счёт МКД)"]}'
         f'&" — ЭТО СПЕЦИАЛЬНЫЙ СЧЁТ ВАШЕГО ДОМА"',
         role="total", size=11, bold=True, align="center", wrap=True,
         border=BOX_MED)
 
-    ws.row_dimensions[41].height = 44
-    put(ws, "B41:H41",
+    ws.row_dimensions[40].height = 44
+    put(ws, "B40:H40",
         f'="В отделении банка и в мобильном приложении во вкладках ищите "'
         f'&"«РФКР МКД_капремонт, оплата по расчётному счёту» и указывайте '
         f'номер расчётного счёта, приведённый выше. Оплата через общий поиск '
@@ -726,23 +722,23 @@ def сделать_квитанцию(q, римская, месяцы):
         f'&CHAR(10)&"Лицевой счёт № "&{R_ЛС}&" при оплате НЕ вводится — '
         f'он указан справочно, только для учёта начислений."',
         role="note", size=9, align="center", wrap=True)
-    spacer(ws, 42, 6)
+    spacer(ws, 41, 6)
 
-    ws.row_dimensions[43].height = 24
-    put(ws, "B43:D43", "Подпись плательщика  ______________________",
+    ws.row_dimensions[42].height = 24
+    put(ws, "B42:D42", "Подпись плательщика  ______________________",
         role="plain", size=9, align="center", border=None)
-    put(ws, "E43:F43", "Кассир  ______________", role="plain", size=9,
+    put(ws, "E42:F42", "Кассир  ______________", role="plain", size=9,
         align="center", border=None)
-    put(ws, "G43:H43", "Дата  ____________", role="plain", size=9,
+    put(ws, "G42:H42", "Дата  ____________", role="plain", size=9,
         align="center", border=None)
 
-    ws.row_dimensions[44].height = 22
-    put(ws, "B44:H44",
+    ws.row_dimensions[43].height = 22
+    put(ws, "B43:H43",
         f'="Начисление за "&{период}&"    По вопросам начислений обращайтесь '
         f'к председателю совета дома, тел. "&{R_ПРЕД_ТЕЛ}&"."',
         role="value", size=8, italic=True, align="center", wrap=True)
 
-    ws.print_area = "$A$1:$I$44"
+    ws.print_area = "$A$1:$I$43"
     ws.page_setup.orientation = "portrait"
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.fitToWidth = 1
@@ -963,7 +959,7 @@ NAMES = {
     "ИД_НАЧИСЛЕНО_МЕС": f"'{SRC}'!$C$8",
     "ИД_ЛС": f"'{SRC}'!$C$11",
     "ИД_КВАРТИРА": f"'{SRC}'!$C$12",
-    "ИД_КВАРТАЛЫ": f"'{SRC}'!$B$30:$G$33",
+    "ИД_КВАРТАЛЫ": f"'{SRC}'!$B$30:$F$33",
 }
 for name, ref in NAMES.items():
     wb.defined_names.add(DefinedName(name, attr_text=ref))
