@@ -65,6 +65,58 @@ def collect_photos(inputs: list[Path]) -> list[Path]:
     return found
 
 
+def register_heif() -> bool:
+    """Teach Pillow to open HEIC/HEIF, the default iPhone format.
+
+    ffmpeg has no HEIF demuxer in the versions we target, so these files have to
+    be transcoded before anything else touches them.
+    """
+    try:
+        import pillow_heif
+
+        pillow_heif.register_heif_opener()
+        return True
+    except ImportError:
+        return False
+
+
+def normalise_formats(photos: list[Path], work: Path) -> list[Path]:
+    """Transcode anything ffmpeg can't read into JPEG, preserving EXIF.
+
+    Originals are never modified — conversions land in the work directory.
+    """
+    heic = [p for p in photos if p.suffix.lower() in {".heic", ".heif"}]
+    if not heic:
+        return photos
+
+    if not register_heif():
+        sys.exit(
+            f"{len(heic)} photo(s) are HEIC/HEIF, which ffmpeg cannot read here.\n"
+            f"Install support with:  .venv/bin/pip install pillow-heif\n"
+            f"Or export them as JPEG (iPhone: Settings → Camera → Formats → "
+            f"Most Compatible)."
+        )
+
+    from PIL import Image
+
+    converted_dir = work / "converted"
+    converted_dir.mkdir(parents=True, exist_ok=True)
+    out: list[Path] = []
+
+    for photo in photos:
+        if photo.suffix.lower() not in {".heic", ".heif"}:
+            out.append(photo)
+            continue
+        target = converted_dir / f"{photo.stem}.jpg"
+        img = Image.open(photo)
+        # Carry EXIF across so --order date still sees the capture time.
+        img.convert("RGB").save(target, quality=95, exif=img.getexif().tobytes())
+        out.append(target)
+
+    log(f"converted {len(heic)} HEIC photo(s) to JPEG")
+    return out
+
+
 def exif_taken_at(path: Path) -> float | None:
     """When the photo was taken, from EXIF. None when it isn't recorded."""
     try:
@@ -360,10 +412,6 @@ def main() -> int:
         sys.exit("No supported images found. Looked for: "
                  + ", ".join(sorted(PHOTO_SUFFIXES)))
 
-    photos = order_photos(photos, args.order, args.seed)
-    if args.limit:
-        photos = photos[:args.limit]
-
     if args.music and not args.music.exists():
         sys.exit(f"Music file not found: {args.music}")
 
@@ -380,6 +428,10 @@ def main() -> int:
 
     # 1 — line up the photos --------------------------------------------------
     stage("Collecting photos")
+    photos = normalise_formats(photos, work)
+    photos = order_photos(photos, args.order, args.seed)
+    if args.limit:
+        photos = photos[:args.limit]
     log(f"{len(photos)} photo(s), ordered by {args.order}")
     log("first: " + ", ".join(p.name for p in photos[:4])
         + (" …" if len(photos) > 4 else ""))

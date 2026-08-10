@@ -55,8 +55,9 @@ step "Installing Python dependencies"
 PIP="$ROOT/.venv/bin/pip"
 "$PIP" install -q --upgrade pip
 "$PIP" install -q -r "$ENGINE/requirements.txt"
-# Local speech-to-text for captions, and the Claude SDK for --select llm.
-"$PIP" install -q faster-whisper anthropic
+# Local speech-to-text for captions, the Claude SDK for --select llm, and
+# HEIC support — ffmpeg has no HEIF demuxer, so iPhone photos need transcoding.
+"$PIP" install -q faster-whisper anthropic pillow-heif
 echo "installed into $ROOT/.venv"
 
 # --- Remotion --------------------------------------------------------------
