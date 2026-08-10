@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# autophotos — a folder of photos in, a video out.
+#
+#   ./autophotos photos/                                   calm Ken Burns slideshow
+#   ./autophotos photos/ --style collage --music track.mp3  vertical cut for social
+#   ./autophotos photos/ --order date --title "Лето 2024"   personal archive, by EXIF date
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="$ROOT/.venv/bin/python"
+
+if [ ! -x "$PY" ]; then
+  echo "Engine not provisioned yet. Run: $ROOT/setup.sh" >&2
+  exit 1
+fi
+
+exec "$PY" "$ROOT/montage/photos.py" "$@"

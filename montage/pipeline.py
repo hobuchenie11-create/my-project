@@ -33,74 +33,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-# --------------------------------------------------------------------------- #
-#  Locate the vendored OpenMontage checkout and make its tools importable.
-# --------------------------------------------------------------------------- #
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-ENGINE_ROOT = PROJECT_ROOT / "engine" / "OpenMontage"
-REMOTION_ROOT = ENGINE_ROOT / "remotion-composer"
+from common import (  # noqa: E402
+    PROJECT_ROOT, Stage, library_path, log, prepare_remotion_env, probe_media,
+    require_binaries, require_engine, write_manifest,
+)
 
-if not (ENGINE_ROOT / "tools").is_dir():
-    sys.exit(
-        f"OpenMontage engine not found at {ENGINE_ROOT}\n"
-        f"Run: {PROJECT_ROOT / 'setup.sh'}"
-    )
-
-sys.path.insert(0, str(ENGINE_ROOT))
-
-
-# --------------------------------------------------------------------------- #
-#  Small helpers
-# --------------------------------------------------------------------------- #
-
-class Stage:
-    """Prints a numbered, timed stage banner so a run is auditable as it goes."""
-
-    def __init__(self, total: int) -> None:
-        self.n = 0
-        self.total = total
-
-    def __call__(self, title: str) -> None:
-        self.n += 1
-        print(f"\n[{self.n}/{self.total}] {title}", flush=True)
-
-
-def log(msg: str) -> None:
-    print(f"      {msg}", flush=True)
-
-
-def ffprobe_json(path: Path) -> dict[str, Any]:
-    out = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_format", "-show_streams",
-         "-of", "json", str(path)],
-        capture_output=True, text=True, check=True,
-    )
-    return json.loads(out.stdout)
-
-
-def probe_media(path: Path) -> dict[str, Any]:
-    """Duration / resolution / fps / audio presence for the input file."""
-    info = ffprobe_json(path)
-    video = next((s for s in info["streams"] if s["codec_type"] == "video"), None)
-    audio = next((s for s in info["streams"] if s["codec_type"] == "audio"), None)
-    if video is None:
-        raise SystemExit(f"No video stream in {path}")
-
-    fps = 30.0
-    raw_fps = video.get("avg_frame_rate") or video.get("r_frame_rate") or "30/1"
-    if "/" in raw_fps:
-        num, den = raw_fps.split("/")
-        if float(den) != 0:
-            fps = float(num) / float(den)
-
-    return {
-        "duration": float(info["format"]["duration"]),
-        "width": int(video["width"]),
-        "height": int(video["height"]),
-        "fps": round(fps, 3),
-        "has_audio": audio is not None,
-    }
+require_engine()
 
 
 def mean_volume_db(path: Path, start: float, end: float) -> float:
@@ -549,39 +489,6 @@ def finish(
 #  Environment
 # --------------------------------------------------------------------------- #
 
-def prepare_remotion_env() -> None:
-    """Point Remotion at a local Chromium when it can't download its own.
-
-    Sandboxes and CI images often block Remotion's Chrome Headless Shell
-    download but ship a Chromium already. Detect one and export it; if none is
-    found we leave the environment alone and Remotion downloads as usual.
-    """
-    if os.environ.get("REMOTION_BROWSER_EXECUTABLE"):
-        return
-
-    candidates = [
-        *Path("/opt/pw-browsers").glob("chromium_headless_shell-*/chrome-linux/headless_shell"),
-        *Path("/opt/pw-browsers").glob("chromium-*/chrome-linux/chrome"),
-    ]
-    for name in ("chromium", "chromium-browser", "google-chrome", "headless_shell"):
-        found = shutil.which(name)
-        if found:
-            candidates.append(Path(found))
-
-    for candidate in candidates:
-        if candidate.exists():
-            os.environ["REMOTION_BROWSER_EXECUTABLE"] = str(candidate)
-            os.environ.setdefault("REMOTION_IGNORE_CERT_ERRORS", "1")
-            return
-
-
-def require_binaries() -> None:
-    missing = [b for b in ("ffmpeg", "ffprobe", "npx") if not shutil.which(b)]
-    if missing:
-        sys.exit(f"Missing required binaries: {', '.join(missing)}\n"
-                 f"Run: {PROJECT_ROOT / 'setup.sh'}")
-
-
 # --------------------------------------------------------------------------- #
 #  Entry point
 # --------------------------------------------------------------------------- #
@@ -592,7 +499,9 @@ def main() -> int:
         description="Turn a raw video file into an edited, captioned cut.",
     )
     parser.add_argument("input", type=Path, help="source video file")
-    parser.add_argument("-o", "--output", type=Path, default=Path("output/montage.mp4"))
+    parser.add_argument("-o", "--output", type=Path, default=None,
+                        help="exact output path; default lands in output/")
+    parser.add_argument("--label", default="", help="name for the file in output/")
     parser.add_argument("--target", type=float, default=None,
                         help="approximate length of the finished cut, in seconds")
     parser.add_argument("--select", choices=["auto", "llm", "all"], default="auto",
@@ -629,7 +538,9 @@ def main() -> int:
     require_binaries()
     prepare_remotion_env()
 
-    out_path = args.output.expanduser().resolve()
+    label = args.label or args.title or src.stem
+    out_path = (args.output.expanduser().resolve() if args.output
+                else library_path(label))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     work = (args.work_dir or PROJECT_ROOT / ".montage-work" / str(int(time.time()))).resolve()
     work.mkdir(parents=True, exist_ok=True)
@@ -713,6 +624,22 @@ def main() -> int:
     finish(stitched, out_path, edited_transcript, overlays, args.font_size, args.highlight)
 
     final = probe_media(out_path)
+    write_manifest(out_path, {
+        "source": str(src),
+        "source_duration_seconds": round(meta["duration"], 2),
+        "select_mode": args.select,
+        "target_seconds": args.target,
+        "segments_kept": len(timeline.segments),
+        "segments_found": len(segments),
+        "cuts": [{"start": round(s.start, 2), "end": round(s.end, 2)}
+                 for s in timeline.segments],
+        "transition": f"{timeline.transition} {timeline.transition_duration}s",
+        "caption_lines": len(edited_transcript),
+        "title": title or None,
+        "resolution": f"{final['width']}x{final['height']}",
+        "duration_seconds": round(final["duration"], 2),
+    })
+
     print(
         f"\n✅ {out_path}\n"
         f"   {final['width']}x{final['height']} @ {final['fps']}fps · "

@@ -149,3 +149,7 @@ engine/
 output/
 .montage-work/
 samples/*.mp4
+samples/*.mp3
+samples/photos/
+__pycache__/
+*.pyc
