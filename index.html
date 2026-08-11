@@ -1587,6 +1587,15 @@ function rosterView(){
     <div class="cap">${SEATS - n} ${plural(SEATS-n,'свободное место','свободных места','свободных мест')} в запасе для новых учеников</div>
   </div>
 
+  ${ro ? '' : `
+  <div class="card card-pad">
+    <button class="btn pri wide" style="width:100%;margin-bottom:8px" data-act="paste">
+      ${svg(I.copy,15)} Вставить список одним махом
+    </button>
+    <div class="hint">Скопируйте фамилии из чата или журнала — по одной в строке — и вставьте сюда.
+      Впишутся сразу все, вручную набирать 24 строки не придётся.</div>
+  </div>`}
+
   <div class="card">
     <div class="roster-hd"><span>№ · Ученик</span><span class="rh-r">${ro ? '' : 'Изменить'}</span></div>
     ${S.students.map((s, i) => ro
@@ -1653,9 +1662,15 @@ function rosterView(){
   <div class="card card-pad">
     <button class="btn wide" style="width:100%;margin-bottom:8px" data-act="export">${svg(I.copy,15)} Скопировать отчёт по всем сборам</button>
     ${Cloud.on()
-      ? `<div class="hint">Класс подключён к общей базе, поэтому сброс к демо-данным недоступен —
-           он стёр бы сборы у всех родителей. Сначала отключите устройство от базы.</div>`
-      : `<button class="btn ghost wide" style="width:100%;color:var(--danger)" data-act="reset">Сбросить и загрузить демо-данные</button>`}
+      ? `<div class="hint">Класс подключён к общей базе, поэтому очистка недоступна —
+           она стёрла бы сборы у всех родителей. Сначала отключите устройство от базы.</div>`
+      : `<button class="btn wide" style="width:100%;margin-bottom:8px" data-act="fresh">
+           Начать с чистого листа
+         </button>
+         <div class="hint" style="margin-bottom:14px">Удалит демо-примеры — и учеников, и сборы,
+           чтобы в общую базу не уехали «Жалюзи» и «День рождения Марии Петровны».
+           Делайте это до создания класса в базе.</div>
+         <button class="btn ghost wide" style="width:100%;color:var(--danger)" data-act="reset">Вернуть демо-данные</button>`}
   </div>
   <p class="fab-note">Прототип работает офлайн. Всё хранится в этом браузере — деньги через приложение не проходят.</p>`;
 }
@@ -1665,7 +1680,8 @@ function sheetHTML(){
   const inner =
     sheet.type === 'pay'  ? paySheet() :
     sheet.type === 'edit' ? editSheet() :
-    sheet.type === 'exp'  ? expSheet()  : '';
+    sheet.type === 'exp'  ? expSheet()  :
+    sheet.type === 'paste' ? pasteSheet() : '';
   return `<div class="backdrop" data-act="close"><div class="sheet" data-stop="1">
     <div class="grip"></div>${inner}</div></div>`;
 }
@@ -1706,6 +1722,25 @@ function paySheet(){
         общая сумма ${money(+c.total||0)} разделится на остальных.</div>` : ''}
     </div>
     <button class="btn pri wide" style="width:100%;padding:14px" data-act="savepay">Сохранить</button>
+  </div>`;
+}
+
+function pasteSheet(){
+  return `
+  <div class="sheet-hd">
+    <h2>Список класса</h2>
+    <button class="icon-btn" data-act="close">${svg(I.x,17)}</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label>По одной фамилии в строке</label>
+      <textarea id="p-list" rows="10" placeholder="Абрамова Алиса
+Белов Артём
+Волкова Варвара"></textarea>
+      <div class="hint">Мест в списке ${SEATS}: ${FILLED} учеников и ${SEATS - FILLED} в запасе.
+        Порядок сохранится, нумерация проставится сама.</div>
+    </div>
+    <button class="btn pri wide" style="width:100%;padding:14px" data-act="pastesave">Заполнить список</button>
   </div>`;
 }
 
@@ -2268,6 +2303,40 @@ document.addEventListener('click', e => {
       gate = null; saveDevice(); render(); break;
     }
 
+
+    case 'paste':
+      sheet = {type:'paste'};
+      scrollMemo[view] = window.scrollY; render(); break;
+
+    case 'pastesave': {
+      const lines = document.getElementById('p-list').value
+        .split('\n').map(x => x.trim()).filter(Boolean);
+      if (!lines.length) { toast('Список пуст'); return; }
+      const had = active().length;
+      if (had && !confirm(`Заменить весь список? Сейчас в нём ${had} ${plural(had,'ученик','ученика','учеников')}.`)) return;
+      S.students.forEach((st, i) => {
+        const name = lines[i] || '';
+        if (st.name !== name) S.collections.forEach(c => delete c.payments[st.id]);
+        st.name = name;
+      });
+      save();
+      const put = Math.min(lines.length, SEATS);
+      sheet = null; render();
+      toast(lines.length > SEATS
+        ? `Вписано ${put} из ${lines.length} — мест всего ${SEATS}`
+        : `Вписано ${put} ${plural(put,'ученик','ученика','учеников')}`);
+      break;
+    }
+
+    case 'fresh': {
+      if (!confirm('Удалить все демо-примеры — учеников и сборы? Список станет пустым, его нужно будет заполнить.')) return;
+      S.collections = [];
+      S.students.forEach(st => { st.name = ''; });
+      S.payee = {name:'', phone:'', bank:''};
+      save(); view = 'roster'; render();
+      toast('Чистый лист — заполните список класса');
+      break;
+    }
 
     case 'reset':
       if (Cloud.on()){ toast('Сначала отключите общую базу'); return; }
