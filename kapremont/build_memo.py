@@ -47,7 +47,7 @@ TXT = "263238"
 ]
 
 ВСЕГО_КВАРТИР = 60      # строк в списке; лишние можно очистить
-СТРОК_В_СТОЛБЦЕ = 43    # столько номеров помещается в столбец на А4
+СТРОК_В_ПОДКОЛОНКЕ = 30  # в категории две подколонки => до 60 квартир
 ПЕРВАЯ_СТРОКА_СПИСКА = 3
 
 THIN = Side(style="thin", color="BFBFBF")
@@ -161,86 +161,102 @@ lst.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
 # ==========================================================================
 # Лист ПАМЯТКА — печатная страница
 # ==========================================================================
+# Каждая категория занимает две подколонки: так все квартиры дома помещаются
+# на одну страницу даже если почти все они в одном статусе. Столбцов
+# по-прежнему три — подколонки лишь делят список номеров пополам.
 memo = wb.create_sheet(MEMO, 0)
 memo.sheet_view.showGridLines = False
-for col, w in {"A": 1.5, "B": 26, "C": 26, "D": 26, "E": 1.5}.items():
+ШИРИНА = {"A": 1.5, "B": 12.5, "C": 12.5, "D": 12.5,
+          "E": 12.5, "F": 12.5, "G": 12.5, "H": 1.5}
+for col, w in ШИРИНА.items():
     memo.column_dimensions[col].width = w
 
 memo.row_dimensions[1].height = 8
-memo.merge_cells("B2:D2")
+memo.merge_cells("B2:G2")
 оформить(memo["B2"], size=15, bold=True, color=ACCENT, align="center",
          border=None)
 memo["B2"] = "КОМУ КАКАЯ КВИТАНЦИЯ НУЖНА"
-memo.row_dimensions[2].height = 26
+memo.row_dimensions[2].height = 24
 
-memo.merge_cells("B3:D3")
+memo.merge_cells("B3:G3")
 оформить(memo["B3"], size=10, italic=True, color="666666", align="center",
          border=None)
 memo["B3"] = ('="МКД г. Омск, ул. Магистральная, 2   ·   всего квартир в '
               f"списке: \"&COUNTA('{LIST}'!$B${ПЕРВАЯ_СТРОКА_СПИСКА}:$B${ПОСЛЕДНЯЯ})")
-memo.row_dimensions[3].height = 18
-memo.row_dimensions[4].height = 10
+memo.row_dimensions[3].height = 16
+memo.row_dimensions[4].height = 8
 
-# --- Шапки трёх столбцов
 ЗАГОЛОВОК = 5
 ПОДЗАГОЛОВОК = 6
 СЧЁТЧИК = 7
 ПЕРВАЯ = 8
 
-memo.row_dimensions[ЗАГОЛОВОК].height = 32
-memo.row_dimensions[ПОДЗАГОЛОВОК].height = 26
-memo.row_dimensions[СЧЁТЧИК].height = 18
+memo.row_dimensions[ЗАГОЛОВОК].height = 30
+memo.row_dimensions[ПОДЗАГОЛОВОК].height = 24
+memo.row_dimensions[СЧЁТЧИК].height = 16
 
 for i, (код, заголовок, пояснение) in enumerate(СТАТУСЫ):
-    col = chr(ord("B") + i)
-    оформить(memo[f"{col}{ЗАГОЛОВОК}"], size=10, bold=True, color="FFFFFF",
-             fill=ACCENT, align="center", wrap=True)
-    memo[f"{col}{ЗАГОЛОВОК}"] = f"{i + 1}. {заголовок}"
-
-    оформить(memo[f"{col}{ПОДЗАГОЛОВОК}"], size=9, italic=True, color=TXT,
-             fill=GREY, align="center", wrap=True)
-    memo[f"{col}{ПОДЗАГОЛОВОК}"] = пояснение
-
-    оформить(memo[f"{col}{СЧЁТЧИК}"], size=10, bold=True, color=ACCENT,
-             fill=ACCENT_LIGHT, align="center")
-    memo[f"{col}{СЧЁТЧИК}"] = (
-        f'="Квартир: "&COUNTIF(\'{LIST}\'!$C:$C,"{код}")')
-
-    # Сами номера квартир
+    лев = chr(ord("B") + i * 2)
+    прав = chr(ord("C") + i * 2)
     служебный = chr(ord("E") + i)
-    for k in range(СТРОК_В_СТОЛБЦЕ):
+    счёт = f'COUNTIF(\'{LIST}\'!$C:$C,"{код}")'
+
+    for строка, текст, стиль in (
+            (ЗАГОЛОВОК, f"{i + 1}. {заголовок}",
+             dict(size=10, bold=True, color="FFFFFF", fill=ACCENT)),
+            (ПОДЗАГОЛОВОК, пояснение,
+             dict(size=8.5, italic=True, color=TXT, fill=GREY)),
+            (СЧЁТЧИК, f'="Квартир: "&{счёт}',
+             dict(size=10, bold=True, color=ACCENT, fill=ACCENT_LIGHT))):
+        memo.merge_cells(f"{лев}{строка}:{прав}{строка}")
+        c = memo[f"{лев}{строка}"]
+        c.value = текст
+        for колонка in (лев, прав):
+            оформить(memo[f"{колонка}{строка}"], align="center", wrap=True,
+                     **стиль)
+
+    # Номера: левая подколонка — первая половина списка, правая — вторая
+    for k in range(СТРОК_В_ПОДКОЛОНКЕ):
         row = ПЕРВАЯ + k
-        memo.row_dimensions[row].height = 13.5
-        c = memo[f"{col}{row}"]
-        c.value = (
-            f'=IFERROR("кв. "&INDEX(\'{LIST}\'!$B:$B,'
-            f"MATCH({k + 1},'{LIST}'!${служебный}:${служебный},0)),\"\")")
-        оформить(c, size=9.5, align="center",
-                 fill=ACCENT_LIGHT if k % 2 else "FFFFFF")
+        memo.row_dimensions[row].height = 14
+        for половина, колонка in enumerate((лев, прав)):
+            позиция = k + 1 + половина * СТРОК_В_ПОДКОЛОНКЕ
+            c = memo[f"{колонка}{row}"]
+            c.value = (
+                f'=IFERROR("кв. "&INDEX(\'{LIST}\'!$B:$B,'
+                f"MATCH({позиция},'{LIST}'!${служебный}:${служебный},0)),\"\")")
+            оформить(c, size=9.5, align="center",
+                     fill=ACCENT_LIGHT if k % 2 else "FFFFFF")
 
-    # Если в категории больше строк, чем помещается на страницу
-    хвост = ПЕРВАЯ + СТРОК_В_СТОЛБЦЕ
-    memo.row_dimensions[хвост].height = 16
-    c = memo[f"{col}{хвост}"]
-    c.value = (f'=IF(COUNTIF(\'{LIST}\'!$C:$C,"{код}")>{СТРОК_В_СТОЛБЦЕ},'
-               f'"…и ещё "&(COUNTIF(\'{LIST}\'!$C:$C,"{код}")'
-               f'-{СТРОК_В_СТОЛБЦЕ})&" — см. лист «{LIST}»","")')
-    оформить(c, size=8, italic=True, color="B00000", align="center")
+    хвост = ПЕРВАЯ + СТРОК_В_ПОДКОЛОНКЕ
+    memo.row_dimensions[хвост].height = 14
+    memo.merge_cells(f"{лев}{хвост}:{прав}{хвост}")
+    c = memo[f"{лев}{хвост}"]
+    ёмкость = СТРОК_В_ПОДКОЛОНКЕ * 2
+    c.value = (f'=IF({счёт}>{ёмкость},"…и ещё "&({счёт}-{ёмкость})'
+               f'&" — см. лист «{LIST}»","")')
+    for колонка in (лев, прав):
+        оформить(memo[f"{колонка}{хвост}"], size=8, italic=True,
+                 color="B00000", align="center")
 
-# Рамка вокруг каждого столбца
+# Рамка вокруг каждой категории
 for i in range(3):
-    col = chr(ord("B") + i)
-    for row in range(ЗАГОЛОВОК, ПЕРВАЯ + СТРОК_В_СТОЛБЦЕ + 1):
-        c = memo[f"{col}{row}"]
-        b = c.border
-        c.border = Border(
-            left=MEDIUM, right=MEDIUM,
-            top=MEDIUM if row == ЗАГОЛОВОК else b.top,
-            bottom=MEDIUM if row == ПЕРВАЯ + СТРОК_В_СТОЛБЦЕ else b.bottom)
+    лев = chr(ord("B") + i * 2)
+    прав = chr(ord("C") + i * 2)
+    for row in range(ЗАГОЛОВОК, ПЕРВАЯ + СТРОК_В_ПОДКОЛОНКЕ + 1):
+        for колонка, сторона in ((лев, "left"), (прав, "right")):
+            c = memo[f"{колонка}{row}"]
+            b = c.border
+            c.border = Border(
+                left=MEDIUM if сторона == "left" else b.left,
+                right=MEDIUM if сторона == "right" else b.right,
+                top=MEDIUM if row == ЗАГОЛОВОК else b.top,
+                bottom=(MEDIUM if row == ПЕРВАЯ + СТРОК_В_ПОДКОЛОНКЕ
+                        else b.bottom))
 
-ПОДВАЛ = ПЕРВАЯ + СТРОК_В_СТОЛБЦЕ + 2
-memo.row_dimensions[ПОДВАЛ].height = 30
-memo.merge_cells(f"B{ПОДВАЛ}:D{ПОДВАЛ}")
+ПОДВАЛ = ПЕРВАЯ + СТРОК_В_ПОДКОЛОНКЕ + 2
+memo.row_dimensions[ПОДВАЛ].height = 28
+memo.merge_cells(f"B{ПОДВАЛ}:G{ПОДВАЛ}")
 оформить(memo[f"B{ПОДВАЛ}"], size=9, italic=True, color="666666",
          align="center", wrap=True, border=None)
 memo[f"B{ПОДВАЛ}"] = (
@@ -248,7 +264,7 @@ memo[f"B{ПОДВАЛ}"] = (
     'в нужный столбец. Памятка обновлена: "'
     '&TEXT(DAY(TODAY()),"00")&"."&TEXT(MONTH(TODAY()),"00")&"."&YEAR(TODAY())')
 
-memo.print_area = f"$B$1:$D${ПОДВАЛ}"
+memo.print_area = f"$B$1:$G${ПОДВАЛ}"
 memo.page_setup.orientation = "portrait"
 memo.page_setup.paperSize = memo.PAPERSIZE_A4
 memo.page_setup.fitToWidth = 1
