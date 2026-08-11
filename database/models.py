@@ -63,6 +63,10 @@ MIGRATIONS = [
     ("task_templates", "amount_field", "TEXT NOT NULL DEFAULT 'amount'"),
     ("task_templates", "priority", "TEXT NOT NULL DEFAULT 'normal'"),
     ("tasks", "house_meter_id", "INTEGER"),
+    # Комментарий председателя к задаче. Отдельно от description: описание
+    # приходит из шаблона регламента и обновляется вместе с ним, а этот
+    # комментарий пишется руками (в том числе правкой в Excel) и не затирается.
+    ("tasks", "note", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # За сколько дней до срока задача считается «горящей» (подсветка и напоминание)
@@ -108,6 +112,7 @@ TASK_OPEN_STATUSES = ("new", "in_progress", "waiting")
 TASK_CATEGORIES = {
     "finance": "Спецсчёт и финансы",
     "nonresidential": "Сопровождение нежилого помещения",
+    "services": "Абонентские платежи и обслуживание",
     "meters": "Показания и ресурсники",
     "verification": "Поверка приборов учёта",
     "repair": "Текущий ремонт",
@@ -122,6 +127,10 @@ TASK_PRIORITIES = {"high": "Высокий", "normal": "Обычный", "low": 
 # Регулярные задачи председателя — годовой цикл. Каждый месяц из этих шаблонов
 # создаются задачи со своими сроками, статусом и напоминаниями.
 # day_start/day_end — окно выполнения в числах месяца.
+#
+# Порядок в списке — хронологический, по сроку (day_end), при равном сроке —
+# по началу окна. Из него берётся sort_order шаблонов, поэтому и в боте, и в
+# годовом плане задачи месяца идут по датам, а не по времени добавления.
 DEFAULT_TASK_TEMPLATES = [
     {
         "code": "bank_statement",
@@ -134,14 +143,14 @@ DEFAULT_TASK_TEMPLATES = [
                        "за прошедший месяц.",
     },
     {
-        "code": "posting_invoices",
-        "title": "Разноска платежей и печать квитанций",
-        "category": "finance",
-        "day_start": 5, "day_end": 10,
+        "code": "gsm_fee",
+        "title": "Оплатить абонентскую плату за GSM-модуль",
+        "category": "services",
+        "day_start": 5, "day_end": 7,
         "needs_amount": 0,
         "amount_field": "", "priority": "normal",
-        "description": "Разнести поступления по лицевым счетам, сформировать "
-                       "и распечатать квитанции.",
+        "description": "Внести абонентскую плату за GSM-модуль — срок до 7 "
+                       "числа. Напоминания начинаются с 5 числа.",
     },
     {
         "code": "nonresidential_payment",
@@ -153,6 +162,16 @@ DEFAULT_TASK_TEMPLATES = [
         "priority": "normal",
         "description": "Проконтролировать, что арендатор внёс арендную плату "
                        "(срок — до 10 числа). Указать сумму и дату.",
+    },
+    {
+        "code": "posting_invoices",
+        "title": "Разноска платежей и печать квитанций",
+        "category": "finance",
+        "day_start": 5, "day_end": 10,
+        "needs_amount": 0,
+        "amount_field": "", "priority": "normal",
+        "description": "Разнести поступления по лицевым счетам, сформировать "
+                       "и распечатать квитанции.",
     },
     {
         "code": "nonresidential_utilities",
@@ -173,6 +192,17 @@ DEFAULT_TASK_TEMPLATES = [
         "needs_amount": 0,
         "amount_field": "", "priority": "normal",
         "description": "Передать собранные показания в Росводоканал и ОЭК.",
+    },
+    {
+        "code": "oks_fee",
+        "title": "Оплатить абонентскую плату ОКС",
+        "category": "services",
+        "day_start": 27, "day_end": 30,
+        "needs_amount": 0,
+        "amount_field": "", "priority": "normal",
+        "description": "Внести абонентскую плату ОКС — срок до 30 числа "
+                       "(в феврале — последний день месяца). Напоминания "
+                       "начинаются с 27 числа.",
     },
 ]
 
@@ -278,6 +308,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     utility_paid_at TEXT NOT NULL DEFAULT '',     -- дата оплаты коммуналки
     apartment_id INTEGER REFERENCES apartments (id),
     house_meter_id INTEGER REFERENCES house_meters (id),
+    note         TEXT NOT NULL DEFAULT '',        -- комментарий председателя
     source       TEXT NOT NULL DEFAULT 'chairman',
     created_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
     updated_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),

@@ -347,8 +347,10 @@ def update_task(conn: sqlite3.Connection, task_id: int, **fields) -> None:
 
 
 def tasks_for_period(conn: sqlite3.Connection, period: str) -> list[sqlite3.Row]:
+    """Задачи месяца в хронологическом порядке: по сроку, затем по началу окна."""
     return conn.execute(
-        "SELECT * FROM tasks WHERE period = ? ORDER BY due_date, id", (period,)
+        "SELECT * FROM tasks WHERE period = ? ORDER BY due_date, start_date, id",
+        (period,),
     ).fetchall()
 
 
@@ -356,7 +358,7 @@ def open_tasks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Все незакрытые задачи — по сроку, ближайшие первыми."""
     return conn.execute(
         """SELECT * FROM tasks WHERE status IN ('new', 'in_progress', 'waiting')
-           ORDER BY (due_date = ''), due_date, id"""
+           ORDER BY (due_date = ''), due_date, start_date, id"""
     ).fetchall()
 
 
@@ -371,11 +373,11 @@ def one_off_tasks(conn: sqlite3.Connection, include_done: bool = False) -> list[
 
 
 def tasks_in_year(conn: sqlite3.Connection, year: int) -> list[sqlite3.Row]:
-    """Регулярные задачи года — годовой цикл (без разовых)."""
+    """Регулярные задачи года — годовой цикл (без разовых), по датам."""
     return conn.execute(
         """SELECT * FROM tasks
            WHERE template_id IS NOT NULL AND period LIKE ?
-           ORDER BY period, due_date, id""",
+           ORDER BY period, due_date, start_date, id""",
         (f"{year}-%",),
     ).fetchall()
 

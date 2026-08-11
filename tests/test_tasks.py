@@ -27,12 +27,12 @@ def test_templates_cover_the_chairman_cycle(conn):
     codes = {t["code"] for t in repository.active_task_templates(conn)}
     assert codes == {"bank_statement", "posting_invoices",
                      "nonresidential_payment", "nonresidential_utilities",
-                     "submit_readings_rso"}
+                     "submit_readings_rso", "gsm_fee", "oks_fee"}
 
 
 def test_generate_creates_tasks_with_windows(conn):
     created = task_service.generate_tasks(conn, date(2026, 9, 1), months_ahead=0)
-    assert created == 5
+    assert created == 7
 
     bank = _by_title(conn, "2026-09", "выписку из банка")
     assert bank["start_date"] == "2026-09-02"     # окно 2-5 числа
@@ -51,6 +51,43 @@ def test_generate_creates_tasks_with_windows(conn):
     readings = _by_title(conn, "2026-09", "ресурсоснабжающим")
     assert (readings["start_date"], readings["due_date"]) == ("2026-09-20", "2026-09-25")
 
+    gsm = _by_title(conn, "2026-09", "GSM")
+    assert (gsm["start_date"], gsm["due_date"]) == ("2026-09-05", "2026-09-07")
+
+    oks = _by_title(conn, "2026-09", "ОКС")
+    assert (oks["start_date"], oks["due_date"]) == ("2026-09-27", "2026-09-30")
+
+
+def test_monthly_fees_are_reminded_from_their_start_day(conn):
+    """Абонентские платежи: ОКС — с 27 числа, GSM — с 5 числа."""
+    task_service.generate_tasks(conn, date(2026, 9, 1), months_ahead=0)
+
+    on_27 = task_service.reminders_for_today(conn, date(2026, 9, 27))
+    assert any("ОКС" in m for m in on_27)
+    assert task_service.view(_by_title(conn, "2026-09", "ОКС"),
+                             date(2026, 9, 27)).is_soon is True
+
+    on_5 = task_service.reminders_for_today(conn, date(2026, 9, 5))
+    assert any("GSM" in m for m in on_5)
+    # 4 числа напоминания ещё нет — окно не открылось
+    assert not any("GSM" in m
+                   for m in task_service.reminders_for_today(conn, date(2026, 9, 4)))
+
+
+def test_february_shortens_the_oks_deadline_to_the_last_day(conn):
+    """Срок «до 30 числа» в феврале — последний день месяца."""
+    task_service.generate_tasks(conn, date(2027, 2, 1), months_ahead=0)
+    assert _by_title(conn, "2027-02", "ОКС")["due_date"] == "2027-02-28"
+
+
+def test_month_tasks_are_in_chronological_order(conn):
+    """Задачи месяца идут по срокам — так их легче проходить сверху вниз."""
+    task_service.generate_tasks(conn, date(2026, 9, 1), months_ahead=0)
+    due = [r["due_date"] for r in repository.tasks_for_period(conn, "2026-09")]
+    assert due == sorted(due)
+    assert due == ["2026-09-05", "2026-09-07", "2026-09-10", "2026-09-10",
+                   "2026-09-18", "2026-09-25", "2026-09-30"]
+
 
 def test_generation_is_idempotent(conn):
     task_service.generate_tasks(conn, date(2026, 9, 1), months_ahead=0)
@@ -66,9 +103,10 @@ def test_cycle_continues_into_next_year(conn):
 
 
 def test_generate_year_covers_twelve_months(conn):
+    templates = len(task_service.DEFAULT_TASK_TEMPLATES)
     created = task_service.generate_year(conn, 2027)
-    assert created == 12 * 5
-    assert len(repository.tasks_in_year(conn, 2027)) == 60
+    assert created == 12 * templates
+    assert len(repository.tasks_in_year(conn, 2027)) == 12 * templates
 
 
 def test_short_month_does_not_break_dates(conn):

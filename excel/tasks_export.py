@@ -3,6 +3,10 @@
 Лист «Годовой план» — все задачи года по месяцам: срок, статус, сумма и дата
 оплаты. Лист «Регламент» — расшифровка регулярных задач и их окон, чтобы
 план был понятен и через год, и следующему председателю.
+
+Файл рассчитан на обратную загрузку: у каждой строки есть скрытый столбец
+«ID» — по нему `excel.tasks_import` находит задачу в базе и переносит в неё
+правки, сделанные в Excel. Столбец не трогаем и не удаляем.
 """
 import sqlite3
 from datetime import date
@@ -11,11 +15,12 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
 
 from bot.config import config
 from bot.services import task_service
 from database import repository
-from database.models import DEFAULT_TASK_TEMPLATES
+from database.models import DEFAULT_TASK_TEMPLATES, TASK_CATEGORIES, TASK_STATUSES
 from excel import style
 
 SHEET_PLAN = "Годовой план"
@@ -23,23 +28,39 @@ SHEET_ONE_OFF = "Мои задачи"
 SHEET_VERIFICATION = "Поверка приборов"
 SHEET_RULES = "Регламент"
 
+# Служебный столбец: связывает строку таблицы с записью в базе
+COL_ID_TITLE = "ID"
+
+# Пометка строк-подсказок: при обратной загрузке они пропускаются
+HINT_MARK = "ℹ️"
+
 VERIFICATION_COLUMNS = ["Прибор учёта", "Заводской №", "Последняя поверка",
                         "Интервал, лет", "Следующая поверка", "Осталось",
-                        "Примечание"]
-VERIFICATION_WIDTHS = [38, 18, 18, 14, 20, 22, 30]
+                        "Примечание", COL_ID_TITLE]
+VERIFICATION_WIDTHS = [38, 18, 18, 14, 20, 22, 30, 6]
 
 # Лист «Мои задачи» — разовые дела председателя, вне регулярного цикла
 ONE_OFF_COLUMNS = ["Задача", "Категория", "Срок", "Осталось", "Статус",
-                   "Создана", "Выполнена", "Примечание"]
-ONE_OFF_WIDTHS = [44, 24, 13, 16, 14, 13, 13, 34]
+                   "Создана", "Выполнена", "Примечание", COL_ID_TITLE]
+ONE_OFF_WIDTHS = [44, 24, 13, 16, 14, 13, 13, 34, 6]
 
 COLUMNS = ["Месяц", "Задача", "Категория", "Срок", "Статус",
            "Аренда, ₽", "Дата поступления",
-           "Оплата коммуналки, ₽", "Дата оплаты", "Примечание"]
-WIDTHS = [14, 42, 20, 12, 14, 13, 17, 20, 14, 30]
+           "Оплата коммуналки, ₽", "Дата оплаты", "Комментарий", COL_ID_TITLE]
+WIDTHS = [14, 42, 20, 12, 14, 13, 17, 20, 14, 30, 6]
 
 # Столбцы с суммами (для формата и итогов)
 COL_RENT, COL_RENT_DATE, COL_UTIL, COL_UTIL_DATE = 6, 7, 8, 9
+
+def _list_validation(values) -> DataValidation:
+    """Выпадающий список: правки в Excel возвращаются понятными значениями."""
+    return DataValidation(type="list", allow_blank=True,
+                          formula1='"' + ",".join(values) + '"')
+
+
+def _hide_service_column(ws, column: int) -> None:
+    """Прячет служебный столбец «ID» — он нужен загрузке, а не глазам."""
+    ws.column_dimensions[get_column_letter(column)].hidden = True
 
 FILL_DONE = PatternFill("solid", fgColor="D9EAD3")      # выполнено
 FILL_OVERDUE = PatternFill("solid", fgColor="F4CCCC")   # просрочено
@@ -106,7 +127,8 @@ def _sheet_plan(ws, conn: sqlite3.Connection, year: int) -> None:
                 _fmt(row["paid_at"]),
                 row["utility_amount"] if row["utility_amount"] is not None else "",
                 _fmt(row["utility_paid_at"]),
-                row["description"],
+                row["note"],          # свободный комментарий, правится в Excel
+                row["id"],
             ]
             fill = (FILL_DONE if row["status"] == "done"
                     else FILL_OVERDUE if v.is_overdue
@@ -125,6 +147,8 @@ def _sheet_plan(ws, conn: sqlite3.Connection, year: int) -> None:
                     cell.font = style.FONT_BOLD
             r += 1
 
+    last_data_row = r - 1
+
     # Итоги по суммам оплат за год
     r += 1
     ws.cell(row=r, column=2, value="Итого за год, ₽").font = style.FONT_BOLD
@@ -134,6 +158,18 @@ def _sheet_plan(ws, conn: sqlite3.Connection, year: int) -> None:
         total.font = style.FONT_BOLD
         total.number_format = "# ##0.00"
 
+    hint = ws.cell(row=r + 2, column=1,
+                   value="Правки (статус, суммы, даты) сохраняются в боте: "
+                         "🗂 Задачи → 📥 Загрузить правки — и пришлите этот файл. "
+                         "Скрытый столбец «ID» не удаляйте.")
+    hint.font = Font(italic=True)
+
+    if last_data_row >= 3:
+        status_list = _list_validation(TASK_STATUSES.values())
+        ws.add_data_validation(status_list)
+        status_list.add(f"E3:E{last_data_row}")
+
+    _hide_service_column(ws, ncols)
     ws.freeze_panes = "A3"
     ws.auto_filter.ref = f"A2:{get_column_letter(ncols)}{r - 2}"
     ws.page_setup.orientation = "landscape"
@@ -185,6 +221,7 @@ def _sheet_one_off(ws, conn: sqlite3.Connection) -> None:
             _fmt(row["created_at"][:10]),
             _fmt(row["done_at"]),
             row["description"],
+            row["id"],
         ]
         fill = (FILL_DONE if row["status"] == "done"
                 else FILL_OVERDUE if v.is_overdue
@@ -199,13 +236,31 @@ def _sheet_one_off(ws, conn: sqlite3.Connection) -> None:
         r += 1
 
     if not rows:
-        ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=ncols)
+        ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=ncols - 1)
         hint = ws.cell(row=3, column=1,
-                       value="Пока пусто. Новые задачи ставятся в боте: "
+                       value=f"{HINT_MARK} Пока пусто. Новую задачу можно вписать прямо сюда "
+                             "(название, категория, срок) или поставить в боте: "
                              "🗂 Задачи → ➕ Новая задача.")
         hint.alignment = style.LEFT
         r = 4
 
+    # Место под новые задачи: пустые строки со списками категорий и статусов
+    free_rows = 15
+    status_list = _list_validation(TASK_STATUSES.values())
+    category_list = _list_validation(TASK_CATEGORIES.values())
+    ws.add_data_validation(status_list)
+    ws.add_data_validation(category_list)
+    status_list.add(f"E3:E{r + free_rows}")
+    category_list.add(f"B3:B{r + free_rows}")
+
+    note = ws.cell(row=r + free_rows + 2, column=1,
+                   value=f"{HINT_MARK} Новые строки вписывайте ниже последней задачи — "
+                         "столбец «ID» у них останется пустым, и бот заведёт их "
+                         "как новые. Чтобы сохранить правки: 🗂 Задачи → "
+                         "📥 Загрузить правки и пришлите этот файл.")
+    note.font = Font(italic=True)
+
+    _hide_service_column(ws, ncols)
     ws.freeze_panes = "A3"
     if rows:
         ws.auto_filter.ref = f"A2:{get_column_letter(ncols)}{r - 1}"
@@ -248,6 +303,7 @@ def _sheet_verification(ws, conn: sqlite3.Connection) -> None:
             v.next_due.strftime("%d.%m.%Y") if v.next_due else "",
             v.status_text,
             row["note"],
+            row["id"],
         ]
         fill = (FILL_OVERDUE if v.is_overdue
                 else FILL_SOON if (v.days_left is not None and v.days_left <= 30)
@@ -265,7 +321,14 @@ def _sheet_verification(ws, conn: sqlite3.Connection) -> None:
                    value="Следующая поверка = дата последней поверки + интервал. "
                          "Задача появляется за полгода до срока.")
     note.font = Font(italic=True)
+    hint = ws.cell(row=r + 2, column=1,
+                   value="Даты последней поверки и интервал можно вписать прямо "
+                         "здесь и отправить файл боту: 🗂 Задачи → 📥 Загрузить "
+                         "правки. Столбцы «Следующая поверка» и «Осталось» "
+                         "бот пересчитает сам.")
+    hint.font = Font(italic=True)
 
+    _hide_service_column(ws, ncols)
     ws.freeze_panes = "A3"
     ws.page_setup.orientation = "landscape"
     ws.page_setup.paperSize = ws.PAPERSIZE_A4

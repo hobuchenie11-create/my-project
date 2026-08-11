@@ -1,4 +1,5 @@
 """Меню задач председателя. Доступно только администраторам из ADMIN_IDS."""
+import asyncio
 import logging
 from datetime import date
 
@@ -9,11 +10,11 @@ from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from bot.config import config
 from bot.keyboards.admin_menu import admin_menu
-from bot.keyboards.tasks import (BTN_COUNCIL, BTN_MONTH_PLAN, BTN_NEW_TASK,
-                                 BTN_ONE_OFF, BTN_TASKS, BTN_TASKS_BACK,
-                                 BTN_URGENT, BTN_VERIFICATION, BTN_YEAR_PLAN,
-                                 categories_keyboard, meter_actions,
-                                 task_actions, tasks_menu)
+from bot.keyboards.tasks import (BTN_COUNCIL, BTN_IMPORT_PLAN, BTN_MONTH_PLAN,
+                                 BTN_NEW_TASK, BTN_ONE_OFF, BTN_TASKS,
+                                 BTN_TASKS_BACK, BTN_URGENT, BTN_VERIFICATION,
+                                 BTN_YEAR_PLAN, categories_keyboard,
+                                 meter_actions, task_actions, tasks_menu)
 from bot.services import task_service, verification_service
 from bot.states.tasks import CompleteTask, MeterInterval, NewTask, Verification
 from database import repository
@@ -282,7 +283,63 @@ async def send_year_plan(message: Message) -> None:
     await message.answer_document(
         FSInputFile(path),
         caption=(f"📊 Годовой план задач на {year} год\n"
-                 "Помесячно, со сроками, статусами и суммами оплат."))
+                 "Помесячно, со сроками, статусами и суммами оплат.\n\n"
+                 "Правки в файле сохраняются в боте: отредактируйте, "
+                 "нажмите «📥 Загрузить правки» и пришлите файл обратно."))
+
+
+# ---------------------------------------------------------------------------
+# Обратная загрузка: правки из Excel возвращаются в базу
+# ---------------------------------------------------------------------------
+
+@router.message(F.text == BTN_IMPORT_PLAN)
+async def import_plan_hint(message: Message) -> None:
+    await message.answer(
+        "📥 <b>Загрузка правок из Excel</b>\n\n"
+        "Пришлите сюда файл годового плана — тот, что бот выгрузил, "
+        "с вашими изменениями. Я перенесу их в базу:\n"
+        "• «Годовой план» — статусы, суммы, даты оплат, комментарии;\n"
+        "• «Мои задачи» — правки и новые строки (их бот заведёт как задачи);\n"
+        "• «Поверка приборов» — даты поверки и интервалы.\n\n"
+        "Пустая ячейка означает «не менять» — так случайное стирание "
+        "не удалит данные. Скрытый столбец «ID» удалять нельзя: по нему "
+        "строка находит свою задачу.")
+
+
+@router.message(F.document)
+async def import_plan_file(message: Message) -> None:
+    """Присланный xlsx — это правки годового плана: переносим их в базу."""
+    from excel.tasks_import import import_year_plan
+
+    name = message.document.file_name or ""
+    if not name.lower().endswith((".xlsx", ".xlsm")):
+        await message.answer("Жду файл Excel (.xlsx) — годовой план задач.")
+        return
+
+    inbox = config.reports_dir / "inbox"
+    inbox.mkdir(parents=True, exist_ok=True)
+    path = inbox / f"{date.today().isoformat()}_{name}"
+    await message.bot.download(message.document, destination=path)
+
+    def run_import():
+        # Своё подключение: соединение SQLite нельзя делить между потоками
+        conn = repository.connect()
+        try:
+            return import_year_plan(conn, path, message.from_user.id)
+        finally:
+            conn.close()
+
+    try:
+        result = await asyncio.to_thread(run_import)
+    except Exception as exc:                       # noqa: BLE001 — покажем причину
+        logger.exception("Не удалось загрузить правки из %s", path)
+        await message.answer(f"Не удалось прочитать файл: {exc}\n\n"
+                             "Пришлите книгу, выгруженную ботом "
+                             "(🗂 Задачи → 📊 Годовой план).")
+        return
+
+    await message.answer(f"📥 <b>Правки загружены</b>\n\n{result.text()}",
+                         reply_markup=tasks_menu())
 
 
 # ---------------------------------------------------------------------------

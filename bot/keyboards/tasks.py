@@ -9,6 +9,7 @@ BTN_ONE_OFF = "📌 Мои задачи"
 BTN_NEW_TASK = "➕ Новая задача"
 BTN_VERIFICATION = "🔧 Поверка приборов"
 BTN_YEAR_PLAN = "📊 Годовой план (Excel)"
+BTN_IMPORT_PLAN = "📥 Загрузить правки"
 BTN_COUNCIL = "📤 Сводка для Совета дома"
 BTN_TASKS_BACK = "⬅️ Меню председателя"
 
@@ -18,7 +19,8 @@ def tasks_menu() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=BTN_URGENT), KeyboardButton(text=BTN_MONTH_PLAN)],
             [KeyboardButton(text=BTN_ONE_OFF), KeyboardButton(text=BTN_NEW_TASK)],
-            [KeyboardButton(text=BTN_VERIFICATION), KeyboardButton(text=BTN_YEAR_PLAN)],
+            [KeyboardButton(text=BTN_VERIFICATION)],
+            [KeyboardButton(text=BTN_YEAR_PLAN), KeyboardButton(text=BTN_IMPORT_PLAN)],
             [KeyboardButton(text=BTN_COUNCIL)],
             [KeyboardButton(text=BTN_TASKS_BACK)],
         ],
