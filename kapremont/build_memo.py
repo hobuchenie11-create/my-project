@@ -46,8 +46,8 @@ TXT = "263238"
      "отправляем PDF на электронную почту"),
 ]
 
-ВСЕГО_КВАРТИР = 60      # строк в списке; лишние можно очистить
-СТРОК_В_ПОДКОЛОНКЕ = 30  # в категории две подколонки => до 60 квартир
+ВСЕГО_КВАРТИР = 80      # квартир в доме
+СТРОК_В_ПОДКОЛОНКЕ = 40  # в категории две подколонки => все 80 квартир
 ПЕРВАЯ_СТРОКА_СПИСКА = 3
 
 THIN = Side(style="thin", color="BFBFBF")
@@ -155,7 +155,9 @@ lst.print_area = f"$B$1:$D${ПОСЛЕДНЯЯ + 4}"
 lst.page_setup.orientation = "portrait"
 lst.page_setup.paperSize = lst.PAPERSIZE_A4
 lst.page_setup.fitToWidth = 1
-lst.page_setup.fitToHeight = 1
+# Восемьдесят строк на одну страницу влезли бы только нечитаемо мелко,
+# поэтому по высоте лист не ограничиваем.
+lst.page_setup.fitToHeight = 0
 lst.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
 
 # ==========================================================================
