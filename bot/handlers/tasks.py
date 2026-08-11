@@ -14,9 +14,11 @@ from bot.keyboards.tasks import (BTN_COUNCIL, BTN_IMPORT_PLAN, BTN_MONTH_PLAN,
                                  BTN_NEW_TASK, BTN_ONE_OFF, BTN_TASKS,
                                  BTN_TASKS_BACK, BTN_URGENT, BTN_VERIFICATION,
                                  BTN_YEAR_PLAN, categories_keyboard,
+                                 council_confirm, council_selection,
                                  meter_actions, task_actions, tasks_menu)
 from bot.services import task_service, verification_service
-from bot.states.tasks import CompleteTask, MeterInterval, NewTask, Verification
+from bot.states.tasks import (CompleteTask, CouncilDigest, MeterInterval,
+                              NewTask, Verification)
 from database import repository
 from database.models import TASK_CATEGORIES
 
@@ -249,19 +251,144 @@ def _parse_date(text: str | None) -> date | None:
 
 
 @router.message(F.text == BTN_COUNCIL)
-async def send_council_digest(message: Message) -> None:
+async def start_council_digest(message: Message, state: FSMContext) -> None:
+    """Совету уходит не весь план, а только отмеченные председателем задачи."""
     conn = repository.connect()
     try:
-        digest = task_service.council_digest(conn)
+        rows = task_service.council_candidates(conn)
     finally:
         conn.close()
 
-    # Сводка идёт только в чат Совета дома. В общий чат показаний она
-    # никогда не отправляется — там она жителям не нужна.
+    if not rows:
+        await message.answer(
+            "Пока нечего сообщать Совету: разовых задач нет.\n\n"
+            "Задачи ставятся кнопкой ➕ Новая задача — они и будут "
+            "предлагаться для сводки.")
+        return
+
+    await state.set_state(CouncilDigest.choosing)
+    await state.update_data(selected=[])
+    await message.answer(
+        "📤 <b>Сводка для Совета дома</b>\n\n"
+        "Отметьте задачи, о которых сообщаем Совету, — уйдут только они. "
+        "Ежемесячный регламент (выписки, квитанции, абонентские платы) "
+        "в список не попадает.\n\n"
+        "Потом «👁 Показать сводку» — увидите текст перед отправкой.",
+        reply_markup=council_selection(rows, set()))
+
+
+@router.callback_query(CouncilDigest.choosing, F.data.startswith("council:"))
+async def council_choose(callback: CallbackQuery, state: FSMContext) -> None:
+    action = callback.data.split(":")[1]
+    data = await state.get_data()
+    selected = set(data.get("selected", []))
+
+    conn = repository.connect()
+    try:
+        rows = task_service.council_candidates(conn)
+        if action == "toggle":
+            task_id = int(callback.data.split(":")[2])
+            selected.symmetric_difference_update({task_id})
+        elif action == "all":
+            selected = {r["id"] for r in rows}
+        elif action == "none":
+            selected = set()
+        elif action == "cancel":
+            await state.clear()
+            await callback.message.edit_text("Отправка сводки отменена.")
+            await callback.answer()
+            return
+        elif action == "preview":
+            if not selected:
+                await callback.answer("Сначала отметьте хотя бы одну задачу",
+                                      show_alert=True)
+                return
+            order = [r["id"] for r in rows if r["id"] in selected]
+            digest = task_service.council_digest(conn, task_ids=order)
+        else:
+            await callback.answer()
+            return
+    finally:
+        conn.close()
+
+    await state.update_data(selected=sorted(selected))
+
+    if action == "preview":
+        await state.set_state(CouncilDigest.confirming)
+        await callback.message.edit_text(
+            f"Так сводка придёт Совету дома:\n\n{digest}",
+            reply_markup=council_confirm())
+        await callback.answer()
+        return
+
+    await callback.message.edit_reply_markup(
+        reply_markup=council_selection(rows, selected))
+    await callback.answer()
+
+
+@router.callback_query(CouncilDigest.confirming, F.data.startswith("council:"))
+async def council_confirmation(callback: CallbackQuery,
+                               state: FSMContext) -> None:
+    action = callback.data.split(":")[1]
+    data = await state.get_data()
+    selected = set(data.get("selected", []))
+
+    if action == "cancel":
+        await state.clear()
+        await callback.message.edit_text("Отправка сводки отменена. "
+                                         "Совету ничего не ушло.")
+        await callback.answer()
+        return
+
+    conn = repository.connect()
+    try:
+        rows = task_service.council_candidates(conn)
+        if action == "back":
+            await state.set_state(CouncilDigest.choosing)
+            await callback.message.edit_text(
+                "Отметьте задачи для Совета дома:",
+                reply_markup=council_selection(rows, selected))
+            await callback.answer()
+            return
+
+        order = [r["id"] for r in rows if r["id"] in selected]
+        digest = task_service.council_digest(conn, task_ids=order)
+    finally:
+        conn.close()
+
+    if action != "send":
+        await callback.answer()
+        return
+
+    await state.clear()
+    await _deliver_digest(callback.message, digest, len(order))
+    await callback.answer("Отправлено")
+
+
+@router.callback_query(F.data.startswith("council:"))
+async def council_stale(callback: CallbackQuery) -> None:
+    """Кнопки из старого сообщения: список уже не тот — предлагаем начать заново."""
+    await callback.answer("Этот список устарел. Нажмите «📤 Сводка для Совета "
+                          "дома» ещё раз.", show_alert=True)
+
+
+def _tasks_word(count: int) -> str:
+    """«1 задача», «2 задачи», «5 задач»."""
+    if count % 10 == 1 and count % 100 != 11:
+        return f"{count} задача"
+    if count % 10 in (2, 3, 4) and count % 100 not in (12, 13, 14):
+        return f"{count} задачи"
+    return f"{count} задач"
+
+
+async def _deliver_digest(message: Message, digest: str, count: int) -> None:
+    """Отправляет сводку в чат Совета дома — и никогда в чат показаний."""
     if config.council_chat_id:
         try:
             await message.bot.send_message(config.council_chat_id, digest)
-            await message.answer("📤 Сводка отправлена в чат Совета дома.")
+            await message.answer(
+                f"📤 Сводка отправлена в чат Совета дома ({_tasks_word(count)}).",
+                reply_markup=tasks_menu())
             return
         except TelegramAPIError as exc:
             await message.answer(
@@ -275,7 +402,7 @@ async def send_council_digest(message: Message) -> None:
             "команду /chatid и впишите полученное число в файл .env в строку "
             "<code>COUNCIL_CHAT_ID</code>, затем перезапустите бота.\n\n"
             "Пока вот текст сводки — перешлите Совету вручную:")
-    await message.answer(digest)
+    await message.answer(digest, reply_markup=tasks_menu())
 
 
 @router.message(F.text == BTN_YEAR_PLAN)

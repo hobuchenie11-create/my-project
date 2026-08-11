@@ -51,6 +51,40 @@ def categories_keyboard(categories: dict[str, str]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
+def council_selection(rows, selected: set[int]) -> InlineKeyboardMarkup:
+    """Список задач с отметками: что именно уйдёт Совету дома."""
+    buttons = []
+    for row in rows:
+        mark = "☑️" if row["id"] in selected else "⬜️"
+        title = row["title"]
+        if len(title) > 45:
+            title = title[:44].rstrip() + "…"
+        buttons.append([InlineKeyboardButton(
+            text=f"{mark} {title}", callback_data=f"council:toggle:{row['id']}")])
+
+    buttons.append([
+        InlineKeyboardButton(text="Выбрать все", callback_data="council:all"),
+        InlineKeyboardButton(text="Снять все", callback_data="council:none"),
+    ])
+    buttons.append([InlineKeyboardButton(
+        text=f"👁 Показать сводку ({len(selected)})",
+        callback_data="council:preview")])
+    buttons.append([InlineKeyboardButton(text="🚫 Отмена",
+                                         callback_data="council:cancel")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def council_confirm() -> InlineKeyboardMarkup:
+    """Согласование: отправлять ли эту сводку Совету дома."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📤 Отправить Совету",
+                              callback_data="council:send")],
+        [InlineKeyboardButton(text="✏️ Изменить выбор",
+                              callback_data="council:back")],
+        [InlineKeyboardButton(text="🚫 Отмена", callback_data="council:cancel")],
+    ])
+
+
 def meter_actions(meter_id: int) -> InlineKeyboardMarkup:
     """Кнопки под общедомовым прибором."""
     return InlineKeyboardMarkup(inline_keyboard=[[

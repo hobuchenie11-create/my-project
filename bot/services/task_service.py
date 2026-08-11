@@ -274,13 +274,41 @@ def one_off_text(conn: sqlite3.Connection, today: date | None = None) -> str:
     return "\n".join(lines)
 
 
-def council_digest(conn: sqlite3.Connection, today: date | None = None) -> str:
+def council_candidates(conn: sqlite3.Connection,
+                       today: date | None = None) -> list[sqlite3.Row]:
+    """Задачи, которые есть смысл предложить Совету дома.
+
+    Совету рассказывают о разовых делах — ремонт, благоустройство, документы,
+    а не о ежемесячном регламенте (выписки, квитанции, абонентские платы).
+    Поэтому предлагаются разовые задачи: открытые и закрытые в этом месяце.
+    """
+    today = today or date.today()
+    month_start = today.replace(day=1).isoformat()
+    return [
+        r for r in repository.one_off_tasks_all(conn)
+        if r["status"] in TASK_OPEN_STATUSES
+        or (r["status"] == "done" and r["done_at"] >= month_start)
+    ]
+
+
+def council_digest(conn: sqlite3.Connection, today: date | None = None,
+                   task_ids: list[int] | None = None) -> str:
     """Информационная сводка для Совета дома.
 
     Только заголовки, сроки и статусы — внутренние описания, суммы и
-    комментарии в неё не попадают.
+    комментарии в неё не попадают. Если передан `task_ids`, в сводку идут
+    только выбранные председателем задачи.
     """
     today = today or date.today()
+    if task_ids is not None:
+        chosen = [repository.get_task(conn, task_id) for task_id in task_ids]
+        rows = [r for r in chosen if r is not None]
+        in_work = [r for r in rows if r["status"] in TASK_OPEN_STATUSES
+                   and r["status"] != "waiting"]
+        waiting = [r for r in rows if r["status"] == "waiting"]
+        done_recent = [r for r in rows if r["status"] == "done"]
+        return _digest_text(today, in_work, waiting, done_recent)
+
     rows = repository.open_tasks(conn)
     in_work = [r for r in rows if r["status"] == "in_progress"]
     waiting = [r for r in rows if r["status"] == "waiting"]
@@ -290,7 +318,12 @@ def council_digest(conn: sqlite3.Connection, today: date | None = None) -> str:
         r for r in repository.tasks_for_period(conn, _month_period(today))
         if r["status"] == "done" and r["done_at"] >= month_start.isoformat()
     ]
+    return _digest_text(today, in_work, waiting, done_recent)
 
+
+def _digest_text(today: date, in_work: list, waiting: list,
+                 done_recent: list) -> str:
+    """Собирает текст сводки из трёх групп задач."""
     lines = [f"📋 <b>Совет дома — сводка по задачам на "
              f"{today.strftime('%d.%m.%Y')}</b>", ""]
     if in_work:

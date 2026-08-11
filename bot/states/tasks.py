@@ -20,6 +20,12 @@ class Verification(StatesGroup):
     document = State()
 
 
+class CouncilDigest(StatesGroup):
+    """Выбор задач для сводки Совету дома и согласование перед отправкой."""
+    choosing = State()
+    confirming = State()
+
+
 class MeterInterval(StatesGroup):
     """Изменение межповерочного интервала прибора."""
     years = State()
