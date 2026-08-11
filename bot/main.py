@@ -26,6 +26,19 @@ def _apply_registry_if_present() -> None:
         logger.info("Справочник квартир применен: %s квартир", count)
 
 
+def _log_chats() -> None:
+    """Показывает при запуске, какие чаты подключены — видно сразу в терминале."""
+    logger.info("Чат дома (показания): %s",
+                config.group_chat_id or "не подключен — GROUP_CHAT_ID пуст")
+    logger.info("Чат Совета дома (сводка): %s",
+                config.council_chat_id
+                or "не подключен — COUNCIL_CHAT_ID пуст, сводка придёт вам в личку")
+    if (config.council_chat_id
+            and config.council_chat_id == config.group_chat_id):
+        logger.warning("COUNCIL_CHAT_ID совпадает с GROUP_CHAT_ID: сводка уйдёт "
+                       "в чат показаний. Укажите ID чата Совета (/chatid в нём).")
+
+
 async def main() -> None:
     setup_logging()
 
@@ -66,7 +79,10 @@ async def main() -> None:
 
     await bot.set_my_commands([
         BotCommand(command="start", description="Запуск / главное меню"),
+        BotCommand(command="chatid", description="ID этого чата (для .env)"),
     ])
+
+    _log_chats()
 
     # Календарные задачи: напоминания и ведомость непередавших
     asyncio.create_task(run_scheduler(bot))
