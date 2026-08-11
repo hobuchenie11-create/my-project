@@ -25,7 +25,8 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from bot.services import verification_service
+from bot.services import task_service, verification_service
+from bot.services.task_service import MONTHS_RU
 from database import repository
 from database.models import TASK_CATEGORIES, TASK_STATUSES
 from excel.tasks_export import (COL_ID_TITLE, HINT_MARK, SHEET_ONE_OFF,
@@ -172,29 +173,70 @@ def import_year_plan(conn: sqlite3.Connection, path: Path | str,
     return result
 
 
+def _period_from_header(text: str) -> str | None:
+    """«Январь 2026» -> «2026-01». Так находится месяц в файлах без «ID»."""
+    parts = text.strip().lower().split()
+    if len(parts) != 2 or not parts[1].isdigit():
+        return None
+    if parts[0] not in MONTHS_RU:
+        return None
+    return f"{int(parts[1]):04d}-{MONTHS_RU.index(parts[0]) + 1:02d}"
+
+
+def _task_by_title(conn: sqlite3.Connection, period: str,
+                   title: str) -> object | None:
+    wanted = title.strip().lower()
+    for row in repository.tasks_for_period(conn, period):
+        if row["title"].strip().lower() == wanted:
+            return row
+    return None
+
+
 def _import_tasks(conn: sqlite3.Connection, ws, sheet: str,
                   result: ImportResult, tg_id: int | None) -> None:
-    """Лист «Годовой план»: статусы, суммы и даты оплат."""
+    """Лист «Годовой план»: статусы, суммы и даты оплат.
+
+    Строка находится по скрытому столбцу «ID». В файлах, выгруженных до его
+    появления, «ID» нет — тогда задача ищется по месяцу и названию, чтобы
+    заполненный файл не пришлось набивать заново.
+    """
     header = _header_map(ws)
-    if COL_ID_TITLE.lower() not in header:
-        result.problems.append(
-            f"Лист «{sheet}»: нет служебного столбца «ID» — правки не с чем "
-            "связать. Возьмите файл, выгруженный ботом.")
-        return
+    has_id = COL_ID_TITLE.lower() in header
+    period = ""
 
     for row in range(FIRST_DATA_ROW, ws.max_row + 1):
         values = _row_values(ws, row, header)
-        task_id = _parse_id(values.get(COL_ID_TITLE.lower()))
-        if task_id is None:
-            continue                      # заголовок месяца, итоги, подсказка
-        task = repository.get_task(conn, task_id)
-        if task is None:
-            result.problems.append(f"Лист «{sheet}», строка {row}: "
-                                   f"задача №{task_id} в базе не найдена.")
+
+        # Строка-заголовок месяца: запоминаем период для поиска по названию
+        month = _period_from_header(_clean(ws.cell(row=row, column=1).value))
+        if month:
+            period = month
             continue
 
+        task = None
+        task_id = _parse_id(values.get(COL_ID_TITLE.lower())) if has_id else None
+        title = _clean(values.get("задача"))
+        if task_id is not None:
+            task = repository.get_task(conn, task_id)
+            if task is None:
+                result.problems.append(f"Лист «{sheet}», строка {row}: "
+                                       f"задача №{task_id} в базе не найдена.")
+                continue
+        elif title and period and not _is_hint(title) and _clean(values.get("срок")):
+            # Строки без даты — это итоги и подсказки, а не задачи
+            task = _task_by_title(conn, period, title)
+            if task is None:
+                result.problems.append(
+                    f"Лист «{sheet}», строка {row}: задача «{title}» за "
+                    f"{task_service.period_title(period)} в базе не найдена — "
+                    "строка пропущена.")
+                continue
+        if task is None:
+            continue                      # итоги, подсказка, пустая строка
+
+        task_id = task["id"]
         fields, changes = _task_changes(task, values, result, sheet, row,
-                                        note_column="комментарий",
+                                        note_column=("комментарий", "примечание"),
                                         note_field="note")
         if fields:
             repository.update_task(conn, task_id, **fields)
@@ -204,7 +246,7 @@ def _import_tasks(conn: sqlite3.Connection, ws, sheet: str,
 
 
 def _task_changes(task, values: dict, result: ImportResult, sheet: str,
-                  row: int, note_column: str = "примечание",
+                  row: int, note_column: str | tuple[str, ...] = "примечание",
                   note_field: str = "description") -> tuple[dict, list[str]]:
     """Сравнивает строку файла с задачей в базе. Пустая ячейка — «не менять»."""
     fields: dict[str, object] = {}
@@ -256,10 +298,14 @@ def _task_changes(task, values: dict, result: ImportResult, sheet: str,
             fields[column] = parsed
             changes.append(f"{label} — {_ru(parsed)}")
 
-    note = _clean(values.get(note_column))
-    if note and note != task[note_field]:
+    columns = (note_column,) if isinstance(note_column, str) else note_column
+    note = next((_clean(values.get(c)) for c in columns if _clean(values.get(c))),
+                "")
+    # Описание из регламента (в старых файлах оно стояло в «Примечании»)
+    # комментарием не считаем — иначе оно затрёт пустое поле.
+    if note and note != task[note_field] and note != task["description"]:
         fields[note_field] = note
-        changes.append(note_column)
+        changes.append(columns[0])
 
     return fields, changes
 
@@ -281,8 +327,13 @@ def _import_one_off(conn: sqlite3.Connection, ws, result: ImportResult,
         if task_id is None:
             if not title or _is_hint(title):
                 continue
-            _create_one_off(conn, title, values, result, row, tg_id)
-            continue
+            # Нет «ID» — задача могла быть заведена раньше (файл старой
+            # выгрузки). Ищем по названию, чтобы не создать дубль.
+            existing = _one_off_by_title(conn, title)
+            if existing is None:
+                _create_one_off(conn, title, values, result, row, tg_id)
+                continue
+            task_id = existing["id"]
 
         task = repository.get_task(conn, task_id)
         if task is None:
@@ -305,6 +356,14 @@ def _import_one_off(conn: sqlite3.Connection, ws, result: ImportResult,
             repository.log_task_event(conn, task_id, tg_id, "excel",
                                       "правки из Excel: " + ", ".join(changes))
             result.updated += 1
+
+
+def _one_off_by_title(conn: sqlite3.Connection, title: str) -> object | None:
+    wanted = title.strip().lower()
+    for row in repository.one_off_tasks_all(conn):
+        if row["title"].strip().lower() == wanted:
+            return row
+    return None
 
 
 def _create_one_off(conn: sqlite3.Connection, title: str, values: dict,
@@ -332,21 +391,23 @@ def _create_one_off(conn: sqlite3.Connection, title: str, values: dict,
 def _import_meters(conn: sqlite3.Connection, ws, result: ImportResult) -> None:
     """Лист «Поверка приборов»: даты поверки и межповерочные интервалы."""
     header = _header_map(ws)
-    if COL_ID_TITLE.lower() not in header:
-        result.problems.append(
-            f"Лист «{SHEET_VERIFICATION}»: нет служебного столбца «ID».")
-        return
 
     for row in range(FIRST_DATA_ROW, ws.max_row + 1):
         values = _row_values(ws, row, header)
         meter_id = _parse_id(values.get(COL_ID_TITLE.lower()))
         if meter_id is None:
-            continue
-        meter = repository.get_house_meter(conn, meter_id)
-        if meter is None:
-            result.problems.append(f"Лист «{SHEET_VERIFICATION}», строка {row}: "
-                                   f"прибор №{meter_id} в базе не найден.")
-            continue
+            # Файл без «ID»: прибор ищем по названию
+            meter = _meter_by_name(conn, _clean(values.get("прибор учёта")))
+            if meter is None:
+                continue
+            meter_id = meter["id"]
+        else:
+            meter = repository.get_house_meter(conn, meter_id)
+            if meter is None:
+                result.problems.append(
+                    f"Лист «{SHEET_VERIFICATION}», строка {row}: "
+                    f"прибор №{meter_id} в базе не найден.")
+                continue
 
         fields: dict[str, object] = {}
         serial = _clean(values.get("заводской №"))
@@ -388,6 +449,16 @@ def _import_meters(conn: sqlite3.Connection, ws, result: ImportResult) -> None:
         elif not fields:
             continue
         result.meters += 1
+
+
+def _meter_by_name(conn: sqlite3.Connection, name: str) -> object | None:
+    if not name or _is_hint(name):
+        return None
+    wanted = name.strip().lower()
+    for row in repository.house_meters(conn, only_active=False):
+        if row["name"].strip().lower() == wanted:
+            return row
+    return None
 
 
 def _category_code(value, result: ImportResult, sheet: str,

@@ -168,6 +168,68 @@ def test_unreadable_values_are_reported_not_swallowed(conn, tmp_path):
     assert repository.get_task(conn, rent["id"])["status"] == "new"
 
 
+def test_file_exported_before_the_id_column_still_loads(conn, tmp_path):
+    """Старая выгрузка без «ID»: задача находится по месяцу и названию."""
+    rent = _by_title(conn, "аренда за нежилое")
+    path = export_year_plan(conn, YEAR, tmp_path / "plan.xlsx")
+
+    wb = load_workbook(path)
+    ws = wb[SHEET_PLAN]
+    row = _find_row(ws, len(COLUMNS), rent["id"])
+    ws.cell(row=row, column=5, value="Выполнена")
+    ws.cell(row=row, column=6, value=35000)
+    ws.cell(row=row, column=7, value=f"08.06.{YEAR}")
+    ws.delete_cols(len(COLUMNS))                  # файл вчерашней выгрузки
+    ws.cell(row=2, column=10, value="Примечание")  # и старое имя столбца
+    wb.save(path)
+
+    result = import_year_plan(conn, path, tg_id=1)
+    assert result.updated == 1
+    assert not result.problems                    # итоги и заголовки — не ошибки
+
+    updated = repository.get_task(conn, rent["id"])
+    assert updated["status"] == "done"
+    assert updated["amount"] == 35000
+    assert updated["paid_at"] == f"{YEAR}-06-08"
+    # Описание из регламента комментарием не считается
+    assert updated["note"] == ""
+
+
+def test_old_file_does_not_duplicate_my_tasks(conn, tmp_path):
+    """Разовая задача из старого файла обновляется, а не задваивается."""
+    repository.create_task(conn, "Заказать смету на отмостку", category="repair",
+                           status="new", due_date=f"{YEAR}-09-20",
+                           period=f"{YEAR}-09", source="chairman")
+    path = export_year_plan(conn, YEAR, tmp_path / "plan.xlsx")
+
+    wb = load_workbook(path)
+    ws = wb[SHEET_ONE_OFF]
+    row = _find_row(ws, len(ONE_OFF_COLUMNS), repository.one_off_tasks(conn)[0]["id"])
+    ws.cell(row=row, column=5, value="В работе")
+    ws.delete_cols(len(ONE_OFF_COLUMNS))
+    wb.save(path)
+
+    result = import_year_plan(conn, path)
+    assert (result.created, result.updated) == (0, 1)
+    assert len(repository.one_off_tasks(conn)) == 1
+    assert repository.one_off_tasks(conn)[0]["status"] == "in_progress"
+
+
+def test_old_file_still_carries_verification_dates(conn, tmp_path):
+    path = export_year_plan(conn, YEAR, tmp_path / "plan.xlsx")
+    meter = repository.house_meters(conn)[0]
+
+    wb = load_workbook(path)
+    ws = wb[SHEET_VERIFICATION]
+    row = _find_row(ws, len(VERIFICATION_COLUMNS), meter["id"])
+    ws.cell(row=row, column=3, value="15.03.2024")
+    ws.delete_cols(len(VERIFICATION_COLUMNS))
+    wb.save(path)
+
+    assert import_year_plan(conn, path).meters == 1
+    assert repository.get_house_meter(conn, meter["id"])["last_verified"] == "2024-03-15"
+
+
 def test_foreign_workbook_is_rejected_with_a_hint(conn, tmp_path):
     from openpyxl import Workbook
 
