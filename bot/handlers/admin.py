@@ -155,7 +155,8 @@ async def show_settings(message: Message) -> None:
         f"Квартир: {config.apartments_count}\n"
         f"Нежилых помещений: {config.nonresidential_count}\n"
         f"Прием показаний: с {config.readings_day_start} по {config.readings_day_end} число\n"
-        f"Групповой чат: {config.group_chat_id or 'не подключен'}\n"
+        f"Чат дома (показания): {config.group_chat_id or 'не подключен'}\n"
+        f"Чат Совета дома (сводка): {config.council_chat_id or 'не подключен'}\n"
         f"Администраторы: {', '.join(map(str, config.admin_ids)) or 'не заданы'}"
     )
 

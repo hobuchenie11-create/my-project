@@ -19,7 +19,11 @@ class Config:
     admin_ids: tuple[int, ...] = field(default_factory=lambda: _parse_int_list(os.getenv("ADMIN_IDS", "")))
     apartments_count: int = int(os.getenv("APARTMENTS_COUNT", "80"))
     nonresidential_count: int = int(os.getenv("NONRESIDENTIAL_COUNT", "2"))
+    # Чат дома, откуда собираются показания
     group_chat_id: int | None = int(os.getenv("GROUP_CHAT_ID")) if os.getenv("GROUP_CHAT_ID") else None
+    # Отдельный чат Совета дома: туда уходит сводка по задачам. Если не задан,
+    # сводка никуда не отправляется — жителям в чате показаний она не нужна.
+    council_chat_id: int | None = int(os.getenv("COUNCIL_CHAT_ID")) if os.getenv("COUNCIL_CHAT_ID") else None
     proxy_url: str | None = os.getenv("PROXY_URL") or None
     # Период сбора показаний: с 15 по 19 число включительно
     readings_day_start: int = int(os.getenv("READINGS_DAY_START", "15"))

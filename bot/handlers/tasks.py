@@ -256,17 +256,25 @@ async def send_council_digest(message: Message) -> None:
     finally:
         conn.close()
 
-    if config.group_chat_id:
+    # Сводка идёт только в чат Совета дома. В общий чат показаний она
+    # никогда не отправляется — там она жителям не нужна.
+    if config.council_chat_id:
         try:
-            await message.bot.send_message(config.group_chat_id, digest)
-            await message.answer("📤 Сводка отправлена в чат дома.")
+            await message.bot.send_message(config.council_chat_id, digest)
+            await message.answer("📤 Сводка отправлена в чат Совета дома.")
             return
         except TelegramAPIError as exc:
-            await message.answer(f"Не удалось отправить в чат ({exc}). "
-                                 "Вот текст — можно переслать вручную:")
+            await message.answer(
+                f"Не удалось отправить в чат Совета дома ({exc}).\n"
+                "Проверьте, что бот добавлен в этот чат и не заблокирован. "
+                "Вот текст — можно переслать вручную:")
     else:
-        await message.answer("Чат не подключён. Вот текст сводки — перешлите "
-                             "Совету дома:")
+        await message.answer(
+            "Чат Совета дома не подключён.\n\n"
+            "Как подключить: добавьте бота в чат Совета, отправьте там "
+            "команду /chatid и впишите полученное число в файл .env в строку "
+            "<code>COUNCIL_CHAT_ID</code>, затем перезапустите бота.\n\n"
+            "Пока вот текст сводки — перешлите Совету вручную:")
     await message.answer(digest)
 
 

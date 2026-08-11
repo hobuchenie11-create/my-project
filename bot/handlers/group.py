@@ -58,6 +58,9 @@ async def _react_ok(message: Message) -> None:
 async def handle_group_message(message: Message) -> None:
     if config.group_chat_id and message.chat.id != config.group_chat_id:
         return
+    # В чате Совета дома показания не собираем — там обсуждения, а не цифры
+    if message.chat.id == config.council_chat_id:
+        return
 
     # Пока GROUP_CHAT_ID не задан — подсказываем его в терминале (без сообщений в чат)
     if config.group_chat_id is None and message.chat.id not in _hinted_chats:
