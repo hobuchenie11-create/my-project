@@ -683,9 +683,13 @@ const Cloud = {
      счётчик неверных попыток и защита от перебора не работала бы. */
   async rpc(fn, args){
     const {url, key} = D.cloud;
+    // Ключ apikey нужен всегда. Заголовок Authorization добавляем только для
+    // прежних ключей anon — они JWT и начинаются с «eyJ». Новые ключи Supabase
+    // (sb_publishable_…) не JWT, и Bearer с ними запрос ломает.
+    const headers = {'Content-Type':'application/json', apikey:key};
+    if (/^eyJ/.test(key)) headers.Authorization = 'Bearer ' + key;
     const r = await fetch(`${url.replace(/\/$/,'')}/rest/v1/rpc/${fn}`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json', apikey:key, Authorization:'Bearer ' + key},
+      method:'POST', headers,
       body: JSON.stringify(args),
     });
     const txt = await r.text();
