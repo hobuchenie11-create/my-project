@@ -1077,6 +1077,10 @@ function cloudView(){
       <label>Пароль казначея — даёт право отмечать и править</label>
       <input id="cl-admin" type="password" autocomplete="off" placeholder="не короче 8 символов">
     </div>
+    <button class="btn wide" style="width:100%;margin-bottom:8px" data-act="checkconn">
+      Проверить связь с базой
+    </button>
+    <div id="conn-report"></div>
     <button class="btn pri wide" style="width:100%;margin-bottom:8px" data-act="cloudcreate">
       Создать класс и загрузить текущие данные
     </button>
@@ -2261,6 +2265,40 @@ document.addEventListener('click', e => {
 
     case 'cloud':
       scrollMemo[view] = window.scrollY; view = 'cloud'; render(); break;
+
+    case 'checkconn': {
+      const g = id => document.getElementById(id).value.trim();
+      const url = normalizeUrl(g('cl-url')), key = g('cl-key');
+      const box = document.getElementById('conn-report');
+      if (!url || !key){ toast('Заполните адрес и ключ'); return; }
+      el.disabled = true; el.textContent = 'Проверяем…';
+      const lines = [`адрес: ${url}`, `ключ: ${key.slice(0,12)}… (${key.length} симв.)`];
+      const probe = async (label, path, opts) => {
+        try {
+          const r = await fetch(url + path, opts);
+          const t = (await r.text()).slice(0, 300);
+          lines.push(`${label}: код ${r.status}${t ? ' — ' + t : ''}`);
+        } catch(e){ lines.push(`${label}: связи нет — ${e.message}`); }
+      };
+      const h = {'Content-Type':'application/json', apikey:key};
+      if (/^eyJ/.test(key)) h.Authorization = 'Bearer ' + key;
+      Promise.resolve()
+        .then(() => probe('1. база отвечает', '/rest/v1/', {headers:h}))
+        .then(() => probe('2. функция версии', '/rest/v1/rpc/class_version',
+              {method:'POST', headers:h, body:JSON.stringify({p_id:'00000000-0000-0000-0000-000000000000', p_secret:'x'})}))
+        .then(() => {
+          const txt = lines.join('\n');
+          box.innerHTML = `<div class="calc" style="display:block;white-space:pre-wrap;
+            font-size:12px;font-family:ui-monospace,monospace">${esc(txt)}</div>
+            <button class="btn wide" style="width:100%;margin-bottom:8px" data-act="copyreport">Скопировать для отправки</button>`;
+          window.__report = txt;
+          el.disabled = false; el.textContent = 'Проверить связь с базой';
+        });
+      break;
+    }
+
+    case 'copyreport':
+      copyText(window.__report || '', 'Скопировано — пришлите этот текст'); break;
 
     case 'cloudcreate': {
       const g = id => document.getElementById(id).value.trim();
