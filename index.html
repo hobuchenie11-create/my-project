@@ -688,10 +688,18 @@ const Cloud = {
     // (sb_publishable_…) не JWT, и Bearer с ними запрос ломает.
     const headers = {'Content-Type':'application/json', apikey:key};
     if (/^eyJ/.test(key)) headers.Authorization = 'Bearer ' + key;
-    const r = await fetch(`${url.replace(/\/$/,'')}/rest/v1/rpc/${fn}`, {
-      method:'POST', headers,
-      body: JSON.stringify(args),
-    });
+    let r;
+    try {
+      r = await fetch(`${url.replace(/\/$/,'')}/rest/v1/rpc/${fn}`, {
+        method:'POST', headers,
+        body: JSON.stringify(args),
+      });
+    } catch(e) {
+      // сюда попадаем при опечатке в адресе, отсутствии сети или блокировке
+      throw new Error('Не удалось связаться с базой. Проверьте Project URL и интернет');
+    }
+    if (r.status === 404) throw new Error('Адрес есть, но функции базы не найдены — выполните supabase-schema.sql');
+    if (r.status === 401 || r.status === 403) throw new Error('База не приняла ключ — проверьте ключ из Settings → API Keys');
     const txt = await r.text();
     let data = null;
     try { data = txt ? JSON.parse(txt) : null; } catch(e){ data = txt; }
