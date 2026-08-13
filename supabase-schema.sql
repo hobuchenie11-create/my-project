@@ -58,9 +58,13 @@ returns text language sql immutable as $$
   select encode(digest(coalesce(t,''), 'sha256'), 'hex')
 $$;
 
+-- Токен берётся отсюда при каждом выполнении файла: если запустить схему
+-- повторно с другой строкой, подействует новая. (С «do nothing» повторный
+-- запуск молча оставлял бы прежний токен — и появлялась бы необъяснимая
+-- ошибка «неверный токен установки».)
 insert into public.app_config (create_token_hash)
 values (public.sha('ЗАМЕНИТЕ-ЭТУ-СТРОКУ-НА-СВОЮ'))
-on conflict (only_row) do nothing;
+on conflict (only_row) do update set create_token_hash = excluded.create_token_hash;
 
 -- ── Проверка доступа и защита от перебора ──────────────────────
 -- Два принципиальных момента, оба выяснились на испытаниях:
@@ -278,3 +282,20 @@ revoke execute on function public.sha(text)             from anon, authenticated
 
 comment on table public.classes is
   'Классы приложения «Копилка класса». Одна строка — один класс, всё состояние в state. Доступ только через функции class_*: код класса даёт чтение, пароль казначея — запись.';
+
+-- ── Полезно при разборе неполадок ──────────────────────────────
+-- Выполнить в SQL Editor по отдельности, когда что-то не сходится.
+--
+-- Проверить, тот ли токен установки:
+--   select create_token_hash = public.sha('ваша-строка') as токен_верный
+--     from public.app_config;
+--
+-- Сменить токен, не выполняя файл целиком:
+--   update public.app_config set create_token_hash = public.sha('новая-строка');
+--
+-- Снять блокировку перебора досрочно (для всех классов):
+--   update public.classes set fails = 0, fail_window = null, locked_until = null;
+--
+-- Посмотреть заведённые классы (сами данные не показываются):
+--   select id, version, updated_at, array_length(admin_hashes,1) as казначеев
+--     from public.classes order by created_at;
