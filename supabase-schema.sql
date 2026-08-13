@@ -280,6 +280,11 @@ grant execute on function public.class_admin_reset_others(uuid, text)   to anon,
 revoke execute on function public.auth_check(uuid, text) from anon, authenticated;
 revoke execute on function public.sha(text)             from anon, authenticated;
 
+-- ── Обновить кэш API ───────────────────────────────────────────
+-- Supabase держит список функций в кэше. Без этой строки только что
+-- созданные функции могут какое-то время отвечать «404 не найдено».
+notify pgrst, 'reload schema';
+
 comment on table public.classes is
   'Классы приложения «Копилка класса». Одна строка — один класс, всё состояние в state. Доступ только через функции class_*: код класса даёт чтение, пароль казначея — запись.';
 

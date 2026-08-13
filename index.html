@@ -703,12 +703,20 @@ const Cloud = {
       // сюда попадаем при опечатке в адресе, отсутствии сети или блокировке
       throw new Error('Не удалось связаться с базой. Проверьте Project URL и интернет');
     }
-    if (r.status === 404) throw new Error('Адрес есть, но функции базы не найдены — выполните supabase-schema.sql');
-    if (r.status === 401 || r.status === 403) throw new Error('База не приняла ключ — проверьте ключ из Settings → API Keys');
     const txt = await r.text();
     let data = null;
     try { data = txt ? JSON.parse(txt) : null; } catch(e){ data = txt; }
-    if (!r.ok) throw new Error((data && (data.message || data.error)) || ('HTTP ' + r.status));
+    if (!r.ok) {
+      // подсказка сервера бывает точнее нашей догадки — показываем её тоже
+      const srv = data && (data.message || data.hint || data.error || data.details);
+      const tail = srv ? ` Ответ базы: ${srv}` : '';
+      if (r.status === 404)
+        throw new Error('Функции базы не найдены. Выполните supabase-schema.sql заново, '
+          + 'а если не поможет — NOTIFY pgrst, \'reload schema\';' + tail);
+      if (r.status === 401 || r.status === 403)
+        throw new Error('База не приняла ключ — проверьте ключ из Settings → API Keys.' + tail);
+      throw new Error(srv || ('Ошибка базы, код ' + r.status));
+    }
     const row = Array.isArray(data) ? data[0] : data;
     if (!row) throw new Error('пустой ответ базы');
     if (row.ok === false) throw new Error(row.reason || 'отказано в доступе');
