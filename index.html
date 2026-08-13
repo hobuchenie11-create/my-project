@@ -121,6 +121,11 @@ button{background:none;border:none;cursor:pointer}
   background:var(--surface);border:1px solid var(--line);color:var(--muted);flex-shrink:0;
 }
 .icon-btn:active{transform:scale(.94)}
+/* с подписью: без неё первый раз шестерёнку просто не находят */
+.icon-btn.wide-btn{
+  width:auto;border-radius:99px;gap:6px;padding:0 13px;height:38px;
+  font-size:13px;font-weight:600;color:var(--text);
+}
 .icon-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .icon-btn.on{color:#221D20}}
 :root[data-theme="dark"] .icon-btn.on{color:#221D20}
@@ -1086,7 +1091,7 @@ function header(){
         <div class="cls">${esc(S.className)}</div>
         <div class="sub">Копилка класса</div>
       </div>
-      <button class="icon-btn" data-act="settings" aria-label="Настройки">${svg(I.gear,18)}</button>
+      <button class="icon-btn wide-btn" data-act="settings">${svg(I.gear,17)}<span>Настройки</span></button>
     </div>
     <div style="padding:0 16px 10px;max-width:560px;margin:0 auto">${syncChip()}</div>
     ${Cloud.on() ? `
