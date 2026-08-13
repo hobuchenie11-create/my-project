@@ -788,6 +788,21 @@ const Cloud = {
 
 const clone = o => JSON.parse(JSON.stringify(o));
 
+/* Приводит к рабочему виду то, что человек вставил в поле Project URL.
+   Принимает: сам адрес проекта, адрес личного кабинета Supabase (оттуда
+   берётся код проекта) и просто код проекта. Это место путает чаще всего:
+   в кабинете на виду именно адрес вида supabase.com/dashboard/project/… */
+function normalizeUrl(raw){
+  let v = String(raw || '').trim().replace(/\s+/g, '');
+  if (!v) return '';
+  const dash = v.match(/supabase\.com\/dashboard\/project\/([a-z0-9]{8,})/i);
+  if (dash) return `https://${dash[1].toLowerCase()}.supabase.co`;
+  const direct = v.match(/([a-z0-9]{8,})\.supabase\.co/i);
+  if (direct) return `https://${direct[1].toLowerCase()}.supabase.co`;
+  if (/^[a-z0-9]{8,}$/i.test(v)) return `https://${v.toLowerCase()}.supabase.co`;
+  return v.replace(/\/+$/, '');
+}
+
 /* ── трёхстороннее слияние ─────────────────────────────────────
    base — общий предок, mine — моя версия, theirs — серверная.
    Правило: беру серверное, а поверх кладу то, что изменил именно я.
@@ -1032,6 +1047,8 @@ function cloudView(){
     <div class="field">
       <label>Project URL</label>
       <input id="cl-url" value="${esc(c.url || '')}" placeholder="https://xxxx.supabase.co">
+      <div class="hint">Можно вставить и адрес из строки браузера, где открыт ваш проект
+        Supabase — приложение само возьмёт из него что нужно.</div>
     </div>
     <div class="field">
       <label>Ключ anon public</label>
@@ -2236,7 +2253,7 @@ document.addEventListener('click', e => {
 
     case 'cloudcreate': {
       const g = id => document.getElementById(id).value.trim();
-      const url = g('cl-url'), key = g('cl-key'), token = g('cl-token');
+      const url = normalizeUrl(g('cl-url')), key = g('cl-key'), token = g('cl-token');
       const code = g('cl-code'), admin = g('cl-admin');
       if (!url || !key)     { toast('Нужны Project URL и ключ'); return; }
       if (!token)           { toast('Введите токен установки'); return; }
