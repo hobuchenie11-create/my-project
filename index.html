@@ -715,6 +715,9 @@ const Cloud = {
           + 'а если не поможет — NOTIFY pgrst, \'reload schema\';' + tail);
       if (r.status === 401 || r.status === 403)
         throw new Error('База не приняла ключ — проверьте ключ из Settings → API Keys.' + tail);
+      if (r.status === 405 || r.status === 400 && !srv)
+        throw new Error('Этот адрес не является адресом базы. Нужен вида https://xxxx.supabase.co, '
+          + 'а не адрес личного кабинета supabase.com/dashboard/…' + tail);
       throw new Error(srv || ('Ошибка базы, код ' + r.status));
     }
     const row = Array.isArray(data) ? data[0] : data;
@@ -1054,8 +1057,8 @@ function cloudView(){
   <div class="card card-pad">
     <div class="field">
       <label>Project URL</label>
-      <input id="cl-url" value="${esc(c.url || '')}" placeholder="https://xxxx.supabase.co">
-      <div class="hint">Можно вставить и адрес из строки браузера, где открыт ваш проект
+      <input id="cl-url" value="${esc(c.url || '')}" placeholder="https://xxxx.supabase.co" data-act="urlpeek">
+      <div class="hint" id="url-peek">Можно вставить и адрес из строки браузера, где открыт ваш проект
         Supabase — приложение само возьмёт из него что нужно.</div>
     </div>
     <div class="field">
@@ -2286,6 +2289,7 @@ document.addEventListener('click', e => {
       const secret = document.getElementById('cl-jcode').value.trim();
       const cfg = parseLink(link);
       if (!cfg)    { toast('Ссылку не удалось разобрать'); return; }
+      cfg.url = normalizeUrl(cfg.url);
       if (!secret) { toast('Введите код доступа'); return; }
       joinClass({...cfg, secret});
       break;
@@ -2418,6 +2422,23 @@ document.addEventListener('input', e => {
     const t = document.getElementById('calc-dl');
     if (m) m.innerHTML = moneyCalc(sheet.draft);
     if (t) t.innerHTML = dlCalc(sheet.draft);
+    return;
+  }
+  if (a === 'urlpeek'){
+    const box = document.getElementById('url-peek');
+    if (!box) return;
+    const v = normalizeUrl(el.value);
+    if (!el.value.trim()){
+      box.innerHTML = 'Можно вставить и адрес из строки браузера, где открыт ваш проект Supabase.';
+      box.style.color = '';
+    } else if (/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(v)){
+      box.innerHTML = `Приложение обратится к <b>${esc(v)}</b> — это верный вид адреса.`;
+      box.style.color = 'var(--ok)';
+    } else {
+      box.innerHTML = `Пока получается <b>${esc(v)}</b> — это не похоже на адрес базы. `
+        + 'Нужен вид https://xxxx.supabase.co';
+      box.style.color = 'var(--danger)';
+    }
     return;
   }
   if (a === 'rename'){
