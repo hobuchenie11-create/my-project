@@ -1967,6 +1967,20 @@ function editSheet(){
 
 /* ══ ДЕЙСТВИЯ ═════════════════════════════════════════════ */
 
+/* Ошибку нельзя показывать исчезающей подсказкой: её не успевают прочитать
+   и не могут переслать. Держим на экране, пока не закроют. */
+function showFail(title, detail){
+  const box = document.getElementById('conn-report');
+  const text = `${title}: ${detail}`;
+  window.__report = text;
+  const html = `<div class="calc" style="display:block;white-space:pre-wrap;font-size:12.5px;
+      background:var(--danger-soft);border-color:var(--danger)">
+      <b>${esc(title)}</b>\n${esc(detail)}</div>
+    <button class="btn wide" style="width:100%;margin-bottom:8px" data-act="copyreport">Скопировать текст ошибки</button>`;
+  if (box){ box.innerHTML = html; box.scrollIntoView({block:'center', behavior:'smooth'}); }
+  else alert(text);
+}
+
 function toast(msg){
   document.querySelectorAll('.toast').forEach(t => t.remove());
   const el = document.createElement('div');
@@ -2331,7 +2345,10 @@ document.addEventListener('click', e => {
           Cloud.base = clone(S); Cloud.version = 1; Cloud.status = 'ok';
           Cloud.start(); render(); toast('Класс создан');
         })
-        .catch(e => { D.cloud = null; saveDevice(); render(); toast(e.message); });
+        .catch(e => {
+          D.cloud = null; saveDevice(); render();
+          showFail('Класс не создан', e.message);
+        });
       break;
     }
 
@@ -2353,7 +2370,7 @@ document.addEventListener('click', e => {
       el.disabled = true;
       Cloud.rpc('class_set_code', {p_id:D.cloud.id, p_secret:D.cloud.secret, p_new_code:code})
         .then(() => { render(); toast('Код класса изменён — сообщите новый родителям'); })
-        .catch(e => { el.disabled = false; toast(e.message); });
+        .catch(e => { el.disabled = false; showFail('Код не изменён', e.message); });
       break;
     }
 
@@ -2363,7 +2380,7 @@ document.addEventListener('click', e => {
       el.disabled = true;
       Cloud.rpc('class_admin_add', {p_id:D.cloud.id, p_secret:D.cloud.secret, p_new_admin:pw})
         .then(row => { render(); toast(`Казначеев теперь ${row.admins}`); })
-        .catch(e => { el.disabled = false; toast(e.message); });
+        .catch(e => { el.disabled = false; showFail('Казначей не добавлен', e.message); });
       break;
     }
 
