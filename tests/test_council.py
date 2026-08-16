@@ -139,7 +139,9 @@ def test_chat_reminder_names_the_deadline():
     assert "<b>до 19 августа</b>" in text
     assert "Остаётся 3 дня" in text
     assert "Домовед" in text
-    assert "Хвс кухня 120" in text          # шаблон для 3-комнатных
+    assert "Хвс кухня" in text              # шаблон для 3-комнатных
+    assert "15230" not in text              # в шаблонах без чисел-примеров
+    assert "обходить квартиры" not in text
 
     assert "Сегодня последний день" in collection_reminder_text(date(2026, 8, 19))
     assert "Срок сбора завершён" in collection_reminder_text(date(2026, 8, 21))
