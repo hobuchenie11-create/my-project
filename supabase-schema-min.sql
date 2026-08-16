@@ -1,5 +1,5 @@
--- KOPILKA KLASSA: minimal schema. Zamenite stroku TOKEN-ZDES na svoyu.
--- Polnaya versiya s poyasneniyami: supabase-schema.sql
+-- KOPILKA KLASSA: minimal schema.
+-- Pervyy klass sozdayotsya svobodno. TOKEN-ZDES mozhno ne trogat.
 
 set search_path = public, extensions;
 
@@ -77,13 +77,17 @@ begin
 end $$;
 
 create or replace function public.class_create(
-  p_state jsonb, p_code text, p_admin text, p_token text
+  p_state jsonb, p_code text, p_admin text, p_token text default ''
 ) returns table (ok boolean, reason text, id uuid)
 language plpgsql security definer set search_path = public, extensions as $$
 declare v_id uuid;
 begin
-  if not exists (select 1 from app_config where create_token_hash = sha(p_token)) then
-    return query select false, 'неверный токен установки', null::uuid; return;
+  if exists (select 1 from classes) then
+    if not exists (select 1 from app_config where create_token_hash = sha(p_token)) then
+      return query select false,
+        'в проекте уже есть класс — создание нового закрыто (нужен токен установки)',
+        null::uuid; return;
+    end if;
   end if;
   if length(coalesce(p_code,'')) < 6 then
     return query select false, 'код класса — не короче 6 символов', null::uuid; return;

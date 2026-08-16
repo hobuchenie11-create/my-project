@@ -1066,11 +1066,11 @@ function cloudView(){
       <input id="cl-key" value="${esc(c.key || '')}" placeholder="eyJhbGciOi...">
     </div>
     <div class="field">
-      <label>Токен установки</label>
+      <label>Токен установки — обычно не нужен</label>
       <input id="cl-token" type="text" autocomplete="off" spellcheck="false"
-             placeholder="строка, которую вписали в схему">
-      <div class="hint">Это <b>не</b> ключ из Supabase. Это строка, которую вы придумали сами
-        и вписали в схему вместо TOKEN-ZDES. Показана открыто, чтобы видеть опечатки.</div>
+             placeholder="оставьте пустым">
+      <div class="hint">Первый класс в пустом проекте создаётся без токена — оставьте поле пустым.
+        Он понадобится, только если в проекте уже есть класс и вы заводите ещё один.</div>
     </div>
     <div class="field">
       <label>Код класса — для родителей, только просмотр</label>
@@ -2335,7 +2335,6 @@ document.addEventListener('click', e => {
       const url = normalizeUrl(g('cl-url')), key = g('cl-key'), token = g('cl-token');
       const code = g('cl-code'), admin = g('cl-admin');
       if (!url || !key)     { toast('Нужны Project URL и ключ'); return; }
-      if (!token)           { toast('Введите токен установки'); return; }
       if (code.length < 6)  { toast('Код класса — не короче 6 символов'); return; }
       if (admin.length < 8) { toast('Пароль казначея — не короче 8 символов'); return; }
       if (code === admin)   { toast('Код и пароль должны отличаться'); return; }

@@ -14,6 +14,9 @@
 --   • код класса      — только чтение. Его знают все родители.
 --   • пароль админа   — чтение и запись. Их может быть несколько (казначеи).
 --
+-- Создание классов: первый класс в пустом проекте заводится свободно,
+-- дальше дверь закрывается и нужен токен установки (см. app_config).
+--
 -- Запись разрешена ТОЛЬКО по паролю админа: даже если родитель откроет
 -- приложение в режиме казначея, сервер его правку не примет.
 -- ═══════════════════════════════════════════════════════════════
@@ -133,13 +136,22 @@ end $$;
 -- Требует токен установки: без него посторонний с вашим ключом мог бы
 -- насоздавать классов в проекте.
 create or replace function public.class_create(
-  p_state jsonb, p_code text, p_admin text, p_token text
+  p_state jsonb, p_code text, p_admin text, p_token text default ''
 ) returns table (ok boolean, reason text, id uuid)
 language plpgsql security definer set search_path = public, extensions as $$
 declare v_id uuid;
 begin
-  if not exists (select 1 from app_config where create_token_hash = sha(p_token)) then
-    return query select false, 'неверный токен установки', null::uuid; return;
+  -- Первый класс в пустом проекте заводится свободно: в этот момент адрес
+  -- и ключ знает только владелец проекта. Как только класс появился, дверь
+  -- закрывается — дальше создать ещё один можно лишь по токену установки.
+  -- Так посторонний с публичным ключом не насоздаёт классов, а казначею
+  -- не приходится ничего вводить при первой настройке.
+  if exists (select 1 from classes) then
+    if not exists (select 1 from app_config where create_token_hash = sha(p_token)) then
+      return query select false,
+        'в проекте уже есть класс — создание нового закрыто (нужен токен установки)',
+        null::uuid; return;
+    end if;
   end if;
   if length(coalesce(p_code,'')) < 6 then
     return query select false, 'код класса — не короче 6 символов', null::uuid; return;
