@@ -26,14 +26,21 @@ from dataclasses import dataclass, field
 
 from bot.services.validation import parse_value
 
-# Номер квартиры: «Кв. 12», «квартира №5», «Кв, 29», «Кв 58»
-APARTMENT_RE = re.compile(r"кв\w*\.?\s*[,№]?\s*(\d{1,4})", re.IGNORECASE)
+# Номер квартиры: «Кв. 12», «квартира №5», «Кв, 29», «Кв 58», «кв38».
+# После «кв» допускаем только буквы: \w* съедал цифры номера, и «кв38»
+# превращалось в квартиру 8 — показания уходили не тому дому.
+APARTMENT_RE = re.compile(r"кв[а-яё]*\.?\s*[,№]?\s*(\d{1,4})", re.IGNORECASE)
 NONRESIDENTIAL_RE = re.compile(r"нежило\w*\s*(?:помещение)?\s*№?\s*(\d+)", re.IGNORECASE)
 
 # Число в конце строки (допускаем ведущие нули и дробную часть).
 # Знак не захватываем: тире/дефис в сообщениях жителей — это разделитель
 # («Хвс кухня - 6»), а не минус; показания всегда неотрицательны.
 VALUE_RE = re.compile(r"\d[\d\s]*(?:[.,]\d+)?\s*$")
+
+# Часть жителей пишет всё одной строкой: «кв38,Х/В30,Г/В 42,Эл/э 15873».
+# Режем такую строку на приборы по запятой (или точке с запятой) — но только
+# перед буквой, чтобы не порвать дробное число «56,78».
+SEGMENT_RE = re.compile(r"[;,](?=\s*[а-яёa-z])", re.IGNORECASE)
 
 
 def _normalize(label: str) -> str:
@@ -82,36 +89,45 @@ def parse_message(text: str) -> ParsedReadings:
     context: str | None = None  # 'cold' | 'hot' — тип воды из предыдущих строк
 
     for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line:
-            continue
+        # Подпись из сегментов без числа: «Сумма» + «гв,292» — это одна
+        # подпись «сумма гв», разорванная запятой
+        pending = ""
 
-        value_match = VALUE_RE.search(line)
-        if not value_match:
-            continue
-        label_part = line[: value_match.start()]
-        label = _normalize(label_part)
-        if not label:
-            continue
-        # Строка с номером квартиры — не показание
-        if label in ("кв", "квартира", "кварт"):
-            continue
+        for segment in SEGMENT_RE.split(raw_line):
+            line = segment.strip()
+            if not line:
+                continue
 
-        value = parse_value(value_match.group())
+            value_match = VALUE_RE.search(line)
+            if not value_match:
+                pending += _normalize(line)
+                continue
+            label_part = line[: value_match.start()]
+            label = pending + _normalize(label_part)
+            pending = ""
+            if not label:
+                continue
+            # Строка с номером квартиры — не показание
+            if label in ("кв", "квартира", "кварт"):
+                continue
 
-        kind, context = _classify(label, context)
-        if kind is None:
-            continue
-        if kind == "gas":
-            result.ignored.append(f"газ ({value_match.group().strip()})")
-            continue
-        if value is None:
-            result.errors.append(f"Не удалось разобрать число в строке: «{line}»")
-            continue
-        if kind in result.values:
-            result.errors.append(f"Прибор «{label_part.strip()}» указан дважды")
-            continue
-        result.values[kind] = value
+            value = parse_value(value_match.group())
+
+            kind, context = _classify(label, context)
+            if kind is None:
+                continue
+            if kind == "gas":
+                result.ignored.append(f"газ ({value_match.group().strip()})")
+                continue
+            if value is None:
+                result.errors.append(
+                    f"Не удалось разобрать число в строке: «{line}»")
+                continue
+            if kind in result.values:
+                result.errors.append(
+                    f"Прибор «{label_part.strip()}» указан дважды")
+                continue
+            result.values[kind] = value
 
     return result
 

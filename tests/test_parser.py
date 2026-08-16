@@ -102,3 +102,36 @@ def test_nonresidential():
     parsed = parse_message("Нежилое помещение №1\nХВС: 500\nГВС: 300")
     assert parsed.apartment_number == "Нежилое помещение №1"
     assert parsed.values == {"cws": 500.0, "hws": 300.0}
+
+
+def test_everything_in_one_line_with_commas():
+    """Реальное сообщение жителя: всё в строку, подписи со слешем."""
+    parsed = parse_message("кв38,Х/В30,Г/В 42,Эл/э 15873")
+    assert parsed.apartment_number == "38"
+    assert parsed.values == {"cws": 30.0, "hws": 42.0, "electricity": 15873.0}
+
+
+def test_apartment_number_without_space():
+    """«кв38» — это 38-я квартира, а не 8-я: цифры номера не съедаются."""
+    for text, number in (("кв38", "38"), ("Кв.7", "7"), ("квартира140", "140"),
+                         ("кв 38", "38"), ("кв№38", "38")):
+        assert parse_message(f"{text} хвс 10").apartment_number == number
+
+
+def test_comma_inside_a_number_is_not_a_separator():
+    """Запятая между цифрами — дробная часть, а не разделитель приборов."""
+    parsed = parse_message("кв 5, хвс 56,78, гвс 12,5")
+    assert parsed.values == {"cws": 56.78, "hws": 12.5}
+
+
+def test_one_line_with_kitchen_and_bathroom():
+    parsed = parse_message("Кв 53, хвс кух 36, хвс с/у 228, "
+                           "гвс кух 114, гвс ванна 178")
+    assert parsed.apartment_number == "53"
+    assert parsed.values == {"cws_kitchen": 36.0, "cws_bathroom": 228.0,
+                             "hws_kitchen": 114.0, "hws_bathroom": 178.0}
+
+
+def test_semicolon_separator():
+    parsed = parse_message("кв 12; х/в 30; г/в 42; эл/э 15873")
+    assert parsed.values == {"cws": 30.0, "hws": 42.0, "electricity": 15873.0}
