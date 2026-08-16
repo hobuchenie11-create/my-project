@@ -129,3 +129,19 @@ def test_readings_are_not_collected_in_the_council_chat():
     from bot.handlers import group
 
     assert "council_chat_id" in inspect.getsource(group.handle_group_message)
+
+
+def test_chat_reminder_names_the_deadline():
+    """Напоминание в чат: срок берётся из настроек и текущего месяца."""
+    from bot.texts import collection_reminder_text
+
+    text = collection_reminder_text(date(2026, 8, 16))
+    assert "<b>до 19 августа</b>" in text
+    assert "Остаётся 3 дня" in text
+    assert "Домовед" in text
+    assert "Хвс кухня 120" in text          # шаблон для 3-комнатных
+
+    assert "Сегодня последний день" in collection_reminder_text(date(2026, 8, 19))
+    assert "Срок сбора завершён" in collection_reminder_text(date(2026, 8, 21))
+    assert "1 день" in collection_reminder_text(date(2026, 8, 18))
+    assert "<b>до 19 сентября</b>" in collection_reminder_text(date(2026, 9, 15))

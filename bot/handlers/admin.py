@@ -5,7 +5,8 @@ from aiogram.types import FSInputFile, Message
 
 from bot.config import config
 from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTORS,
-                                      BTN_DEBTORS_DOC, BTN_INVITE, BTN_REGISTRY,
+                                      BTN_CHAT_REMINDER, BTN_DEBTORS_DOC,
+                                      BTN_INVITE, BTN_REGISTRY,
                                       BTN_REMIND, BTN_SETTINGS, BTN_STATEMENT,
                                       BTN_STATS, BTN_USERS, BTN_WORKBOOK, admin_menu)
 from bot.keyboards.menu import main_menu
@@ -14,7 +15,7 @@ from bot.services.apartment_service import registry_summary
 from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
-from bot.texts import welcome_residents_text
+from bot.texts import collection_reminder_text, welcome_residents_text
 from database import repository
 from database.backup import make_backup
 from reports.monthly_statement import generate_statement
@@ -124,6 +125,24 @@ async def send_invite(message: Message) -> None:
         except TelegramAPIError as exc:
             await message.answer(f"Не удалось отправить в чат ({exc}). "
                                  "Вот текст — скопируйте и отправьте в чат вручную:")
+    else:
+        await message.answer("Общий чат не подключён (GROUP_CHAT_ID пуст). "
+                             "Вот готовый текст — скопируйте и отправьте в чат:")
+    await message.answer(text)
+
+
+@router.message(F.text == BTN_CHAT_REMINDER)
+async def send_chat_reminder(message: Message) -> None:
+    """Короткое напоминание о сроке сбора — в общий чат дома."""
+    text = collection_reminder_text()
+    if config.group_chat_id:
+        try:
+            await message.bot.send_message(config.group_chat_id, text)
+            await message.answer("🔔 Напоминание отправлено в общий чат дома.")
+            return
+        except TelegramAPIError as exc:
+            await message.answer(f"Не удалось отправить в чат ({exc}). "
+                                 "Вот текст — скопируйте и отправьте вручную:")
     else:
         await message.answer("Общий чат не подключён (GROUP_CHAT_ID пуст). "
                              "Вот готовый текст — скопируйте и отправьте в чат:")
