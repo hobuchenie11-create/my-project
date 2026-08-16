@@ -17,6 +17,55 @@ def parse_value(text: str) -> float | None:
 
 
 @dataclass
+class Amount:
+    """Сумма платежа: итог и, если вводили по частям, расшифровка.
+
+    Председатель платит по нескольким квитанциям сразу, поэтому сумму удобно
+    вводить так, как она сложилась: 214,33+155+207. Бот считает итог сам,
+    а разбивку сохраняет — иначе потом не вспомнить, из чего сложилось.
+    """
+    total: float
+    parts: list[float]
+
+    @property
+    def is_split(self) -> bool:
+        return len(self.parts) > 1
+
+    def breakdown(self, label: str) -> str:
+        """«Квитанции: 214,33 + 155 + 207» — строка для примечания."""
+        if not self.is_split:
+            return ""
+        return f"{label}: " + " + ".join(money(p) for p in self.parts)
+
+
+def money(value: float) -> str:
+    """1234.5 -> «1234,5»: запятая привычнее в рублях."""
+    return f"{value:g}".replace(".", ",")
+
+
+def parse_amount(text: str) -> Amount | None:
+    """Разбирает сумму: одно число или несколько через «+».
+
+    Принимает «214,33+155,0+207», «214.33 + 155 + 207», «4520,30».
+    """
+    cleaned = (text or "").strip().replace(" ", "").rstrip("+")
+    if not cleaned:
+        return None
+
+    parts = []
+    for chunk in cleaned.split("+"):
+        value = parse_value(chunk)
+        if value is None:
+            return None
+        parts.append(value)
+
+    total = round(sum(parts), 2)
+    if total > 10_000_000:
+        return None
+    return Amount(total=total, parts=parts)
+
+
+@dataclass
 class CheckResult:
     ok: bool
     error: str = ""

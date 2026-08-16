@@ -17,6 +17,7 @@ from bot.keyboards.tasks import (BTN_COUNCIL, BTN_IMPORT_PLAN, BTN_MONTH_PLAN,
                                  council_confirm, council_selection,
                                  meter_actions, task_actions, tasks_menu)
 from bot.services import task_service, verification_service
+from bot.services.validation import money, parse_amount
 from bot.states.tasks import (CompleteTask, CouncilDigest, MeterInterval,
                               NewTask, Verification)
 from database import repository
@@ -505,9 +506,15 @@ async def change_task_status(callback: CallbackQuery, state: FSMContext) -> None
             await state.update_data(task_id=task_id, title=task["title"],
                                     amount_field=field)
             await state.set_state(CompleteTask.amount)
+            hint = ("Если платили по нескольким квитанциям — введите их через "
+                    "плюс: <code>214,33+155+207</code>. Бот сложит сам и "
+                    "запишет расшифровку в примечание."
+                    if field != "amount" else
+                    "Если поступлений было несколько — введите через плюс: "
+                    "<code>7643+7327</code>.")
             await callback.message.answer(
                 f"💰 <b>{task['title']}</b>\nВведите сумму {kind} в рублях "
-                "(например: 4520,30):")
+                f"(например: 4520,30):\n\n{hint}")
             await callback.answer()
             return
 
@@ -526,16 +533,27 @@ async def change_task_status(callback: CallbackQuery, state: FSMContext) -> None
 
 @router.message(CompleteTask.amount)
 async def process_amount(message: Message, state: FSMContext) -> None:
-    from bot.services.validation import parse_value
-    amount = parse_value(message.text or "")
+    amount = parse_amount(message.text or "")
     if amount is None:
-        await message.answer("Не похоже на сумму. Введите число, например 4520,30")
+        await message.answer("Не похоже на сумму. Введите число (4520,30) "
+                             "или несколько квитанций через плюс: "
+                             "214,33+155+207")
         return
-    await state.update_data(amount=amount)
+
+    data = await state.get_data()
+    label = ("Поступления" if data.get("amount_field") == "amount"
+             else "Квитанции")
+    breakdown = amount.breakdown(label)
+
+    await state.update_data(amount=amount.total, note=breakdown)
     await state.set_state(CompleteTask.paid_at)
+
+    total = f"Итого: <b>{money(amount.total)} ₽</b>" if amount.is_split else ""
     today = date.today().strftime("%d.%m.%Y")
-    await message.answer(f"📅 Дата оплаты? Отправьте «сегодня» ({today}) "
-                         "или дату в виде 15.09.2026")
+    await message.answer(
+        (f"{breakdown}\n{total}\n\n" if breakdown else "")
+        + f"📅 Дата оплаты? Отправьте «сегодня» ({today}) "
+          "или дату в виде 15.09.2026")
 
 
 @router.message(CompleteTask.paid_at)
@@ -558,17 +576,19 @@ async def process_paid_at(message: Message, state: FSMContext) -> None:
     conn = repository.connect()
     try:
         field = data.get("amount_field", "amount")
+        note = data.get("note", "")
         task_service.complete_task(conn, data["task_id"], message.from_user.id,
                                    amount=data["amount"], paid_at=paid.isoformat(),
-                                   amount_field=field)
+                                   amount_field=field, note=note)
     finally:
         conn.close()
 
     label = "Аренда" if field == "amount" else "Оплата коммунальных услуг"
     await message.answer(
         f"✅ <b>{data['title']}</b> — выполнено.\n"
-        f"{label}: {data['amount']:g} ₽\n"
-        f"Дата: {paid.strftime('%d.%m.%Y')}",
+        f"{label}: {money(data['amount'])} ₽\n"
+        f"Дата: {paid.strftime('%d.%m.%Y')}"
+        + (f"\nПримечание: {note}" if note else ""),
         reply_markup=tasks_menu())
 
 

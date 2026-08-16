@@ -376,14 +376,20 @@ def reminders_for_today(conn: sqlite3.Connection,
 
 def complete_task(conn: sqlite3.Connection, task_id: int, tg_id: int | None,
                   amount: float | None = None, paid_at: str | None = None,
-                  amount_field: str = "amount") -> None:
-    """Закрывает задачу. Сумма попадает в своё поле: аренда или коммуналка."""
+                  amount_field: str = "amount", note: str = "") -> None:
+    """Закрывает задачу. Сумма попадает в своё поле: аренда или коммуналка.
+
+    `note` — расшифровка суммы («Квитанции: 214,33 + 155 + 207»). Пишется
+    только если передана, чтобы не затирать комментарий председателя.
+    """
     date_field = "paid_at" if amount_field == "amount" else "utility_paid_at"
     fields = {"status": "done", "done_at": date.today().isoformat()}
     if amount is not None:
         fields[amount_field] = amount
     if paid_at:
         fields[date_field] = paid_at
+    if note:
+        fields["note"] = note
     repository.update_task(conn, task_id, **fields)
 
     kind = "аренда" if amount_field == "amount" else "коммуналка"
