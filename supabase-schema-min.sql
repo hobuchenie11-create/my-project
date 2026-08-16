@@ -1,6 +1,8 @@
 -- KOPILKA KLASSA: minimal schema. Zamenite stroku TOKEN-ZDES na svoyu.
 -- Polnaya versiya s poyasneniyami: supabase-schema.sql
 
+set search_path = public, extensions;
+
 create extension if not exists pgcrypto;
 
 create table if not exists public.classes (
@@ -27,7 +29,8 @@ alter table public.app_config enable row level security;
 revoke all on public.app_config from anon, authenticated;
 
 create or replace function public.sha(t text)
-returns text language sql immutable as $$
+returns text language sql immutable
+set search_path = public, extensions as $$
   select encode(digest(coalesce(t,''), 'sha256'), 'hex')
 $$;
 
@@ -37,7 +40,7 @@ on conflict (only_row) do update set create_token_hash = excluded.create_token_h
 
 create or replace function public.auth_check(p_id uuid, p_secret text)
 returns table (role text, reason text)
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare c classes%rowtype;
 begin
   select * into c from classes where id = p_id;
@@ -76,7 +79,7 @@ end $$;
 create or replace function public.class_create(
   p_state jsonb, p_code text, p_admin text, p_token text
 ) returns table (ok boolean, reason text, id uuid)
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare v_id uuid;
 begin
   if not exists (select 1 from app_config where create_token_hash = sha(p_token)) then
@@ -99,7 +102,7 @@ end $$;
 
 create or replace function public.class_get(p_id uuid, p_secret text)
 returns table (ok boolean, reason text, state jsonb, version integer, role text)
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare a record;
 begin
   select * into a from auth_check(p_id, p_secret);
@@ -112,7 +115,7 @@ end $$;
 
 create or replace function public.class_version(p_id uuid, p_secret text)
 returns table (ok boolean, reason text, version integer)
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare a record;
 begin
   select * into a from auth_check(p_id, p_secret);
@@ -125,7 +128,7 @@ end $$;
 create or replace function public.class_save(
   p_id uuid, p_secret text, p_state jsonb, p_version integer
 ) returns table (ok boolean, reason text, version integer)
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare a record; v_new integer;
 begin
   select * into a from auth_check(p_id, p_secret);
@@ -145,7 +148,7 @@ end $$;
 create or replace function public.class_set_code(
   p_id uuid, p_secret text, p_new_code text
 ) returns table (ok boolean, reason text)
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare a record;
 begin
   select * into a from auth_check(p_id, p_secret);
@@ -166,7 +169,7 @@ end $$;
 create or replace function public.class_admin_add(
   p_id uuid, p_secret text, p_new_admin text
 ) returns table (ok boolean, reason text, admins integer)
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare a record; n integer;
 begin
   select * into a from auth_check(p_id, p_secret);
@@ -190,7 +193,7 @@ end $$;
 create or replace function public.class_admin_reset_others(
   p_id uuid, p_secret text
 ) returns table (ok boolean, reason text)
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare a record;
 begin
   select * into a from auth_check(p_id, p_secret);
