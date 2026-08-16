@@ -1,7 +1,7 @@
 # Graph Report - my-project  (2026-08-16)
 
 ## Corpus Check
-- 77 files · ~34,418 words
+- 77 files · ~34,485 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `6c532c85`
+- Built from commit: `4f9938ed`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -35,7 +35,7 @@
 - reading_service.py
 - task_service.py
 - CLAUDE.md
-- import_registry
+- models.py
 - council_digest
 - TaskView
 - main.py
@@ -140,8 +140,8 @@ Cohesion: 0.22
 Nodes (10): _clamp_day(), generate_year(), День месяца с учётом коротких месяцев (30 февраля не бывает)., Разворачивает годовой план: задачи из шаблонов на все 12 месяцев., create_task(), test_digest_keeps_amounts_and_notes_out(), Разовые задачи — на отдельном листе, с автоматическим отсчётом срока., test_generate_year_covers_twelve_months() (+2 more)
 
 ### Community 25 - "test_statements.py"
-Cohesion: 0.13
-Nodes (18): Формирование данных ведомости передачи показаний. Структура печатной ведомости…, Statement, StatementRow, export_statement(), fill_statement_sheet(), Path, Выгрузка ведомости передачи показаний в Excel (.xlsx)., Отдельный файл ведомости — его председатель отправляет ресурсникам. (+10 more)
+Cohesion: 0.15
+Nodes (16): Формирование данных ведомости передачи показаний. Структура печатной ведомости…, Statement, StatementRow, export_statement(), fill_statement_sheet(), Path, Выгрузка ведомости передачи показаний в Excel (.xlsx)., Отдельный файл ведомости — его председатель отправляет ресурсникам. (+8 more)
 
 ### Community 26 - "handlers/registration.py"
 Cohesion: 0.16
@@ -155,9 +155,9 @@ Nodes (22): _dm(), _guidance(), handle_group_message(), Message, Прием по
 Cohesion: 0.14
 Nodes (27): Каждую открытую задачу отправляем отдельно — с кнопками управления., Разовые задачи председателя — с кнопками управления у каждой., show_one_off(), show_urgent(), category_label(), _digest_text(), _fmt_date(), month_plan_text() (+19 more)
 
-### Community 30 - "import_registry"
-Cohesion: 0.21
-Nodes (14): _counts_from_label(), _find_header_row(), generate_template(), import_registry(), _is_apartment_number(), _pick_sheet(), Connection, Path (+6 more)
+### Community 30 - "models.py"
+Cohesion: 0.15
+Nodes (19): apartment_meters(), layout_label(), Схема базы данных DH OS и справочник видов приборов учета., Список приборов квартиры в порядке опроса в боте., Короткая подпись планировки для реестра, например «ХВС×2 · ГВС×2»., _counts_from_label(), _find_header_row(), generate_template() (+11 more)
 
 ### Community 31 - "council_digest"
 Cohesion: 0.28
@@ -176,8 +176,8 @@ Cohesion: 0.07
 Nodes (49): _classify(), _has(), _normalize(), parse_message(), ParsedReadings, Разбор показаний из свободного текста (сообщения в общем чате дома). Словарь…, Определяет вид прибора по нормализованной подписи. Возвращает (вид,…, Убирает разделители, оставляя только буквы, для сопоставления по словарю. (+41 more)
 
 ### Community 35 - "init_db"
-Cohesion: 0.13
-Nodes (22): init_db(), Connection, Path, Создание схемы БД и первичное заполнение реестра квартир. Запускается…, _seed_nonresidential(), _seed_residential(), apartment_meters(), layout_label() (+14 more)
+Cohesion: 0.14
+Nodes (19): init_db(), Connection, Path, Создание схемы БД и первичное заполнение реестра квартир. Запускается…, _seed_nonresidential(), _seed_residential(), Приводит набор приборов квартиры к заданному: нужные — активны, лишние — нет., set_meters() (+11 more)
 
 ### Community 36 - "config.py"
 Cohesion: 0.19
@@ -203,7 +203,7 @@ Nodes (7): debtors_text(), pending_targets(), Connection, Автоматичес
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `connect()` connect `connect` to `repository.py`, `test_cleanup.py`, `demo.py`, `save_reading`, `generate_tasks`, `test_amounts.py`, `test_council.py`, `handlers/readings.py`, `tasks_import.py`, `handlers/tasks.py`, `test_verification.py`, `test_statements.py`, `handlers/registration.py`, `reading_service.py`, `task_service.py`, `import_registry`, `init_db`, `config.py`, `scheduler.py`?**
+- **Why does `connect()` connect `connect` to `repository.py`, `test_cleanup.py`, `demo.py`, `save_reading`, `generate_tasks`, `test_amounts.py`, `test_council.py`, `handlers/readings.py`, `tasks_import.py`, `handlers/tasks.py`, `test_verification.py`, `test_statements.py`, `handlers/registration.py`, `reading_service.py`, `task_service.py`, `models.py`, `init_db`, `config.py`, `scheduler.py`?**
   _High betweenness centrality (0.095) - this node is a cross-community bridge._
 - **Why does `parse_message()` connect `parse_message` to `reading_service.py`, `demo.py`, `save_reading`, `test_amounts.py`?**
   _High betweenness centrality (0.053) - this node is a cross-community bridge._

@@ -162,3 +162,6 @@ def test_invite_and_reminder_speak_the_same_way():
     for text in (invite, collection_reminder_text(date(2026, 8, 16))):
         assert "Домовед" in text
         assert "в первой строке" in text
+        assert text.rstrip().endswith("участие в процессе сбора показаний "
+                                      "по нашему дому. 🙏")
+        assert "расход по ОДН" in text
