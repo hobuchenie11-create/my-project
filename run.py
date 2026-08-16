@@ -1,6 +1,7 @@
 """Точка входа DH OS. Запуск: python run.py"""
 import asyncio
 
+from bot.keepawake import allow_sleep
 from bot.main import main
 
 if __name__ == "__main__":
@@ -8,3 +9,6 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         print("DH OS остановлен.")
+    finally:
+        # Бот больше не работает — ноутбук снова может засыпать сам
+        allow_sleep()

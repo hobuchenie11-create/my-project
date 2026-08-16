@@ -10,6 +10,7 @@ from aiogram.types import BotCommand
 from bot.config import config
 from bot.handlers import (admin, common, group, readings, registration, reports,
                           start, tasks)
+from bot.keepawake import keep_awake
 from bot.proxy import make_session
 from bot.scheduler import run_scheduler
 from bot.utils.logger import setup_logging
@@ -83,6 +84,10 @@ async def main() -> None:
     ])
 
     _log_chats()
+
+    # Пока бот работает, ноутбук не должен засыпать — иначе показания,
+    # присланные днём, повиснут в очереди Telegram до пробуждения.
+    keep_awake()
 
     # Календарные задачи: напоминания и ведомость непередавших
     asyncio.create_task(run_scheduler(bot))
