@@ -2573,6 +2573,11 @@ function gateView(){
   } else if (Cloud.on()){
     Cloud.start();
   }
+  // прямые ссылки на экраны: #cloud открывает настройку общей базы,
+  // #spisok — список класса. Нужны, чтобы можно было прислать ссылку
+  // сразу на нужный экран, а не объяснять, где искать кнопку.
+  const direct = {'#cloud':'cloud', '#spisok':'roster', '#kassa':'spend'}[location.hash];
+  if (direct) view = direct;
   render();
 })();
 </script>
