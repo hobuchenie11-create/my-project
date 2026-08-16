@@ -2282,10 +2282,23 @@ document.addEventListener('click', e => {
       };
       const h = {'Content-Type':'application/json', apikey:key};
       if (/^eyJ/.test(key)) h.Authorization = 'Bearer ' + key;
+      let verdict = '';
       Promise.resolve()
-        .then(() => probe('1. база отвечает', '/rest/v1/', {headers:h}))
-        .then(() => probe('2. функция версии', '/rest/v1/rpc/class_version',
+        // корень REST по замыслу Supabase доступен только ключу service_role,
+        // поэтому 401 здесь — норма и означает, что сервер жив
+        .then(() => probe('1. сервер базы (401 здесь — норма)', '/rest/v1/', {headers:h}))
+        .then(() => probe('2. функции базы', '/rest/v1/rpc/class_version',
               {method:'POST', headers:h, body:JSON.stringify({p_id:'00000000-0000-0000-0000-000000000000', p_secret:'x'})}))
+        .then(() => {
+          const l2 = lines[lines.length - 1];
+          if (l2.includes('код 200') && l2.includes('"ok"'))
+            verdict = 'ИТОГ: связь есть, функции базы работают. Можно нажимать «Создать класс».';
+          else if (l2.includes('код 404')) verdict = 'ИТОГ: функции не найдены — выполните supabase-schema.sql.';
+          else if (l2.includes('код 401') || l2.includes('код 403')) verdict = 'ИТОГ: база не приняла ключ — возьмите ключ заново.';
+          else if (l2.includes('связи нет')) verdict = 'ИТОГ: до базы не достучаться — проверьте адрес и интернет.';
+          else verdict = 'ИТОГ: неожиданный ответ, пришлите этот текст.';
+          lines.push('', verdict);
+        })
         .then(() => {
           const txt = lines.join('\n');
           box.innerHTML = `<div class="calc" style="display:block;white-space:pre-wrap;
