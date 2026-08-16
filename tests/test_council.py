@@ -147,3 +147,18 @@ def test_chat_reminder_names_the_deadline():
     assert "Срок сбора завершён" in collection_reminder_text(date(2026, 8, 21))
     assert "1 день" in collection_reminder_text(date(2026, 8, 18))
     assert "<b>до 19 сентября</b>" in collection_reminder_text(date(2026, 9, 15))
+
+
+def test_invite_and_reminder_speak_the_same_way():
+    """Памятка и напоминание — одна формулировка и шаблоны без чисел."""
+    from bot.texts import collection_reminder_text, welcome_residents_text
+
+    invite = welcome_residents_text("domoved_bot")
+    assert "автоматическом режиме" in invite
+    assert "обходить квартиры" not in invite
+    assert "15230" not in invite and "Хвс кухня 120" not in invite
+    assert "Хвс санузел" in invite            # шаблон остался
+
+    for text in (invite, collection_reminder_text(date(2026, 8, 16))):
+        assert "Домовед" in text
+        assert "в первой строке" in text
