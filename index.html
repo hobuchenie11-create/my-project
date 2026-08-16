@@ -1067,7 +1067,10 @@ function cloudView(){
     </div>
     <div class="field">
       <label>Токен установки</label>
-      <input id="cl-token" type="password" autocomplete="off" placeholder="строка, которую вписали в схему">
+      <input id="cl-token" type="text" autocomplete="off" spellcheck="false"
+             placeholder="строка, которую вписали в схему">
+      <div class="hint">Это <b>не</b> ключ из Supabase. Это строка, которую вы придумали сами
+        и вписали в схему вместо TOKEN-ZDES. Показана открыто, чтобы видеть опечатки.</div>
     </div>
     <div class="field">
       <label>Код класса — для родителей, только просмотр</label>
