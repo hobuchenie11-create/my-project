@@ -184,6 +184,45 @@ def readings_history_for_apartment(conn: sqlite3.Connection, apartment_id: int,
     ).fetchall()
 
 
+def find_readings(conn: sqlite3.Connection, before: str = "", period: str = "",
+                  apartment: str = "", source: str = "") -> list[sqlite3.Row]:
+    """Показания по фильтрам — для разбора и удаления тестовых записей."""
+    where, params = ["1 = 1"], []
+    if before:
+        where.append("r.created_at < ?")
+        params.append(before)
+    if period:
+        where.append("r.period = ?")
+        params.append(period)
+    if apartment:
+        where.append("a.number = ?")
+        params.append(apartment)
+    if source:
+        where.append("r.source = ?")
+        params.append(source)
+
+    return conn.execute(
+        f"""SELECT r.id, r.created_at, r.period, r.value, r.source,
+                   m.kind, a.number AS apartment_number
+            FROM readings r
+            JOIN meters m ON m.id = r.meter_id
+            JOIN apartments a ON a.id = m.apartment_id
+            WHERE {' AND '.join(where)}
+            ORDER BY a.sort_order, a.id, r.id""",
+        params,
+    ).fetchall()
+
+
+def delete_readings(conn: sqlite3.Connection, ids: list[int]) -> int:
+    """Удаляет показания по списку id. Возвращает число удалённых строк."""
+    if not ids:
+        return 0
+    placeholders = ",".join("?" * len(ids))
+    cur = conn.execute(f"DELETE FROM readings WHERE id IN ({placeholders})", ids)
+    conn.commit()
+    return cur.rowcount
+
+
 def apartments_submitted(conn: sqlite3.Connection, period: str) -> set[str]:
     rows = conn.execute(
         """SELECT DISTINCT a.number

@@ -74,6 +74,11 @@
   следующий цикл, история поверок сохраняется.
 - 🔔 Автоматические напоминания должникам по дням месяца (Этап 7,
   по умолчанию 17, 23, 25 — настраивается в `.env`).
+- 🧹 Очистка тестовых показаний: `python -m database.cleanup` показывает, что
+  лежит в базе, с фильтрами (`--before`, `--period`, `--apartment`, `--source`)
+  — что именно удалится, а `--yes` удаляет, предварительно сделав резервную
+  копию. Нужна после обкатки: пробные значения иначе считаются предыдущими и
+  отклоняют настоящие показания как «меньше предыдущего».
 - 📝 Журнал действий и логи.
 
 ## Быстрый старт
@@ -150,6 +155,8 @@ python run.py
 python -m reports.monthly_statement 2026-07   # ведомость за период в Excel
 python -m reports.print_statement             # ведомость в консоли
 python -m database.backup                     # резервная копия базы
+python -m database.cleanup                    # какие показания есть в базе
+python -m database.cleanup --before 15.08.2026 --yes   # убрать тестовые показания
 python -m excel.import_registry --template    # шаблон реестра квартир (xlsx)
 python -m excel.import_registry               # импорт реестра из data/apartments.xlsx
 python -m excel.tasks_import plan.xlsx        # загрузить правки годового плана в базу
