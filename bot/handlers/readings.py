@@ -5,8 +5,10 @@ from aiogram.types import Message
 
 from bot.config import config
 from bot.keyboards.menu import BTN_SUBMIT, cancel_keyboard, main_menu
+from bot.services.parser import parse_message
 from bot.services.reading_service import (current_period, is_late, receipt_text,
-                                          save_reading, unit_for)
+                                          save_parsed_readings, save_reading,
+                                          unit_for)
 from bot.texts import late_submission_text
 from bot.services.validation import parse_value
 from bot.states.readings import SubmitReadings
@@ -112,10 +114,56 @@ async def cancel_submission(message: Message, state: FSMContext) -> None:
     await message.answer("Передача показаний отменена.", reply_markup=main_menu(is_admin))
 
 
+async def _try_whole_message(message: Message, state: FSMContext) -> bool:
+    """Вставили сообщение целиком вместо одного числа — разбираем его.
+
+    Жители копируют готовый текст (из WhatsApp, из чата дома) и вставляют
+    в диалог. Отвечать «не похоже на показание» на такое — терять переданные
+    показания, поэтому пробуем прочитать сообщение как обычно.
+    """
+    parsed = parse_message(message.text or "")
+    if parsed.is_empty:
+        return False
+
+    data = await state.get_data()
+    conn = repository.connect()
+    try:
+        apartment = repository.get_apartment_by_id(conn, data["apartment_id"])
+        # Вставили показания за другую квартиру — записывать их сюда нельзя
+        if (parsed.apartment_number
+                and parsed.apartment_number != apartment["number"]):
+            await message.answer(
+                f"В сообщении указана {parsed.apartment_number}, а сейчас "
+                f"вводим показания по кв. {apartment['number']}.\n\n"
+                "Нажмите «❌ Отмена» и пришлите этот текст обычным сообщением — "
+                "бот запишет его в нужную квартиру.")
+            return True
+
+        outcome = save_parsed_readings(conn, apartment, parsed,
+                                       data.get("user_id"), source="bot")
+        text = (receipt_text(conn, apartment, outcome.saved)
+                if outcome.anything_saved else "Показания не записаны.")
+    finally:
+        conn.close()
+
+    await state.clear()
+    problems = list(outcome.warnings) + list(outcome.errors)
+    if problems:
+        text += "\n\n" + "\n".join(f"⚠️ {p}" for p in problems)
+    if outcome.anything_saved and is_late():
+        text += "\n\n" + late_submission_text()
+
+    is_admin = message.from_user.id in config.admin_ids
+    await message.answer(text, reply_markup=main_menu(is_admin))
+    return True
+
+
 @router.message(SubmitReadings.value)
 async def process_value(message: Message, state: FSMContext) -> None:
     text = message.text or ""
     value = parse_value(text)
+    if value is None and await _try_whole_message(message, state):
+        return
     if value is None:
         # Житель посреди передачи показаний задал вопрос — не оставляем его
         # в тупике, а объясняем, как выйти из диалога.

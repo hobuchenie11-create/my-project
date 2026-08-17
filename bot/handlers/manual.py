@@ -1,8 +1,9 @@
-"""Ручной ввод показаний председателем — в личном чате с ботом.
+"""Показания текстом в личном чате с ботом — без диалога по кнопке.
 
-Нежилые помещения и общедомовой прибор передаёт не житель, а председатель.
-Отдельного диалога для них не нужно: пишем боту в личку тем же текстом, что
-жители пишут в чат, — «Нежилое 1 / Эл.эн 1234 / Хвс 56 / Гвс 78».
+Житель копирует готовое сообщение (из чата дома, из WhatsApp) и вставляет
+боту — записываем в его квартиру. Председатель тем же способом передаёт
+нежилые помещения и общедомовой прибор («Нежилое 1», «Общедомовой») и может
+внести показания за любую квартиру, если житель передал их по телефону.
 
 Роутер подключается последним, поэтому кнопки меню и диалоги (новая задача,
 поверка, суммы) разбираются раньше и сюда не попадают: здесь оказывается
@@ -15,15 +16,15 @@ from aiogram.types import Message
 
 from bot.config import config
 from bot.services.parser import parse_message
-from bot.services.reading_service import (current_period, receipt_text,
+from bot.services.reading_service import (current_period, is_late, receipt_text,
                                           save_parsed_readings)
+from bot.texts import late_submission_text
 from database import repository
 
 logger = logging.getLogger(__name__)
 
 router = Router()
-router.message.filter(F.chat.type == "private",
-                      F.from_user.id.in_(config.admin_ids))
+router.message.filter(F.chat.type == "private")
 
 
 @router.message(F.text)
@@ -32,20 +33,14 @@ async def manual_readings(message: Message) -> None:
     if parsed.is_empty and not parsed.apartment_number:
         return                      # обычное сообщение, не показания
 
-    if parsed.apartment_number is None:
-        await message.answer(
-            "Не понял, к какому помещению относятся показания. Укажите "
-            "в первой строке номер: «Кв. 15», «Нежилое 1» или «Общедомовой».")
-        return
-
+    is_admin = message.from_user.id in config.admin_ids
     conn = repository.connect()
     try:
-        apartment = repository.get_apartment_by_number(
-            conn, parsed.apartment_number)
-        if apartment is None:
-            await message.answer(
-                f"В реестре нет помещения «{parsed.apartment_number}». "
-                "Проверьте номер.")
+        user = repository.get_user_by_tg(conn, message.from_user.id)
+        apartment = _resolve(conn, parsed, user, is_admin)
+
+        if isinstance(apartment, str):          # не помещение, а объяснение
+            await message.answer(apartment)
             return
 
         if parsed.is_empty:
@@ -54,11 +49,11 @@ async def manual_readings(message: Message) -> None:
                 "«Эл.эн 12345», «Хвс 56».")
             return
 
-        user = repository.get_user_by_tg(conn, message.from_user.id)
+        source = "admin" if is_admin else "bot"
         outcome = save_parsed_readings(conn, apartment, parsed,
                                        user["id"] if user else None,
-                                       source="admin")
-        repository.log_event(conn, message.from_user.id, "reading_admin",
+                                       source=source)
+        repository.log_event(conn, message.from_user.id, f"reading_{source}",
                              f"{apartment['number']}: принято "
                              f"{len(outcome.saved)} за {current_period()}")
         text = (receipt_text(conn, apartment, outcome.saved)
@@ -66,9 +61,47 @@ async def manual_readings(message: Message) -> None:
     finally:
         conn.close()
 
+    logger.info("Личка: %s — записано показаний %s", apartment["number"],
+                len(outcome.saved))
+
     problems = list(outcome.warnings) + list(outcome.errors)
     if parsed.ignored:
         problems.append("Не учитывается: " + ", ".join(parsed.ignored))
     if problems:
         text += "\n\n" + "\n".join(f"⚠️ {p}" for p in problems)
+    if outcome.anything_saved and is_late():
+        text += "\n\n" + late_submission_text()
     await message.answer(text)
+
+
+def _resolve(conn, parsed, user, is_admin):
+    """Помещение, в которое пойдут показания, либо текст с объяснением.
+
+    Житель может передать только за свою квартиру: номер из сообщения для
+    него — повод перепроверить, а не записать соседу. Председатель передаёт
+    за любое помещение, включая нежилые и общедомовой прибор.
+    """
+    if is_admin:
+        if parsed.apartment_number is None:
+            return ("Не понял, к какому помещению относятся показания. Укажите "
+                    "в первой строке номер: «Кв. 15», «Нежилое 1» "
+                    "или «Общедомовой».")
+        apartment = repository.get_apartment_by_number(
+            conn, parsed.apartment_number)
+        if apartment is None:
+            return (f"В реестре нет помещения «{parsed.apartment_number}». "
+                    "Проверьте номер.")
+        return apartment
+
+    if user is None or not user["apartment_id"]:
+        return ("Похоже на показания, но я не знаю вашей квартиры. "
+                "Отправьте /start и зарегистрируйтесь — это один раз.")
+
+    apartment = repository.get_apartment_by_id(conn, user["apartment_id"])
+    if (parsed.apartment_number
+            and parsed.apartment_number != apartment["number"]):
+        return (f"В сообщении указана {parsed.apartment_number}, а вы "
+                f"зарегистрированы как кв. {apartment['number']}. "
+                "Показания принимаются только по своей квартире — "
+                "если номер квартиры изменился, сообщите председателю.")
+    return apartment

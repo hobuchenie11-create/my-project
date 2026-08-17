@@ -160,3 +160,126 @@ def test_ordinary_message_gets_no_answer(db):
 def _period() -> str:
     from bot.services.reading_service import current_period
     return current_period()
+
+
+def test_resident_pastes_readings_without_pressing_the_button(db, monkeypatch):
+    """Житель вставил готовый текст в личку — записываем в его квартиру."""
+    resident = 777
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "3")
+        repository.create_user(conn, resident, "Житель", flat["id"])
+    finally:
+        conn.close()
+
+    message = FakeMessage("Эл.эн 15230\nХвс 123\nГвс 88")
+    message.from_user = SimpleNamespace(id=resident, username="rezident")
+    asyncio.run(manual.manual_readings(message))
+
+    assert "кв. 3 — показания приняты" in message.answers[0]
+
+
+def test_resident_cannot_submit_for_another_flat(db):
+    """Номер чужой квартиры в тексте — не повод записать соседу."""
+    resident = 778
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "3")
+        repository.create_user(conn, resident, "Житель", flat["id"])
+    finally:
+        conn.close()
+
+    message = FakeMessage("Кв. 4\nЭл.эн 15230")
+    message.from_user = SimpleNamespace(id=resident, username="rezident")
+    asyncio.run(manual.manual_readings(message))
+
+    assert "только по своей квартире" in message.answers[0]
+    conn = repository.connect(db)
+    try:
+        other = repository.get_apartment_by_number(conn, "4")
+        assert repository.readings_history_for_apartment(conn, other["id"]) == []
+    finally:
+        conn.close()
+
+
+def test_unregistered_sender_is_asked_to_register(db):
+    message = FakeMessage("Эл.эн 15230")
+    message.from_user = SimpleNamespace(id=999, username="new")
+    asyncio.run(manual.manual_readings(message))
+
+    assert "/start" in message.answers[0]
+
+
+def test_pasted_message_inside_the_dialog(db, monkeypatch):
+    """Вставили сообщение целиком в диалог «Передать показания»."""
+    from bot.handlers import readings as readings_handler
+
+    resident = 780
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "3")
+        user_id = repository.create_user(conn, resident, "Житель", flat["id"])
+    finally:
+        conn.close()
+
+    real_connect = repository.connect
+    monkeypatch.setattr(readings_handler.repository, "connect",
+                        lambda *a, **kw: real_connect(db))
+
+    class State:
+        def __init__(self, data):
+            self.data, self.cleared = data, False
+
+        async def get_data(self):
+            return dict(self.data)
+
+        async def clear(self):
+            self.cleared = True
+
+    message = FakeMessage("Кв. 3\nЭл.эн 15230\nХвс 123\nГвс 88")
+    message.from_user = SimpleNamespace(id=resident, username="rezident")
+    state = State({"apartment_id": flat["id"], "user_id": user_id,
+                   "queue": ["electricity", "cws", "hws"], "saved": {},
+                   "warnings": []})
+
+    asyncio.run(readings_handler.process_value(message, state))
+
+    assert "кв. 3 — показания приняты" in message.answers[0]
+    assert "Электроэнергия: 15230" in message.answers[0]
+    assert state.cleared                       # диалог закрыт, дальше не спрашиваем
+
+
+def test_pasted_message_for_another_flat_is_refused_in_the_dialog(db, monkeypatch):
+    from bot.handlers import readings as readings_handler
+
+    resident = 781
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "3")
+        user_id = repository.create_user(conn, resident, "Житель", flat["id"])
+    finally:
+        conn.close()
+
+    real_connect = repository.connect
+    monkeypatch.setattr(readings_handler.repository, "connect",
+                        lambda *a, **kw: real_connect(db))
+
+    class State:
+        def __init__(self, data):
+            self.data, self.cleared = data, False
+
+        async def get_data(self):
+            return dict(self.data)
+
+        async def clear(self):
+            self.cleared = True
+
+    message = FakeMessage("Кв. 4\nЭл.эн 15230")
+    message.from_user = SimpleNamespace(id=resident, username="rezident")
+    state = State({"apartment_id": flat["id"], "user_id": user_id,
+                   "queue": ["electricity"], "saved": {}, "warnings": []})
+
+    asyncio.run(readings_handler.process_value(message, state))
+
+    assert "вводим показания по кв. 3" in message.answers[0]
+    assert not state.cleared                   # остаёмся в диалоге
