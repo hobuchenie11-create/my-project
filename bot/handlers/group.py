@@ -56,10 +56,21 @@ async def _react_ok(message: Message) -> None:
 
 @router.message(F.text)
 async def handle_group_message(message: Message) -> None:
-    if config.group_chat_id and message.chat.id != config.group_chat_id:
-        return
     # В чате Совета дома показания не собираем — там обсуждения, а не цифры
     if message.chat.id == config.council_chat_id:
+        return
+
+    if config.group_chat_id and message.chat.id != config.group_chat_id:
+        # Чужой чат — либо и правда чужой, либо ID чата дома изменился
+        # (так бывает, когда группу повышают до супергруппы). Молчать об этом
+        # нельзя: со стороны выглядит как «бот перестал видеть показания».
+        if message.chat.id not in _hinted_chats:
+            _hinted_chats.add(message.chat.id)
+            logger.warning(
+                "Сообщение из чата «%s» (ID %s) пропущено: в .env указан "
+                "GROUP_CHAT_ID=%s. Если показания шлют именно сюда — впишите "
+                "в .env этот ID и перезапустите бота.",
+                message.chat.title, message.chat.id, config.group_chat_id)
         return
 
     # Пока GROUP_CHAT_ID не задан — подсказываем его в терминале (без сообщений в чат)

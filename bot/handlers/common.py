@@ -10,7 +10,12 @@ router = Router()
 
 @router.message(Command("chatid"))
 async def cmd_chatid(message: Message) -> None:
-    """Показывает ID чата — нужен для GROUP_CHAT_ID и COUNCIL_CHAT_ID в .env."""
+    """Показывает ID чата — нужен для GROUP_CHAT_ID и COUNCIL_CHAT_ID в .env.
+
+    Команды доходят до бота даже при включённом режиме приватности, поэтому
+    здесь же проверяем, видит ли он обычные сообщения: если нет, показания
+    из чата до него просто не долетают.
+    """
     chat_id = message.chat.id
 
     if chat_id == config.group_chat_id:
@@ -29,4 +34,23 @@ async def cmd_chatid(message: Message) -> None:
                 "• <code>COUNCIL_CHAT_ID</code> — если это чат Совета дома, "
                 "куда уходит сводка по задачам.")
 
-    await message.reply(f"ID этого чата: <code>{chat_id}</code>\n\n{role}")
+    lines = [f"ID этого чата: <code>{chat_id}</code>", "", role]
+
+    if message.chat.type in ("group", "supergroup"):
+        me = await message.bot.get_me()
+        if me.can_read_all_group_messages:
+            lines.append("")
+            lines.append("👀 Обычные сообщения в этом чате бот видит — "
+                         "показания будут разбираться.")
+        else:
+            lines.append("")
+            lines.append(
+                "⚠️ <b>Бот не видит обычные сообщения чата</b> — включён режим "
+                "приватности, до него доходят только команды. Показания "
+                "из чата приниматься не будут.\n"
+                "Как исправить: @BotFather → /mybots → выбрать бота → "
+                "Bot Settings → Group Privacy → <b>Turn off</b>. "
+                "Затем удалить бота из чата и добавить заново — иначе "
+                "настройка не применится.")
+
+    await message.reply("\n".join(lines))

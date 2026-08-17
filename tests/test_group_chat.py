@@ -101,3 +101,28 @@ def test_ordinary_chat_message_is_ignored(db):
 
     assert message.bot.dm == []
     assert message.replies == []
+
+
+def test_message_from_another_chat_is_logged_not_swallowed(db, caplog, monkeypatch):
+    """Чужой чат — предупреждение в лог: так видно смену ID чата дома."""
+    monkeypatch.setattr(group, "config",
+                        replace(group.config, group_chat_id=-100999))
+    group._hinted_chats.clear()
+
+    message = FakeMessage("Кв. 5\nХвс 30")
+    with caplog.at_level("WARNING"):
+        asyncio.run(group.handle_group_message(message))
+
+    assert _readings(db, "5") == {}                  # ничего не записали
+    assert "GROUP_CHAT_ID" in caplog.text
+    assert str(message.chat.id) in caplog.text
+
+
+def test_council_chat_is_skipped_before_the_id_check(db, monkeypatch):
+    monkeypatch.setattr(group, "config",
+                        replace(group.config, group_chat_id=None,
+                                council_chat_id=-100123))
+    message = FakeMessage("Кв. 5\nХвс 30")
+    asyncio.run(group.handle_group_message(message))
+
+    assert _readings(db, "5") == {}
