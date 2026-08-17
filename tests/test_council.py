@@ -185,3 +185,22 @@ def test_templates_are_separate_messages():
 
     # Памятка использует те же константы — шаблоны не разъедутся
     assert TEMPLATE_LARGE in welcome_residents_text("domoved_bot")
+
+
+def test_large_template_asks_for_the_hot_water_total():
+    """Строка «Сумма ГВ» — её бот сверяет с кухня+ванна."""
+    from bot.services.parser import parse_message
+    from bot.texts import TEMPLATE_LARGE
+
+    assert TEMPLATE_LARGE.endswith("Сумма ГВ")
+
+    filled = TEMPLATE_LARGE.replace("Кв.", "Кв. 5")
+    for label, value in (("Эл.эн", 21694), ("Хвс кухня", 138),
+                         ("Хвс санузел", 617), ("Гвс кухня", 206),
+                         ("Гвс ванна", 622), ("Сумма ГВ", 828)):
+        filled = filled.replace(f"\n{label}", f"\n{label} {value}")
+
+    parsed = parse_message(filled)
+    assert parsed.apartment_number == "5"
+    assert parsed.values["hws_total"] == 828        # сумма распознана
+    assert parsed.values["hws_kitchen"] == 206
