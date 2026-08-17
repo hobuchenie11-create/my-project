@@ -112,12 +112,13 @@ def parse_message(text: str) -> ParsedReadings:
 
     context: str | None = None  # 'cold' | 'hot' — тип воды из предыдущих строк
 
-    for raw_line in text.splitlines():
-        # Запятая могла разорвать пару «подпись — показание»: «Сумма» + «гв,292»
-        # или «1234» + «Эл.эн». Держим половинку до следующего сегмента.
-        pending_label = ""
-        pending_value = ""
+    # Пара «подпись — показание» бывает разорвана: запятой («Сумма» + «гв,292»,
+    # «1234» + «Эл.эн») или переводом строки — жители пишут подпись на одной
+    # строке, а число на следующей. Держим половинку до её пары.
+    pending_label = ""
+    pending_value = ""
 
+    for raw_line in text.splitlines():
         for segment in SEGMENT_RE.split(raw_line):
             line = segment.strip()
             if not line:
@@ -132,7 +133,14 @@ def parse_message(text: str) -> ParsedReadings:
             else:
                 raw_value, label_part = "", line
 
-            label = pending_label + _normalize(label_part)
+            own_label = _normalize(label_part)
+            # Строка с номером квартиры — не показание. Проверяем по её
+            # собственной подписи, чтобы заодно сбросить всё недособранное.
+            if own_label in ("кв", "квартира", "кварт"):
+                pending_label = pending_value = ""
+                continue
+
+            label = pending_label + own_label
 
             if not raw_value:
                 if pending_value and label:
@@ -145,10 +153,6 @@ def parse_message(text: str) -> ParsedReadings:
                 continue
 
             pending_label = ""
-            # Строка с номером квартиры — не показание
-            if label in ("кв", "квартира", "кварт"):
-                continue
-
             value = parse_value(raw_value)
 
             kind, context = _classify(label, context)

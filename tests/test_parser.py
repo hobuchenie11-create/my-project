@@ -196,3 +196,33 @@ def test_both_orders_in_one_message():
 def test_decimal_value_before_the_name():
     parsed = parse_message("Кв 5\n56,78 Хвс\n90,5 - Гвс")
     assert parsed.values == {"cws": 56.78, "hws": 90.5}
+
+
+def test_label_and_value_on_separate_lines():
+    """«КВ.41 / ЭЛ.ЭНЕРГИЯ / 31560» — подпись и число разными строками."""
+    parsed = parse_message("КВ.41\nЭЛ.ЭНЕРГИЯ\n31560")
+    assert parsed.apartment_number == "41"
+    assert parsed.values == {"electricity": 31560.0}
+
+
+def test_whole_message_written_in_a_column():
+    parsed = parse_message("Кв 53\nЭл.эн\n15230\nХвс кухня\n120\n"
+                           "Хвс санузел\n45\nГвс кухня\n60\nГвс ванна\n30")
+    assert parsed.apartment_number == "53"
+    assert parsed.values == {
+        "electricity": 15230.0, "cws_kitchen": 120.0, "cws_bathroom": 45.0,
+        "hws_kitchen": 60.0, "hws_bathroom": 30.0,
+    }
+
+
+def test_greeting_above_the_readings_does_not_stick_to_them():
+    """Строка приветствия не должна склеиться с номером квартиры."""
+    parsed = parse_message("Добрый вечер!\nКв. 5\nСв 20820\nХв 1048")
+    assert parsed.apartment_number == "5"
+    assert parsed.values == {"electricity": 20820.0, "cws": 1048.0}
+
+
+def test_bare_number_after_a_flat_number_is_not_a_reading():
+    """Номер квартиры не переносится на следующую строку как подпись."""
+    parsed = parse_message("Кв. 5\n12345")
+    assert parsed.values == {}
