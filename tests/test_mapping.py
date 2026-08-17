@@ -53,3 +53,35 @@ def test_compact_apartment_rejects_split(conn):
     outcome = save_parsed_readings(conn, apt, parsed, None, period="2026-07")
     assert not outcome.saved
     assert outcome.errors
+
+
+def test_total_line_in_a_flat_with_separate_meters(conn):
+    """«ГВС» одной строкой у 3-комнатной — это итог, а не отсутствующий прибор."""
+    apartment = repository.get_apartment_by_number(conn, "1")
+    parsed = parse_message("Кв. 1\nЭлектро 21694\nХвс кухня 138\n"
+                           "Хвс санузел 617\nГвс кухня 206\nГвс ванна 622\n"
+                           "Гвс 828")
+    outcome = save_parsed_readings(conn, apartment, parsed, None)
+
+    assert outcome.errors == []                   # никаких «нет такого прибора»
+    assert outcome.warnings == []                 # 206 + 622 = 828, сходится
+    assert outcome.saved["hws_kitchen"] == 206
+    assert outcome.saved["hws_bathroom"] == 622
+
+
+def test_total_line_that_does_not_add_up_warns(conn):
+    apartment = repository.get_apartment_by_number(conn, "1")
+    parsed = parse_message("Кв. 1\nГвс кухня 206\nГвс ванна 622\nГвс 800")
+    outcome = save_parsed_readings(conn, apartment, parsed, None)
+
+    assert outcome.errors == []
+    assert any("не сходится" in w for w in outcome.warnings)
+
+
+def test_cold_total_is_checked_too(conn):
+    apartment = repository.get_apartment_by_number(conn, "1")
+    parsed = parse_message("Кв. 1\nХвс кухня 138\nХвс санузел 617\nХвс 755")
+    outcome = save_parsed_readings(conn, apartment, parsed, None)
+
+    assert outcome.errors == []
+    assert outcome.warnings == []                 # 138 + 617 = 755

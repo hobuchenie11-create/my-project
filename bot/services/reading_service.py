@@ -82,6 +82,10 @@ def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
     values = dict(parsed.values)
 
     hws_total = values.pop("hws_total", None)
+    # В квартире с раздельным учётом строка «ГВС» без кухни/ванны — это итог,
+    # а не отдельный прибор: жители часто дописывают его для проверки.
+    folded = _fold_totals(values, available)
+    hws_total = hws_total if hws_total is not None else folded.get("hws")
 
     for kind, value in values.items():
         target = _resolve_meter_kind(kind, available)
@@ -100,7 +104,23 @@ def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
             outcome.errors.append(result.error)
 
     _check_hws_total(outcome, hws_total, values, available)
+    _check_total(outcome, "ХВС", folded.get("cws"), values,
+                 ("cws_kitchen", "cws_bathroom"))
     return outcome
+
+
+def _fold_totals(values: dict[str, float],
+                 available: set[str]) -> dict[str, float]:
+    """Забирает из показаний общие «ГВС»/«ХВС» там, где учёт раздельный.
+
+    Такая строка — не прибор, а итог для сверки: считать её отсутствующим
+    прибором и пугать жителя ошибкой не за что.
+    """
+    totals = {}
+    for single, kitchen in (("hws", "hws_kitchen"), ("cws", "cws_kitchen")):
+        if single in values and single not in available and kitchen in available:
+            totals[single] = values.pop(single)
+    return totals
 
 
 def _resolve_meter_kind(kind: str, available: set[str]) -> str | None:
@@ -112,6 +132,21 @@ def _resolve_meter_kind(kind: str, available: set[str]) -> str | None:
     if kind == "hws" and "hws" not in available:
         return None
     return None
+
+
+def _check_total(outcome: SaveOutcome, label: str, total: float | None,
+                 values: dict[str, float], parts: tuple[str, str]) -> None:
+    """Сверяет присланный итог с суммой кухня+санузел. Сходится — молчим."""
+    if total is None:
+        return
+    numbers = [values.get(key) for key in parts]
+    if any(n is None for n in numbers):
+        return
+    calc = sum(numbers)
+    if abs(calc - total) > 0.001:
+        outcome.warnings.append(
+            f"Сумма {label} ({total:g}) не сходится с кухня+санузел "
+            f"({calc:g}) — проверьте")
 
 
 def _check_hws_total(outcome: SaveOutcome, hws_total: float | None,
