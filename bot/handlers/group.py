@@ -144,8 +144,9 @@ async def handle_group_message(message: Message) -> None:
         problems.append("Не учитывается: " + ", ".join(parsed.ignored))
     problems_text = "\n".join(f"⚠️ {p}" for p in problems)
 
-    # Тихая отметка в чате, если что-то записали
-    marked = await _react_ok(message) if outcome.anything_saved else False
+    # Отметка в чате, что показания приняты
+    if outcome.anything_saved:
+        await _confirm_in_chat(message, apartment)
 
     # Подтверждение — в личку жителю
     dm_text = receipt + ("\n\n" + problems_text if problems else "")
@@ -156,11 +157,25 @@ async def handle_group_message(message: Message) -> None:
     # В чат пишем только если в личку не дошло И есть о чём предупредить
     if not delivered and problems:
         await message.reply(problems_text + _START_HINT)
+
+
+async def _confirm_in_chat(message: Message, apartment) -> None:
+    """Подтверждение приёма в чате — способом из CHAT_CONFIRM.
+
+    Реакции в группе можно запретить настройками, и тогда единственный
+    видимый признак приёма пропадает. Поэтому по умолчанию (`auto`) при
+    неудачной реакции бот отвечает короткой строкой.
+    """
+    mode = config.chat_confirm
+    if mode == "off":
         return
-    # Ни отметки, ни личного подтверждения — житель остался бы без ответа
-    if not marked and not delivered and outcome.anything_saved:
-        await message.reply(f"✅ {apartment['number']}: показания приняты."
-                            + _START_HINT)
+
+    if mode in ("auto", "reaction") and await _react_ok(message):
+        return
+    if mode == "reaction":
+        return
+
+    await message.reply(f"✅ {apartment['number']}: показания приняты")
 
 
 async def _guidance(message: Message, text: str) -> None:

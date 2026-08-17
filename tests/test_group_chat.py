@@ -145,20 +145,47 @@ def test_reaction_failure_is_logged(db, caplog):
     assert "Не удалось поставить" in caplog.text
 
 
-def test_resident_is_answered_when_nothing_else_reaches_them(db):
-    """Ни реакции, ни лички — отвечаем в чате, иначе житель без подтверждения."""
+def test_reply_replaces_the_reaction_when_it_is_forbidden(db):
+    """Реакции в чате запрещены — подтверждаем короткой строкой (CHAT_CONFIRM=auto)."""
     from aiogram.exceptions import TelegramBadRequest
 
-    message = FakeMessage("Кв. 5\nХвс 30", tg_id=777)   # не запускал бота
+    message = FakeMessage("Кв. 5\nХвс 30")
 
-    async def refuse(*args, **kwargs):
-        raise TelegramBadRequest(method=None, message="blocked")
+    async def refuse(**kwargs):
+        raise TelegramBadRequest(method=None, message="REACTION_INVALID")
 
     message.bot.set_message_reaction = refuse
-    message.bot.send_message = refuse
     asyncio.run(group.handle_group_message(message))
 
-    assert message.replies and "показания приняты" in message.replies[0]
+    assert message.replies == ["✅ 5: показания приняты"]
+
+
+def test_confirmation_mode_is_configurable(db, monkeypatch):
+    from aiogram.exceptions import TelegramBadRequest
+
+    async def refuse(**kwargs):
+        raise TelegramBadRequest(method=None, message="REACTION_INVALID")
+
+    # reply — подтверждаем сообщением всегда, реакцию даже не пробуем
+    monkeypatch.setattr(group, "config", replace(group.config, chat_confirm="reply"))
+    message = FakeMessage("Кв. 5\nХвс 30")
+    asyncio.run(group.handle_group_message(message))
+    assert message.replies == ["✅ 5: показания приняты"]
+
+    # off — в чате молчим, квитанция уходит только в личку
+    monkeypatch.setattr(group, "config", replace(group.config, chat_confirm="off"))
+    message = FakeMessage("Кв. 6\nХвс 30")
+    asyncio.run(group.handle_group_message(message))
+    assert message.replies == []
+    assert message.bot.dm                       # личное подтверждение осталось
+
+    # reaction — только реакция: не прошла, значит подтверждения нет
+    monkeypatch.setattr(group, "config",
+                        replace(group.config, chat_confirm="reaction"))
+    message = FakeMessage("Кв. 7\nХвс 30")
+    message.bot.set_message_reaction = refuse
+    asyncio.run(group.handle_group_message(message))
+    assert message.replies == []
 
 
 def test_accepted_readings_are_logged(db, caplog):

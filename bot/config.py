@@ -25,6 +25,12 @@ class Config:
     # сводка никуда не отправляется — жителям в чате показаний она не нужна.
     council_chat_id: int | None = int(os.getenv("COUNCIL_CHAT_ID")) if os.getenv("COUNCIL_CHAT_ID") else None
     proxy_url: str | None = os.getenv("PROXY_URL") or None
+    # Как бот подтверждает приём показаний в общем чате:
+    #   auto     — реакция 👍, а если реакции в чате запрещены, короткий ответ
+    #   reaction — только реакция (нет реакций — нет подтверждения)
+    #   reply    — всегда коротким сообщением
+    #   off      — в чате не подтверждать (квитанция всё равно уйдёт в личку)
+    chat_confirm: str = os.getenv("CHAT_CONFIRM", "auto").strip().lower()
     # Период сбора показаний: с 15 по 19 число включительно
     readings_day_start: int = int(os.getenv("READINGS_DAY_START", "15"))
     readings_day_end: int = int(os.getenv("READINGS_DAY_END", "19"))
