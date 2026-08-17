@@ -26,10 +26,16 @@ from dataclasses import dataclass, field
 
 from bot.services.validation import parse_value
 
-# Номер квартиры: «Кв. 12», «квартира №5», «Кв, 29», «Кв 58», «кв38».
+# Номер квартиры: «Кв. 12», «квартира №5», «Кв, 29», «Кв 58», «кв38», «Кв,, 29».
 # После «кв» допускаем только буквы: \w* съедал цифры номера, и «кв38»
-# превращалось в квартиру 8 — показания уходили не тому дому.
-APARTMENT_RE = re.compile(r"кв[а-яё]*\.?\s*[,№]?\s*(\d{1,4})", re.IGNORECASE)
+# превращалось в квартиру 8 — показания уходили не тому дому. Разделителей
+# между «кв» и номером может быть сколько угодно: жители ставят по две
+# запятые, точку с запятой, скобку.
+APARTMENT_RE = re.compile(r"кв[а-яё]*[\s.,;:№()-]*(\d{1,4})", re.IGNORECASE)
+
+# Слово «квартира» в тексте — чтобы отличить «номер не разобрали»
+# от «номер вообще не указан»
+APARTMENT_WORD_RE = re.compile(r"\bкв", re.IGNORECASE)
 NONRESIDENTIAL_RE = re.compile(r"нежило\w*\s*(?:помещение)?\s*№?\s*(\d+)", re.IGNORECASE)
 
 # Число в конце строки (допускаем ведущие нули и дробную часть).
@@ -69,10 +75,16 @@ class ParsedReadings:
     values: dict[str, float] = field(default_factory=dict)
     ignored: list[str] = field(default_factory=list)   # газ и прочее, что не учитываем
     errors: list[str] = field(default_factory=list)
+    mentions_apartment: bool = False   # в тексте есть «кв», номер мог не читаться
 
     @property
     def is_empty(self) -> bool:
         return not self.values
+
+    @property
+    def apartment_unreadable(self) -> bool:
+        """Квартиру назвали, но номер не разобрали — подставлять чужую нельзя."""
+        return self.mentions_apartment and self.apartment_number is None
 
 
 def parse_message(text: str) -> ParsedReadings:
@@ -82,6 +94,7 @@ def parse_message(text: str) -> ParsedReadings:
     if m:
         result.apartment_number = f"Нежилое помещение №{m.group(1)}"
     else:
+        result.mentions_apartment = bool(APARTMENT_WORD_RE.search(text))
         m = APARTMENT_RE.search(text)
         if m:
             result.apartment_number = m.group(1)

@@ -79,11 +79,21 @@ async def handle_group_message(message: Message) -> None:
         apartment = None
         if parsed.apartment_number:
             apartment = repository.get_apartment_by_number(conn, parsed.apartment_number)
+        elif parsed.apartment_unreadable:
+            # Номер квартиры назвали, но прочитать не смогли. Подставить
+            # квартиру отправителя нельзя: показания уйдут не туда.
+            pass
         elif user and user["apartment_id"]:
             apartment = repository.get_apartment_by_id(conn, user["apartment_id"])
 
         if apartment is None:
             if parsed.is_empty:
+                return
+            if parsed.apartment_unreadable:
+                await _guidance(
+                    message, "Вижу показания, но не разобрал номер квартиры. "
+                             "Пришлите ещё раз, указав его в первой строке — "
+                             "например «Кв. 29». Показания не записаны.")
                 return
             await _guidance(message, "Не понял, к какой квартире относятся показания. "
                                      "Укажите в первой строке «Кв. <номер>».")

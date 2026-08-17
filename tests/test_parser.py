@@ -135,3 +135,33 @@ def test_one_line_with_kitchen_and_bathroom():
 def test_semicolon_separator():
     parsed = parse_message("кв 12; х/в 30; г/в 42; эл/э 15873")
     assert parsed.values == {"cws": 30.0, "hws": 42.0, "electricity": 15873.0}
+
+
+def test_repeated_separators_before_the_number():
+    """«Кв,, 29» — жители ставят по две запятые, скобки, тире."""
+    for text, number in (("Кв,, 29", "29"), ("Кв,,, 7", "7"), ("Кв - 12", "12"),
+                         ("Кв: 5", "5"), ("кв (33)", "33"), ("Кв.. 41", "41")):
+        assert parse_message(f"{text}\nХвс 30").apartment_number == number
+
+
+def test_real_message_with_doubled_commas():
+    """Сообщение жителя целиком: двойные запятые в каждой строке."""
+    parsed = parse_message("Кв,, 29\nЭлектро 12254\nХв,кух,36\nСан,уз,,229\n"
+                           "Гв,кух,,114\nГв, ванная, 179\nСум,,гв,,293")
+    assert parsed.apartment_number == "29"
+    assert parsed.values == {
+        "electricity": 12254.0, "cws_kitchen": 36.0, "cws_bathroom": 229.0,
+        "hws_kitchen": 114.0, "hws_bathroom": 179.0, "hws_total": 293.0,
+    }
+
+
+def test_unreadable_apartment_is_flagged():
+    """Квартиру назвали, но номер не читается — это не «номер не указан»."""
+    unreadable = parse_message("Кв.\nХвс 30")
+    assert unreadable.apartment_number is None
+    assert unreadable.apartment_unreadable is True
+
+    # Номера нет вовсе — квартиру можно взять из регистрации отправителя
+    no_mention = parse_message("Хвс 30\nГвс 42")
+    assert no_mention.mentions_apartment is False
+    assert no_mention.apartment_unreadable is False
