@@ -204,3 +204,42 @@ def test_large_template_asks_for_the_hot_water_total():
     assert parsed.apartment_number == "5"
     assert parsed.values["hws_total"] == 828        # сумма распознана
     assert parsed.values["hws_kitchen"] == 206
+
+
+def test_chatid_checks_visibility_in_this_chat():
+    """«Приватность выключена» ещё не значит, что бот видит этот чат."""
+    from bot.handlers import common
+
+    class Bot:
+        def __init__(self, privacy_off, status):
+            self.privacy_off, self.status = privacy_off, status
+
+        async def get_me(self):
+            return SimpleNamespace(id=1,
+                                   can_read_all_group_messages=self.privacy_off)
+
+        async def get_chat_member(self, chat_id, user_id):
+            return SimpleNamespace(status=self.status)
+
+    class Msg:
+        def __init__(self, bot):
+            self.bot = bot
+            self.chat = SimpleNamespace(id=-100123, type="supergroup")
+            self.out = ""
+
+        async def reply(self, text, **kwargs):
+            self.out = text
+
+    def answer(privacy_off, status):
+        message = Msg(Bot(privacy_off, status))
+        asyncio.run(common.cmd_chatid(message))
+        return message.out
+
+    # Администратор видит всё независимо от приватности
+    assert "администратор чата" in answer(True, "administrator")
+    # Приватность выключена, но бот — обычный участник: могла не примениться
+    warning = answer(True, "member")
+    assert "может не действовать" in warning
+    assert "администратором" in warning
+    # Приватность включена — прямой запрет
+    assert "не видит обычные сообщения" in answer(False, "member")

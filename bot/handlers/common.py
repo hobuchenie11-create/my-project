@@ -1,5 +1,6 @@
 """Служебные команды, доступные в любом чате."""
 from aiogram import Router
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command
 from aiogram.types import Message
 
@@ -37,20 +38,47 @@ async def cmd_chatid(message: Message) -> None:
     lines = [f"ID этого чата: <code>{chat_id}</code>", "", role]
 
     if message.chat.type in ("group", "supergroup"):
-        me = await message.bot.get_me()
-        if me.can_read_all_group_messages:
-            lines.append("")
-            lines.append("👀 Обычные сообщения в этом чате бот видит — "
-                         "показания будут разбираться.")
-        else:
-            lines.append("")
-            lines.append(
-                "⚠️ <b>Бот не видит обычные сообщения чата</b> — включён режим "
-                "приватности, до него доходят только команды. Показания "
-                "из чата приниматься не будут.\n"
-                "Как исправить: @BotFather → /mybots → выбрать бота → "
-                "Bot Settings → Group Privacy → <b>Turn off</b>. "
-                "Затем удалить бота из чата и добавить заново — иначе "
-                "настройка не применится.")
+        lines.append("")
+        lines.append(await _visibility_note(message))
 
     await message.reply("\n".join(lines))
+
+
+async def _visibility_note(message: Message) -> str:
+    """Видит ли бот обычные сообщения именно в этом чате.
+
+    Одного `can_read_all_group_messages` мало: это глобальная настройка из
+    @BotFather, а к чату режим приватности применяется в момент добавления
+    бота. Если приватность выключили уже после — в этом чате бот по-прежнему
+    видит только команды. Права администратора снимают ограничение всегда.
+    """
+    me = await message.bot.get_me()
+    try:
+        member = await message.bot.get_chat_member(message.chat.id, me.id)
+        status = member.status
+    except TelegramAPIError:
+        status = ""
+
+    if status in ("administrator", "creator"):
+        return ("👀 Бот — администратор чата, значит видит все сообщения. "
+                "Показания будут разбираться.")
+
+    fix = ("<b>Как исправить (любой способ):</b>\n"
+           "• сделать бота администратором чата — самый быстрый, права "
+           "модератора ему не нужны;\n"
+           "• либо удалить бота из чата и добавить заново.")
+
+    if me.can_read_all_group_messages:
+        return ("⚠️ <b>Приватность выключена, но в этом чате может не "
+                "действовать.</b> Режим приватности применяется к чату при "
+                "добавлении бота: если его выключили позже, здесь бот "
+                "по-прежнему видит только команды — а показания не видит.\n"
+                f"{fix}\n\n"
+                "Проверка: отправьте в чат любое сообщение с показаниями и "
+                "посмотрите терминал — там должна появиться строка "
+                "«Чат: … — записано показаний …».")
+
+    return ("⚠️ <b>Бот не видит обычные сообщения чата</b> — включён режим "
+            "приватности, до него доходят только команды.\n"
+            "@BotFather → /mybots → выбрать бота → Bot Settings → "
+            "Group Privacy → <b>Turn off</b>, затем:\n" + fix)
