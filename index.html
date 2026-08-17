@@ -148,6 +148,7 @@ button{background:none;border:none;cursor:pointer}
 .sync.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .sync.busy{background:var(--gold-soft);color:var(--gold);border-color:transparent}
 .sync.err{background:var(--danger-soft);color:var(--danger);border-color:transparent}
+.sync.demo{background:var(--gold-soft);color:var(--gold);border-color:transparent}
 .who{
   display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
   padding:0 16px 12px;max-width:560px;margin:0 auto;
@@ -464,8 +465,12 @@ button{background:none;border:none;cursor:pointer}
    Данные хранятся локально в браузере (localStorage).
    ══════════════════════════════════════════════════════════ */
 
-const STORE_KEY = 'kopilka.class.v1';
-const DEV_KEY   = 'kopilka.device.v1';
+/* Демонстрационный режим: адрес с ?demo. Своё хранилище, поэтому показ
+   клиенту никогда не заденет настоящий класс, открытый в том же браузере.
+   Общая база в демо отключена — показывать нечего и незачем. */
+const DEMO = /(^|[?&])demo\b/.test(location.search);
+const STORE_KEY = DEMO ? 'kopilka.class.demo' : 'kopilka.class.v1';
+const DEV_KEY   = DEMO ? 'kopilka.device.demo' : 'kopilka.device.v1';
 const SEATS = 29;          // 24 ученика + 5 мест в запасе
 const FILLED = 24;
 
@@ -681,7 +686,7 @@ const Cloud = {
   status: 'off',     // off | ok | sync | error | conflict
   err: '',
 
-  on(){ return !!(D.cloud && D.cloud.id && D.cloud.url && D.cloud.key && D.cloud.secret); },
+  on(){ return !DEMO && !!(D.cloud && D.cloud.id && D.cloud.url && D.cloud.key && D.cloud.secret); },
 
   /* Все функции базы возвращают строку с признаком ok и причиной отказа.
      Ошибку доступа сервер НЕ бросает исключением — иначе откатился бы
@@ -967,6 +972,7 @@ function paintStatus(){
   if (el) el.outerHTML = syncChip();
 }
 function syncChip(){
+  if (DEMO) return `<span class="sync demo">${svg(I.gift,13)} Демонстрация · данные вымышленные</span>`;
   if (!Cloud.on()) return `<button id="sync" class="sync off" data-act="cloud">${svg(I.cloudoff,13)} Только этот телефон</button>`;
   const m = {
     ok:      [`${svg(I.cloud,13)} Общая база`, 'ok'],
@@ -1700,6 +1706,13 @@ function rosterView(){
       поменяйте реквизиты прямо в сборе, на остальные это не повлияет.</div>
   </div>`}
 
+  ${DEMO ? `
+  <div class="sec-title">Демонстрация</div>
+  <div class="card card-pad">
+    <div class="hint" style="margin-bottom:12px">Это витрина: класс и все суммы вымышлены,
+      меняйте что угодно — настоящие данные это не затронет. Общая база здесь отключена.</div>
+    <button class="btn pri wide" style="width:100%" data-act="reset">Вернуть демо в исходный вид</button>
+  </div>` : `
   <div class="sec-title">Общая база</div>
   <div class="card">
     <div class="srow" data-act="view" data-v="cloud">
@@ -1708,7 +1721,7 @@ function rosterView(){
         <span class="tag">${Cloud.on()?'все видят одни и те же данные':'сейчас данные только на этом телефоне'}</span></div>
       <div style="color:var(--muted)">${svg(I.right,18)}</div>
     </div>
-  </div>
+  </div>`}
 
   <div class="sec-title">Данные</div>
   <div class="card card-pad">
@@ -2599,6 +2612,7 @@ function gateView(){
 
 /* ── запуск ────────────────────────────── */
 (function boot(){
+  if (DEMO && !active().length){ S = seed(); saveLocal(); }
   const fromLink = parseLink(location.hash);
   if (fromLink && (!D.cloud || D.cloud.id !== fromLink.id)){
     gate = {cfg: fromLink, mode:'code'};      // пришли по чужой ссылке — спросим код
