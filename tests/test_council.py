@@ -165,3 +165,23 @@ def test_invite_and_reminder_speak_the_same_way():
         assert text.rstrip().endswith("участие в процессе сбора показаний "
                                       "по нашему дому. 🙏")
         assert "расход по ОДН" in text
+
+
+def test_templates_are_separate_messages():
+    """Шаблоны уходят по отдельности — чтобы житель копировал нужный."""
+    from bot.texts import (TEMPLATE_LARGE, TEMPLATE_SMALL, template_messages,
+                           welcome_residents_text)
+
+    messages = template_messages()
+    assert len(messages) == 3
+
+    small = [m for m in messages if TEMPLATE_SMALL in m]
+    large = [m for m in messages if TEMPLATE_LARGE in m]
+    assert len(small) == 1 and len(large) == 1
+    assert small[0] is not large[0]           # каждый — в своём сообщении
+
+    for message in small + large:
+        assert message.count("<code>") == 1   # копируется только шаблон
+
+    # Памятка использует те же константы — шаблоны не разъедутся
+    assert TEMPLATE_LARGE in welcome_residents_text("domoved_bot")

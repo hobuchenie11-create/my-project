@@ -8,14 +8,16 @@ from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTO
                                       BTN_CHAT_REMINDER, BTN_DEBTORS_DOC,
                                       BTN_INVITE, BTN_REGISTRY,
                                       BTN_REMIND, BTN_SETTINGS, BTN_STATEMENT,
-                                      BTN_STATS, BTN_USERS, BTN_WORKBOOK, admin_menu)
+                                      BTN_STATS, BTN_TEMPLATES, BTN_USERS,
+                                      BTN_WORKBOOK, admin_menu)
 from bot.keyboards.menu import main_menu
 from bot.scheduler import send_reminders
 from bot.services.apartment_service import registry_summary
 from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
-from bot.texts import collection_reminder_text, welcome_residents_text
+from bot.texts import (collection_reminder_text, template_messages,
+                       welcome_residents_text)
 from database import repository
 from database.backup import make_backup
 from reports.monthly_statement import generate_statement
@@ -147,6 +149,30 @@ async def send_chat_reminder(message: Message) -> None:
         await message.answer("Общий чат не подключён (GROUP_CHAT_ID пуст). "
                              "Вот готовый текст — скопируйте и отправьте в чат:")
     await message.answer(text)
+
+
+@router.message(F.text == BTN_TEMPLATES)
+async def send_templates(message: Message) -> None:
+    """Шаблоны — отдельными сообщениями, чтобы житель копировал нужный."""
+    messages = template_messages()
+
+    if config.group_chat_id:
+        try:
+            for text in messages:
+                await message.bot.send_message(config.group_chat_id, text)
+            await message.answer(
+                "📋 Шаблоны отправлены в чат дома — тремя сообщениями.\n\n"
+                "Рекомендую закрепить оба шаблона: удерживать сообщение → "
+                "«Закрепить». Тогда жители найдут их в любой момент.")
+            return
+        except TelegramAPIError as exc:
+            await message.answer(f"Не удалось отправить в чат ({exc}). "
+                                 "Вот сообщения — перешлите их в чат:")
+    else:
+        await message.answer("Общий чат не подключён (GROUP_CHAT_ID пуст). "
+                             "Вот сообщения — перешлите их в чат:")
+    for text in messages:
+        await message.answer(text)
 
 
 @router.message(F.text == BTN_USERS)
