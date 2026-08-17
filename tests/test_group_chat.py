@@ -126,3 +126,44 @@ def test_council_chat_is_skipped_before_the_id_check(db, monkeypatch):
     asyncio.run(group.handle_group_message(message))
 
     assert _readings(db, "5") == {}
+
+
+def test_reaction_failure_is_logged(db, caplog):
+    """Реакции в чате запрещены: показания записаны, но это должно быть видно."""
+    from aiogram.exceptions import TelegramBadRequest
+
+    message = FakeMessage("Кв. 5\nХвс 30")
+
+    async def refuse(**kwargs):
+        raise TelegramBadRequest(method=None, message="REACTION_INVALID")
+
+    message.bot.set_message_reaction = refuse
+    with caplog.at_level("WARNING"):
+        asyncio.run(group.handle_group_message(message))
+
+    assert _readings(db, "5")["cws"] == 30.0          # записали
+    assert "Не удалось поставить" in caplog.text
+
+
+def test_resident_is_answered_when_nothing_else_reaches_them(db):
+    """Ни реакции, ни лички — отвечаем в чате, иначе житель без подтверждения."""
+    from aiogram.exceptions import TelegramBadRequest
+
+    message = FakeMessage("Кв. 5\nХвс 30", tg_id=777)   # не запускал бота
+
+    async def refuse(*args, **kwargs):
+        raise TelegramBadRequest(method=None, message="blocked")
+
+    message.bot.set_message_reaction = refuse
+    message.bot.send_message = refuse
+    asyncio.run(group.handle_group_message(message))
+
+    assert message.replies and "показания приняты" in message.replies[0]
+
+
+def test_accepted_readings_are_logged(db, caplog):
+    message = FakeMessage("Кв. 5\nХвс 30\nГвс 42")
+    with caplog.at_level("INFO"):
+        asyncio.run(group.handle_group_message(message))
+
+    assert "записано показаний 2" in caplog.text

@@ -44,14 +44,21 @@ async def _dm(message: Message, text: str) -> bool:
         return False  # житель не запускал бота в личке — написать нельзя
 
 
-async def _react_ok(message: Message) -> None:
+async def _react_ok(message: Message) -> bool:
     """Тихая отметка в чате, что показание принято (без текстового сообщения)."""
     try:
         await message.bot.set_message_reaction(
             chat_id=message.chat.id, message_id=message.message_id,
             reaction=[ReactionTypeEmoji(emoji="👍")])
-    except TelegramAPIError:
-        pass  # в чате запрещены реакции — не критично
+        return True
+    except TelegramAPIError as exc:
+        # Реакции в чате могут быть запрещены настройками группы. Показания
+        # при этом записаны — но в чате не видно ни одной отметки, и со
+        # стороны это выглядит как «бот перестал работать».
+        logger.warning("Не удалось поставить 👍 в чате «%s»: %s. Показания "
+                       "записаны, но отметки в чате не будет.",
+                       message.chat.title, exc)
+        return False
 
 
 @router.message(F.text)
@@ -127,14 +134,18 @@ async def handle_group_message(message: Message) -> None:
     finally:
         conn.close()
 
+    # Видно прямо в терминале: что пришло из чата и чем закончилось
+    logger.info("Чат: %s — записано показаний %s%s", apartment["number"],
+                len(outcome.saved),
+                f", отклонено {len(outcome.errors)}" if outcome.errors else "")
+
     problems = list(outcome.warnings) + list(outcome.errors)
     if parsed.ignored:
         problems.append("Не учитывается: " + ", ".join(parsed.ignored))
     problems_text = "\n".join(f"⚠️ {p}" for p in problems)
 
     # Тихая отметка в чате, если что-то записали
-    if outcome.anything_saved:
-        await _react_ok(message)
+    marked = await _react_ok(message) if outcome.anything_saved else False
 
     # Подтверждение — в личку жителю
     dm_text = receipt + ("\n\n" + problems_text if problems else "")
@@ -145,6 +156,11 @@ async def handle_group_message(message: Message) -> None:
     # В чат пишем только если в личку не дошло И есть о чём предупредить
     if not delivered and problems:
         await message.reply(problems_text + _START_HINT)
+        return
+    # Ни отметки, ни личного подтверждения — житель остался бы без ответа
+    if not marked and not delivered and outcome.anything_saved:
+        await message.reply(f"✅ {apartment['number']}: показания приняты."
+                            + _START_HINT)
 
 
 async def _guidance(message: Message, text: str) -> None:
