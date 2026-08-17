@@ -8,8 +8,8 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
 from bot.config import config
-from bot.handlers import (admin, common, group, readings, registration, reports,
-                          start, tasks)
+from bot.handlers import (admin, common, group, manual, readings,
+                          registration, reports, start, tasks)
 from bot.keepawake import keep_awake
 from bot.proxy import make_session
 from bot.scheduler import run_scheduler
@@ -71,6 +71,9 @@ async def main() -> None:
     dp.include_router(reports.router)
     dp.include_router(start.router)
     dp.include_router(group.router)
+    # Последним: ручной ввод показаний председателем в личке —
+    # сюда попадает только текст, который не разобрали остальные
+    dp.include_router(manual.router)
 
     # Сбрасываем возможный вебхук — иначе getUpdates выдает Conflict.
     # Накопившиеся сообщения НЕ отбрасываем: пока бот был выключен, жители

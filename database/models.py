@@ -32,8 +32,20 @@ def layout_label(cws_count: int, hws_count: int) -> str:
 DEFAULT_CWS_COUNT = 1
 DEFAULT_HWS_COUNT = 1
 
-# Набор приборов для нежилого помещения
-NONRESIDENTIAL_METERS = ["cws", "hws"]
+# Набор приборов для нежилого помещения по умолчанию
+NONRESIDENTIAL_METERS = ["electricity", "cws", "hws"]
+
+# У нежилых помещений набор приборов свой: во втором стоит только
+# электросчётчик, воды там нет.
+NONRESIDENTIAL_METER_SETS = {
+    1: ["electricity", "cws", "hws"],
+    2: ["electricity"],
+}
+
+# Общедомовой прибор учёта — отдельная строка ведомости. Показания по нему
+# передаёт председатель, так же как по квартире.
+COMMON_NUMBER = "Общедомовой прибор учета"
+COMMON_METERS = ["electricity"]
 
 # Единицы измерения
 METER_UNITS = {"electricity": "кВт·ч"}

@@ -18,12 +18,17 @@ def conn(tmp_path):
 
 def test_seed(conn):
     apartments = repository.list_apartments(conn)
-    assert len(apartments) == 4
+    assert len(apartments) == 5              # 3 квартиры, нежилое, общедомовой
     assert apartments[0]["number"] == "1"
     assert apartments[3]["number"] == "Нежилое помещение №1"
+    assert apartments[4]["number"] == "Общедомовой прибор учета"
     # По умолчанию квартира — один ХВС и один ГВС (+ электро)
     assert len(repository.meters_for_apartment(conn, apartments[0]["id"])) == 3
-    assert len(repository.meters_for_apartment(conn, apartments[3]["id"])) == 2
+    # Нежилое №1 — электричество и вода, общедомовой — только электричество
+    assert [m["kind"] for m in repository.meters_for_apartment(
+        conn, apartments[3]["id"])] == ["electricity", "cws", "hws"]
+    assert [m["kind"] for m in repository.meters_for_apartment(
+        conn, apartments[4]["id"])] == ["electricity"]
 
 
 def test_save_and_last_reading(conn):
@@ -47,7 +52,7 @@ def test_statement_split_apartment(conn):
     save_reading(conn, apt["id"], "hws_bathroom", 20, None, period="2026-07")
 
     statement = build_statement(conn, "2026-07")
-    assert len(statement.rows) == 5  # 4 помещения + общедомовой прибор
+    assert len(statement.rows) == 5  # 3 квартиры, нежилое, общедомовой прибор
     numbers = [r.number for r in statement.rows]
     assert numbers[:2] == ["Нежилое помещение №1", "Общедомовой прибор учета"]
 
@@ -56,7 +61,7 @@ def test_statement_split_apartment(conn):
     assert row.electricity == 500
     assert row.hws_sum == 30
     assert statement.submitted_count == 1
-    assert statement.total_count == 4
+    assert statement.total_count == 5
 
 
 def test_statement_single_apartment(conn):

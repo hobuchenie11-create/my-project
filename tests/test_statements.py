@@ -101,7 +101,7 @@ def test_debtors_statement(db, tmp_path):
         conn.close()
 
     out, count = build_debtors_statement("2026-07", tmp_path / "d.xlsx", db)
-    assert count == 5                        # 6 помещений, сдало одно
+    assert count == 6                        # 7 строк реестра, сдала одна
 
     ws = load_workbook(out).active
     assert "Ведомость непередавших" in ws.cell(1, 1).value

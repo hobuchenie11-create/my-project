@@ -8,7 +8,7 @@ import sqlite3
 from dataclasses import dataclass, field
 
 from database import repository
-from database.models import LATE_NOTE
+from database.models import COMMON_NUMBER, LATE_NOTE
 
 STATEMENT_COLUMNS = ["Кв.", "✔", "Электроэнергия", "ГВС сумма", "ХВС кухня",
                      "ХВС сан.узел", "ГВС кухня", "ГВС ванна", "Примечание"]
@@ -57,6 +57,7 @@ def build_statement(conn: sqlite3.Connection, period: str) -> Statement:
     statement = Statement(period=period)
     residential: list[StatementRow] = []
     nonresidential: list[StatementRow] = []
+    common: list[StatementRow] = []
     for apt in repository.list_apartments(conn):
         values = readings.get(apt["number"], {})
         note = apt["note"]
@@ -80,22 +81,31 @@ def build_statement(conn: sqlite3.Connection, period: str) -> Statement:
         elif "hws" in values:
             # Один ГВС -> колонка «ГВС сумма»
             row.hws_sum = values.get("hws")
-        (nonresidential if apt["type"] == "nonresidential" else residential).append(row)
+        if apt["type"] == "nonresidential":
+            nonresidential.append(row)
+        elif apt["type"] == "common":
+            if not row.submitted and not row.note:
+                row.note = "(показания не переданы)"
+            common.append(row)
+        else:
+            residential.append(row)
         if row.submitted:
             statement.submitted_count += 1
 
     # Нежилые помещения и общедомовой прибор идут первыми — так они всегда
     # попадают на первую страницу печатной ведомости, а не теряются в конце.
-    statement.rows = nonresidential + [
-        StatementRow(number="Общедомовой прибор учета", note="(заполняется вручную)")
-    ] + residential
+    if not common:
+        # База создана до появления строки общедомового прибора
+        common = [StatementRow(number=COMMON_NUMBER,
+                               note="(заполняется вручную)")]
+    statement.rows = nonresidential + common + residential
     statement.total_count = len(repository.list_apartments(conn))
     return statement
 
 
 def stats_text(conn: sqlite3.Connection, period: str, period_name: str) -> str:
     statement = build_statement(conn, period)
-    missing = [r.number for r in statement.rows[:-1] if not r.submitted]
+    missing = [r.number for r in statement.rows if not r.submitted]
     lines = [f"📈 Статистика за {period_name}", "",
              f"Сдали показания: {statement.submitted_count} из {statement.total_count}"]
     if missing:

@@ -25,6 +25,7 @@ import re
 from dataclasses import dataclass, field
 
 from bot.services.validation import parse_value
+from database.models import COMMON_NUMBER
 
 # Номер квартиры: «Кв. 12», «квартира №5», «Кв, 29», «Кв 58», «кв38», «Кв,, 29».
 # После «кв» допускаем только буквы: \w* съедал цифры номера, и «кв38»
@@ -37,6 +38,9 @@ APARTMENT_RE = re.compile(r"кв[а-яё]*[\s.,;:№()-]*(\d{1,4})", re.IGNORECA
 # от «номер вообще не указан»
 APARTMENT_WORD_RE = re.compile(r"\bкв", re.IGNORECASE)
 NONRESIDENTIAL_RE = re.compile(r"нежило\w*\s*(?:помещение)?\s*№?\s*(\d+)", re.IGNORECASE)
+
+# Общедомовой прибор учёта: «Общедомовой», «ОДПУ», «общий прибор», «ОДН»
+COMMON_RE = re.compile(r"общедом\w*|одпу|общ\w*\s+прибор|\bодн\b", re.IGNORECASE)
 
 # Число в конце строки (допускаем ведущие нули и дробную часть).
 # Знак не захватываем: тире/дефис в сообщениях жителей — это разделитель
@@ -98,6 +102,8 @@ def parse_message(text: str) -> ParsedReadings:
     m = NONRESIDENTIAL_RE.search(text)
     if m:
         result.apartment_number = f"Нежилое помещение №{m.group(1)}"
+    elif COMMON_RE.search(text):
+        result.apartment_number = COMMON_NUMBER
     else:
         result.mentions_apartment = bool(APARTMENT_WORD_RE.search(text))
         m = APARTMENT_RE.search(text)

@@ -13,8 +13,10 @@ from pathlib import Path
 
 from bot.config import config
 from database import repository
-from database.models import (DEFAULT_CWS_COUNT, DEFAULT_HWS_COUNT,
-                             NONRESIDENTIAL_METERS, apartment_meters, layout_label)
+from database.models import (COMMON_METERS, COMMON_NUMBER, DEFAULT_CWS_COUNT,
+                             DEFAULT_HWS_COUNT, NONRESIDENTIAL_METER_SETS,
+                             NONRESIDENTIAL_METERS, apartment_meters,
+                             layout_label)
 
 
 def init_db(db_path: Path | str | None = None,
@@ -30,6 +32,7 @@ def init_db(db_path: Path | str | None = None,
         repository.create_schema(conn)
         _seed_residential(conn, apartments_count)
         _seed_nonresidential(conn, apartments_count, nonresidential_count)
+        _seed_common(conn, apartments_count, nonresidential_count)
         conn.commit()
     finally:
         conn.close()
@@ -48,9 +51,19 @@ def _seed_nonresidential(conn: sqlite3.Connection, apartments_count: int,
                          nonresidential_count: int) -> None:
     for i in range(1, nonresidential_count + 1):
         number = f"Нежилое помещение №{i}"
+        meters = NONRESIDENTIAL_METER_SETS.get(i, NONRESIDENTIAL_METERS)
         apt_id = repository.upsert_apartment(conn, number, "nonresidential",
                                              apartments_count + i, layout="нежилое")
-        repository.set_meters(conn, apt_id, NONRESIDENTIAL_METERS)
+        repository.set_meters(conn, apt_id, meters)
+
+
+def _seed_common(conn: sqlite3.Connection, apartments_count: int,
+                 nonresidential_count: int) -> None:
+    """Общедомовой прибор учёта — такая же строка реестра, со своим счётчиком."""
+    apt_id = repository.upsert_apartment(
+        conn, COMMON_NUMBER, "common",
+        apartments_count + nonresidential_count + 1, layout="общедомовой")
+    repository.set_meters(conn, apt_id, COMMON_METERS)
 
 
 if __name__ == "__main__":

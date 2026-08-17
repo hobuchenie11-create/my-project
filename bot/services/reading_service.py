@@ -167,7 +167,9 @@ def _check_hws_total(outcome: SaveOutcome, hws_total: float | None,
 
 
 def _display(apartment: sqlite3.Row) -> str:
-    if apartment["type"] == "nonresidential":
+    # Нежилые помещения и общедомовой прибор называются полностью,
+    # приписка «кв.» им не нужна
+    if apartment["type"] != "residential":
         return apartment["number"]
     return f"кв. {apartment['number']}"
 

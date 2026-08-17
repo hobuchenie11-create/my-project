@@ -8,7 +8,8 @@ from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTO
                                       BTN_CHAT_REMINDER, BTN_DEBTORS_DOC,
                                       BTN_INVITE, BTN_REGISTRY,
                                       BTN_REMIND, BTN_SETTINGS, BTN_STATEMENT,
-                                      BTN_STATS, BTN_TEMPLATES, BTN_USERS,
+                                      BTN_SPECIAL, BTN_STATS, BTN_TEMPLATES,
+                                      BTN_USERS,
                                       BTN_WORKBOOK, admin_menu)
 from bot.keyboards.menu import main_menu
 from bot.scheduler import send_reminders
@@ -16,8 +17,8 @@ from bot.services.apartment_service import registry_summary
 from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
-from bot.texts import (collection_reminder_text, template_messages,
-                       welcome_residents_text)
+from bot.texts import (collection_reminder_text, special_readings_text,
+                       template_messages, welcome_residents_text)
 from database import repository
 from database.backup import make_backup
 from reports.monthly_statement import generate_statement
@@ -173,6 +174,12 @@ async def send_templates(message: Message) -> None:
                              "Вот сообщения — перешлите их в чат:")
     for text in messages:
         await message.answer(text)
+
+
+@router.message(F.text == BTN_SPECIAL)
+async def show_special(message: Message) -> None:
+    """Как передать показания по нежилым помещениям и общедомовому прибору."""
+    await message.answer(special_readings_text())
 
 
 @router.message(F.text == BTN_USERS)
