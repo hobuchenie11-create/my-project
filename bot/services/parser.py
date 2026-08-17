@@ -43,6 +43,11 @@ NONRESIDENTIAL_RE = re.compile(r"нежило\w*\s*(?:помещение)?\s*№
 # («Хвс кухня - 6»), а не минус; показания всегда неотрицательны.
 VALUE_RE = re.compile(r"\d[\d\s]*(?:[.,]\d+)?\s*$")
 
+# Обратный порядок: сначала показание, потом прибор — «11882 - Эл.эн».
+# Подпись обязана начинаться с буквы, иначе это просто число.
+LEADING_VALUE_RE = re.compile(
+    r"^\s*(\d[\d\s]*(?:[.,]\d+)?)\s*[-–—:=.,]*\s*([а-яёa-z].*)$", re.IGNORECASE)
+
 # Часть жителей пишет всё одной строкой: «кв38,Х/В30,Г/В 42,Эл/э 15873».
 # Режем такую строку на приборы по запятой (или точке с запятой) — но только
 # перед буквой, чтобы не порвать дробное число «56,78».
@@ -102,9 +107,10 @@ def parse_message(text: str) -> ParsedReadings:
     context: str | None = None  # 'cold' | 'hot' — тип воды из предыдущих строк
 
     for raw_line in text.splitlines():
-        # Подпись из сегментов без числа: «Сумма» + «гв,292» — это одна
-        # подпись «сумма гв», разорванная запятой
-        pending = ""
+        # Запятая могла разорвать пару «подпись — показание»: «Сумма» + «гв,292»
+        # или «1234» + «Эл.эн». Держим половинку до следующего сегмента.
+        pending_label = ""
+        pending_value = ""
 
         for segment in SEGMENT_RE.split(raw_line):
             line = segment.strip()
@@ -112,25 +118,38 @@ def parse_message(text: str) -> ParsedReadings:
                 continue
 
             value_match = VALUE_RE.search(line)
-            if not value_match:
-                pending += _normalize(line)
+            reversed_match = None if value_match else LEADING_VALUE_RE.match(line)
+            if value_match:
+                raw_value, label_part = value_match.group(), line[: value_match.start()]
+            elif reversed_match:
+                raw_value, label_part = reversed_match.group(1), reversed_match.group(2)
+            else:
+                raw_value, label_part = "", line
+
+            label = pending_label + _normalize(label_part)
+
+            if not raw_value:
+                if pending_value and label:
+                    raw_value, pending_value = pending_value, ""
+                else:
+                    pending_label = label       # подпись без числа — ждём число
+                    continue
+            elif not label:
+                pending_value = raw_value       # число без подписи — ждём подпись
                 continue
-            label_part = line[: value_match.start()]
-            label = pending + _normalize(label_part)
-            pending = ""
-            if not label:
-                continue
+
+            pending_label = ""
             # Строка с номером квартиры — не показание
             if label in ("кв", "квартира", "кварт"):
                 continue
 
-            value = parse_value(value_match.group())
+            value = parse_value(raw_value)
 
             kind, context = _classify(label, context)
             if kind is None:
                 continue
             if kind == "gas":
-                result.ignored.append(f"газ ({value_match.group().strip()})")
+                result.ignored.append(f"газ ({raw_value.strip()})")
                 continue
             if value is None:
                 result.errors.append(

@@ -165,3 +165,34 @@ def test_unreadable_apartment_is_flagged():
     no_mention = parse_message("Хвс 30\nГвс 42")
     assert no_mention.mentions_apartment is False
     assert no_mention.apartment_unreadable is False
+
+
+def test_value_before_the_meter_name():
+    """Житель пишет «11882 - Эл.эн»: сначала показание, потом прибор."""
+    parsed = parse_message("Кв. 73\n11882 - Эл.эн\n54 - Хвс кухня\n"
+                           "442 - Хвс санузел\n53 - Гвс кухня\n"
+                           "227 - Гвс ванна\n280 - Сумма ГВС")
+    assert parsed.apartment_number == "73"
+    assert parsed.values == {
+        "electricity": 11882.0, "cws_kitchen": 54.0, "cws_bathroom": 442.0,
+        "hws_kitchen": 53.0, "hws_bathroom": 227.0, "hws_total": 280.0,
+    }
+    assert parsed.errors == []
+
+
+def test_reversed_order_with_various_separators():
+    for line in ("1234 Эл.эн", "1234 - Эл.эн", "1234 — Эл.эн", "1234: Эл.эн",
+                 "1234, Эл.эн", "1234.Эл.эн"):
+        parsed = parse_message(f"Кв 5\n{line}")
+        assert parsed.values == {"electricity": 1234.0}, line
+
+
+def test_both_orders_in_one_message():
+    """Порядок может смешаться — обе строки должны прочитаться."""
+    parsed = parse_message("Кв. 9\nЭл.эн 15000\n50 - Хвс\nГвс 42")
+    assert parsed.values == {"electricity": 15000.0, "cws": 50.0, "hws": 42.0}
+
+
+def test_decimal_value_before_the_name():
+    parsed = parse_message("Кв 5\n56,78 Хвс\n90,5 - Гвс")
+    assert parsed.values == {"cws": 56.78, "hws": 90.5}
