@@ -7,7 +7,7 @@
    ─────────────────────────────────────────────────────────── */
 
 window.DomovedAnnouncement = (function () {
-  var W = 1180, H_BASE = 810, H_SPENT = 946, PAD = 56;
+  var W = 1180, PAD = 56;
 
   var C = {
     head:  '#0E766D',
@@ -62,14 +62,22 @@ window.DomovedAnnouncement = (function () {
     ctx.fillText(text, cx, y);
   }
 
-  function hasSpent(m) {
-    return m.spent !== null && m.spent !== undefined && m.spent !== '';
+  function has(v) {
+    return v !== null && v !== undefined && v !== '';
   }
+  function hasSpent(m) { return has(m.spent); }
+  function hasDebt(m) { return has(m.debt); }
 
   /* Рисует объявление в переданный <canvas>. m — запись месяца.
      Плашка «израсходовано» появляется только если у месяца задан spent. */
   function draw(canvas, m, address) {
-    var H = hasSpent(m) ? H_SPENT : H_BASE;
+    /* высота зависит от состава: плашки расхода и задолженности
+       появляются, только если цифры заполнены */
+    var restTop = hasSpent(m) ? 690 : 542;
+    var bottom = restTop + 206;
+    var debtTop = bottom + 24;
+    if (hasDebt(m)) bottom = debtTop + 120;
+    var H = bottom + 62;
     var scale = window.devicePixelRatio > 1 ? 2 : 1;
     canvas.width = W * scale;
     canvas.height = H * scale;
@@ -109,14 +117,12 @@ window.DomovedAnnouncement = (function () {
     centered(ctx, 'ПО СПЕЦСЧЁТУ', 27, '700', C.inkSoft, rightCx, top + 58);
     centered(ctx, money(m.interest), 44, '700', C.ink, rightCx, top + 106);
 
-    var restTop = 542;
     if (hasSpent(m)) {
       ctx.fillStyle = C.grey;
       ctx.fillRect(PAD, 522, W - PAD * 2, 140);
       centered(ctx, 'ИЗРАСХОДОВАНО НА РАБОТЫ', 27, '700', C.inkSoft, cx, 544);
       centered(ctx, money(m.spent), 44, '700', C.ink, cx, 576);
       if (m.spentNote) centered(ctx, m.spentNote, 22, '400', C.inkSoft, cx, 628);
-      restTop = 690;
     }
 
     ctx.fillStyle = C.tile;
@@ -124,6 +130,13 @@ window.DomovedAnnouncement = (function () {
     centered(ctx, 'ОСТАТОК ОБЩЕЙ СУММЫ НА СЧЁТЕ на ' + dateRu(m.balanceDate),
              29, '700', C.ink, cx, restTop + 34);
     centered(ctx, money(m.balance), 60, '700', C.ink, cx, restTop + 100);
+
+    if (hasDebt(m)) {
+      ctx.fillStyle = C.grey;
+      ctx.fillRect(PAD, debtTop, W - PAD * 2, 120);
+      centered(ctx, 'ЗАДОЛЖЕННОСТЬ СОБСТВЕННИКОВ', 27, '700', C.inkSoft, cx, debtTop + 22);
+      centered(ctx, money(m.debt), 44, '700', C.ink, cx, debtTop + 56);
+    }
   }
 
   function fileName(m) {
@@ -137,6 +150,7 @@ window.DomovedAnnouncement = (function () {
     dateRu: dateRu,
     fileName: fileName,
     hasSpent: hasSpent,
+    hasDebt: hasDebt,
     width: W
   };
 })();

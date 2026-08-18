@@ -125,6 +125,11 @@
         <span class="val" id="sSpent">—</span>
         <span class="sub" id="sSpentNote">оплата работ со спецсчёта</span>
       </div>
+      <div class="stat" id="debtCard" hidden>
+        <span class="lab">Задолженность собственников</span>
+        <span class="val" id="sDebt">—</span>
+        <span class="sub">не оплаченные взносы по дому</span>
+      </div>
       <div class="stat lead">
         <span class="lab">Остаток на счёте</span>
         <span class="val" id="sBalance">—</span>
@@ -145,6 +150,7 @@
             <th scope="col" style="text-align:right">Проценты</th>
             <th scope="col" style="text-align:right" id="thSpent" hidden>Израсходовано</th>
             <th scope="col" style="text-align:right">Остаток</th>
+            <th scope="col" style="text-align:right" id="thDebt" hidden>Задолженность</th>
           </tr>
         </thead>
         <tbody id="histBody"></tbody>
@@ -166,6 +172,10 @@
       <div class="note">
         <span class="bang">⚒</span>
         <p><strong>Израсходовано на работы</strong> — сколько потрачено со спецсчёта за месяц. Строка появляется только в месяцы, когда работы оплачивались: ремонты идут не каждый месяц.</p>
+      </div>
+      <div class="note">
+        <span class="bang">!</span>
+        <p><strong>Задолженность собственников</strong> — сколько взносов на капремонт по дому не оплачено. Эти деньги дому уже начислены, но на счёт пока не поступили, поэтому фонд накапливается медленнее. Данные ведутся с июля 2026 года.</p>
       </div>
       <div class="note">
         <span class="bang">Σ</span>
@@ -224,6 +234,14 @@
       document.getElementById('sBalanceDate').textContent =
         m.balanceDate ? 'на ' + A.dateRu(m.balanceDate) : 'накоплено всего';
 
+      var debtCard = document.getElementById('debtCard');
+      if (A.hasDebt(m)) {
+        document.getElementById('sDebt').textContent = A.money(m.debt);
+        debtCard.hidden = false;
+      } else {
+        debtCard.hidden = true;
+      }
+
       var spentCard = document.getElementById('spentCard');
       var spentMore = document.getElementById('spentMore');
       if (A.hasSpent(m)) {
@@ -260,12 +278,15 @@
       var body = document.getElementById('histBody');
       /* колонку расходов показываем, только если они были хоть раз */
       var anySpent = months.some(A.hasSpent);
+      var anyDebt = months.some(A.hasDebt);
       if (anySpent) document.getElementById('thSpent').hidden = false;
+      if (anyDebt) document.getElementById('thDebt').hidden = false;
 
       months.slice().reverse().forEach(function (m) {
         var cells = [A.monthName(m.period), A.money(m.paid), A.money(m.interest)];
         if (anySpent) cells.push(A.hasSpent(m) ? A.money(m.spent) : '—');
         cells.push(A.money(m.balance));
+        if (anyDebt) cells.push(A.hasDebt(m) ? A.money(m.debt) : '—');
 
         var tr = document.createElement('tr');
         cells.forEach(function (t, k) {
