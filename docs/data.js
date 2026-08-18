@@ -71,6 +71,13 @@ window.DOMOVED = {
                     месяцы данных нет и плашка не показывается.            */
   months: [
     {
+      period: "2025-12",
+      paid: 82739.46,
+      interest: 16749.23,
+      balance: 2451001.81,
+      balanceDate: "2025-12-31"
+    },
+    {
       period: "2026-01",
       paid: 68380.97,
       interest: 0.00,
