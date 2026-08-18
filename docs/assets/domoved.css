@@ -214,6 +214,37 @@ section > h2{
 .meter{ height:9px; border-radius:99px; background:var(--line-soft); overflow:hidden; }
 .meter > span{ display:block; height:100%; background:var(--tq); border-radius:99px; }
 
+/* ── Подробности о расходе ───────────────────────────── */
+.spent-more{
+  margin-top:12px;
+  background:var(--card); border:1px solid var(--line); border-radius:10px;
+  overflow:hidden;
+}
+.spent-more summary{
+  cursor:pointer; list-style:none;
+  padding:13px 18px; font-weight:600; font-size:.94rem;
+  display:flex; gap:10px; align-items:center;
+}
+.spent-more summary::-webkit-details-marker{ display:none; }
+.spent-more summary::before{
+  content:"⚒"; color:var(--tq); flex:none;
+}
+.spent-more summary::after{
+  content:"показать"; margin-left:auto; font-weight:400;
+  font-size:.82rem; color:var(--ink-3);
+}
+.spent-more[open] summary::after{ content:"скрыть"; }
+.spent-more summary:focus-visible{ outline:2px solid var(--tq); outline-offset:-2px; }
+.spent-more .body{
+  padding:0 18px 16px 44px; color:var(--ink-2); font-size:.94rem;
+}
+.spent-more .body p{ margin:0 0 10px; max-width:62ch; }
+.spent-more .body p:last-child{ margin-bottom:0; }
+.spent-more .amount{
+  font-family:var(--serif); font-size:1.15rem; color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+
 /* ── Таблица ─────────────────────────────────────────── */
 .tablewrap{ overflow-x:auto; }
 table{ width:100%; border-collapse:collapse; font-size:.94rem; }

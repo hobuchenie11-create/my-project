@@ -92,6 +92,15 @@
       </div>
     </div>
 
+    <details class="spent-more noprint" id="spentMore" hidden>
+      <summary>Подробнее о расходе за этот месяц</summary>
+      <div class="body">
+        <p class="amount" id="spentMoreSum">—</p>
+        <p id="spentMoreText"></p>
+        <p style="color:var(--ink-3); font-size:.86rem">Расходы со специального счёта возможны только на капитальный ремонт и по решению общего собрания собственников.</p>
+      </div>
+    </details>
+
     <div class="empty-state" id="noData" hidden>
       Данные по спецсчёту ещё не внесены. Как только появится первая запись, здесь будет ежемесячная сводка.
     </div>
@@ -216,13 +225,25 @@
         m.balanceDate ? 'на ' + A.dateRu(m.balanceDate) : 'накоплено всего';
 
       var spentCard = document.getElementById('spentCard');
+      var spentMore = document.getElementById('spentMore');
       if (A.hasSpent(m)) {
         document.getElementById('sSpent').textContent = A.money(m.spent);
         document.getElementById('sSpentNote').textContent =
           m.spentNote || 'оплата работ со спецсчёта';
         spentCard.hidden = false;
+
+        /* кнопка с подробностями — только если они заполнены */
+        if (m.spentDetails) {
+          document.getElementById('spentMoreSum').textContent = A.money(m.spent);
+          document.getElementById('spentMoreText').textContent = m.spentDetails;
+          spentMore.hidden = false;
+        } else {
+          spentMore.hidden = true;
+        }
       } else {
         spentCard.hidden = true;
+        spentMore.hidden = true;
+        spentMore.open = false;
       }
       canvas.setAttribute('aria-label',
         'Спецсчёт за ' + A.monthName(m.period, true) +
