@@ -226,3 +226,34 @@ def test_bare_number_after_a_flat_number_is_not_a_reading():
     """Номер квартиры не переносится на следующую строку как подпись."""
     parsed = parse_message("Кв. 5\n12345")
     assert parsed.values == {}
+
+
+def test_single_letter_water_with_location():
+    """«Х. Кух», «Г. Ван» — одна буква вместо «хвс»/«гвс»."""
+    parsed = parse_message("Кв. 60\nЭл. Эн-27970\nХ. Кух-277\n"
+                           "Х. Сан. Узел-506\nГ. Кух . - 304\nГ. Ван. - 513\n"
+                           "Общ. ГВС -817")
+    assert parsed.apartment_number == "60"
+    assert parsed.values == {
+        "electricity": 27970.0, "cws_kitchen": 277.0, "cws_bathroom": 506.0,
+        "hws_kitchen": 304.0, "hws_bathroom": 513.0, "hws_total": 817.0,
+    }
+    assert parsed.errors == []
+
+
+def test_single_letter_needs_a_location_to_count():
+    """Одинокая буква прибором не считается — иначе поймает любое слово."""
+    assert parse_message("Кв. 5\nХ 277").values == {}
+    assert parse_message("Кв. 5\nГ 304").values == {}
+
+
+def test_obshch_gvs_is_a_total():
+    """«Общ. ГВС» — это итог по горячей воде, а не отдельный прибор."""
+    parsed = parse_message("Кв. 5\nГвс кухня 304\nГвс ванна 513\nОбщ. ГВС 817")
+    assert parsed.values["hws_total"] == 817.0
+    assert parsed.values["hws_kitchen"] == 304.0
+
+
+def test_obshch_gvs_does_not_hijack_the_flat_number():
+    """«Общ. ГВС» не должно принять сообщение за общедомовой прибор."""
+    assert parse_message("Кв. 60\nОбщ. ГВС 817").apartment_number == "60"

@@ -67,7 +67,8 @@ def _normalize(label: str) -> str:
 ELECTRICITY_KW = ("электро", "элэн", "эленер", "элэнер", "эенер", "ээнер",
                   "ээн", "эенер", "эдектро", "свет", "св", "эл", "ээ")
 GAS_KW = ("газ",)
-TOTAL_KW = ("итог", "сумм", "сум")
+# «Общ. ГВС» жители пишут как итог по горячей воде — наравне с «сумма»
+TOTAL_KW = ("итог", "сумм", "сум", "общ")
 COLD_KW = ("хвс", "хв", "холод", "хол", "хв")
 HOT_KW = ("гвс", "гв", "горяч", "гор", "гв")
 KITCHEN_KW = ("кухн", "кух")
@@ -190,6 +191,15 @@ def _classify(label: str, context: str | None) -> tuple[str | None, str | None]:
     is_kitchen = _has(label, KITCHEN_KW)
     is_bathroom = _has(label, BATHROOM_KW)
     is_total = _has(label, TOTAL_KW)
+
+    # Одна буква вместо «хвс»/«гвс»: «Х. Кух», «Г. Ван». Саму по себе букву
+    # в словарь не добавить — она встретится в любом слове, поэтому
+    # засчитываем её только рядом с местом установки прибора.
+    if not is_cold and not is_hot and (is_kitchen or is_bathroom):
+        if label.startswith("х"):
+            is_cold = True
+        elif label.startswith("г"):
+            is_hot = True
 
     # Тип воды из строки либо из контекста предыдущих строк
     if is_cold and not is_hot:
