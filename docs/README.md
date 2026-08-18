@@ -97,7 +97,6 @@ render(period="2026-07", paid=..., interest=..., balance=...,
 
 Эти поля пока пустые — страницы показывают на их месте прочерк или подсказку:
 
-- `contacts.telegram` — без него не работает кнопка «Заказать акт сверки»
 - `contacts.chairperson`, `contacts.phone` — председатель и телефон для связи
 - `account.inn` — ИНН владельца счёта
 - `house.city`, `house.totalArea`, `account.tariff` — город, площадь дома, тариф
