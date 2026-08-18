@@ -1023,15 +1023,16 @@ function cloudView(){
     <button class="btn wide" style="width:100%;margin-bottom:18px" data-act="setcode">Сменить код класса</button>
 
     <div class="field">
-      <label>Пароль второго казначея</label>
+      <label>Пароль ещё одного администратора</label>
       <input id="ac-admin" type="password" autocomplete="off" placeholder="не короче 8 символов">
-      <div class="hint">У второго казначея будет свой пароль — доступ можно отозвать
-        отдельно, не меняя ваш.</div>
+      <div class="hint">Так вы заводите пароль себе или второму казначею: права одинаковые —
+        отмечать сдачу, вести сборы и траты. Пароль у каждого свой, поэтому доступ
+        можно отозвать по отдельности. Уже действующие пароли остаются в силе.</div>
     </div>
-    <button class="btn wide" style="width:100%;margin-bottom:18px" data-act="addadmin">Добавить казначея</button>
+    <button class="btn wide" style="width:100%;margin-bottom:18px" data-act="addadmin">Добавить администратора</button>
 
     <button class="btn ghost wide" style="width:100%;color:var(--danger)" data-act="resetadmins">
-      Отозвать доступ у всех казначеев, кроме меня
+      Отозвать доступ у всех, кроме меня
     </button>
   </div>` : `
   <div class="card card-pad">
@@ -2394,13 +2395,13 @@ document.addEventListener('click', e => {
       if (pw.length < 8) { toast('Пароль — не короче 8 символов'); return; }
       el.disabled = true;
       Cloud.rpc('class_admin_add', {p_id:D.cloud.id, p_secret:D.cloud.secret, p_new_admin:pw})
-        .then(row => { render(); toast(`Казначеев теперь ${row.admins}`); })
-        .catch(e => { el.disabled = false; showFail('Казначей не добавлен', e.message); });
+        .then(row => { render(); toast(`Администраторов теперь ${row.admins}`); })
+        .catch(e => { el.disabled = false; showFail('Администратор не добавлен', e.message); });
       break;
     }
 
     case 'resetadmins': {
-      if (!confirm('Отозвать доступ у всех казначеев, кроме вас? Ваш пароль продолжит работать.')) return;
+      if (!confirm('Отозвать доступ у всех администраторов, кроме вас? Ваш пароль продолжит работать.')) return;
       Cloud.rpc('class_admin_reset_others', {p_id:D.cloud.id, p_secret:D.cloud.secret})
         .then(() => toast('Доступ отозван'))
         .catch(e => toast(e.message));
