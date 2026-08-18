@@ -66,7 +66,7 @@ window.DOMOVED = {
       period: "2026-07",
       paid: 66187.80,
       interest: 8296.20,
-      balance: 212492.13,
+      balance: 2124925.13,
       balanceDate: "2026-07-31"
     }
   ],
