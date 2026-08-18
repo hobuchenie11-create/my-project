@@ -304,7 +304,9 @@
 
   /* Остаток на спецсчёте — из data.js */
   (function(){
-    var months = ((window.DOMOVED || {}).months || []);
+    var months = ((window.DOMOVED || {}).months || []).slice().sort(function (a, b) {
+      return String(a.period) < String(b.period) ? -1 : 1;
+    });
     if (!months.length) return;
     var last = months[months.length - 1];
     var MONTHS = ['январь','февраль','март','апрель','май','июнь',

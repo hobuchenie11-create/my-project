@@ -157,7 +157,9 @@
 <script src="../assets/domoved.js"></script>
 <script>
   (function () {
-    var m = ((window.DOMOVED || {}).months || []);
+    var m = ((window.DOMOVED || {}).months || []).slice().sort(function (a, b) {
+      return String(a.period) < String(b.period) ? -1 : 1;
+    });
     var state = document.getElementById('fillState');
     if (!state || !m.length) return;
     var last = m[m.length - 1];
