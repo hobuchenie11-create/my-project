@@ -128,7 +128,7 @@
       <div class="stat" id="debtCard" hidden>
         <span class="lab">Задолженность собственников</span>
         <span class="val" id="sDebt">—</span>
-        <span class="sub">не оплаченные взносы по дому</span>
+        <span class="sub">начислено и не оплачено, на текущую дату</span>
       </div>
       <div class="stat lead">
         <span class="lab">Остаток на счёте</span>
@@ -150,7 +150,6 @@
             <th scope="col" style="text-align:right">Проценты</th>
             <th scope="col" style="text-align:right" id="thSpent" hidden>Израсходовано</th>
             <th scope="col" style="text-align:right">Остаток</th>
-            <th scope="col" style="text-align:right" id="thDebt" hidden>Задолженность</th>
           </tr>
         </thead>
         <tbody id="histBody"></tbody>
@@ -175,7 +174,7 @@
       </div>
       <div class="note">
         <span class="bang">!</span>
-        <p><strong>Задолженность собственников</strong> — сколько взносов на капремонт по дому не оплачено. Эти деньги дому уже начислены, но на счёт пока не поступили, поэтому фонд накапливается медленнее. Данные ведутся с июля 2026 года.</p>
+        <p><strong>Задолженность собственников</strong> — сколько взносов начислено по дому, но не оплачено. Показатель накопительный: он ведётся по факту начислений и меняется постоянно, поэтому публикуется только на текущий период. За прошлые месяцы он уже не актуален и в таблице ниже не приводится.</p>
       </div>
       <div class="note">
         <span class="bang">Σ</span>
@@ -224,9 +223,14 @@
     sel.value = String(months.length - 1);
     if (months.length > 1) pickWrap.hidden = false;
 
+    var lastIdx = months.length - 1;
+
     function show(i) {
       var m = months[i];
-      A.draw(canvas, m, (D.house && D.house.address) || '');
+      /* Задолженность — накопительный показатель на текущую дату, а не
+         итог месяца: показываем её только у самого свежего периода. */
+      var forPoster = (i === lastIdx) ? m : Object.assign({}, m, { debt: null });
+      A.draw(canvas, forPoster, (D.house && D.house.address) || '');
       document.getElementById('curMonth').textContent = A.monthName(m.period, true);
       document.getElementById('sPaid').textContent = A.money(m.paid);
       document.getElementById('sInterest').textContent = A.money(m.interest);
@@ -235,7 +239,7 @@
         m.balanceDate ? 'на ' + A.dateRu(m.balanceDate) : 'накоплено всего';
 
       var debtCard = document.getElementById('debtCard');
-      if (A.hasDebt(m)) {
+      if (i === lastIdx && A.hasDebt(m)) {
         document.getElementById('sDebt').textContent = A.money(m.debt);
         debtCard.hidden = false;
       } else {
@@ -278,15 +282,12 @@
       var body = document.getElementById('histBody');
       /* колонку расходов показываем, только если они были хоть раз */
       var anySpent = months.some(A.hasSpent);
-      var anyDebt = months.some(A.hasDebt);
       if (anySpent) document.getElementById('thSpent').hidden = false;
-      if (anyDebt) document.getElementById('thDebt').hidden = false;
 
       months.slice().reverse().forEach(function (m) {
         var cells = [A.monthName(m.period), A.money(m.paid), A.money(m.interest)];
         if (anySpent) cells.push(A.hasSpent(m) ? A.money(m.spent) : '—');
         cells.push(A.money(m.balance));
-        if (anyDebt) cells.push(A.hasDebt(m) ? A.money(m.debt) : '—');
 
         var tr = document.createElement('tr');
         cells.forEach(function (t, k) {
@@ -303,6 +304,7 @@
     /* скачивание картинки */
     document.getElementById('dl').addEventListener('click', function () {
       var m = months[Number(sel.value)];
+      /* холст уже отрисован по тем же правилам, что и на экране */
       canvas.toBlob(function (blob) {
         if (!blob) { note.textContent = 'Не удалось сохранить картинку'; return; }
         var url = URL.createObjectURL(blob);
