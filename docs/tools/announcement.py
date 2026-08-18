@@ -17,6 +17,11 @@
         --balance-date 2026-06-30 \
         --out iyun-2026.png
 
+Если в месяце были расходы, добавьте --spent и, по желанию,
+--spent-note «на что» — тогда на картинке появится четвёртая плашка:
+
+    python3 announcement.py ... --spent 340000 --spent-note "ремонт кровли, 1 подъезд"
+
 Использование из бота:
 
     from announcement import render
@@ -43,7 +48,9 @@ INK_SOFT = (23, 92, 85)
 WHITE = (255, 255, 255)
 
 # ── размеры холста ──────────────────────────────────────────
-W, H = 1180, 810             # пропорции исходника, крупнее для чёткости
+W = 1180
+H_BASE = 810                 # обычный месяц: период, показатели, остаток
+H_SPENT = 946                # месяц с расходами: добавляется четвёртая плашка
 PAD = 56                     # поля
 
 MONTHS_GEN = ['ЯНВАРЬ', 'ФЕВРАЛЬ', 'МАРТ', 'АПРЕЛЬ', 'МАЙ', 'ИЮНЬ',
@@ -98,8 +105,16 @@ def _centered(draw, text, font, fill, cx, y):
 
 
 def render(period, paid, interest, balance, balance_date,
-           address='Магистральная, 2', out='announcement.png'):
-    """Рисует объявление и сохраняет в файл. Возвращает путь к файлу."""
+           address='Магистральная, 2', out='announcement.png',
+           spent=None, spent_note=''):
+    """Рисует объявление и сохраняет в файл. Возвращает путь к файлу.
+
+    spent      — израсходовано на работы за месяц; None → плашки не будет
+    spent_note — на что израсходовано, короткой строкой
+    """
+    has_spent = spent is not None
+    H = H_SPENT if has_spent else H_BASE
+
     img = Image.new('RGB', (W, H), PAGE_BG)
     d = ImageDraw.Draw(img)
 
@@ -110,6 +125,7 @@ def render(period, paid, interest, balance, balance_date,
     f_val = _font('DejaVuSans-Bold.ttf', 44)
     f_lab_big = _font('DejaVuSans-Bold.ttf', 29)
     f_val_big = _font('DejaVuSans-Bold.ttf', 60)
+    f_note = _font('DejaVuSans.ttf', 22)
 
     cx = W / 2
 
@@ -142,11 +158,21 @@ def render(period, paid, interest, balance, balance_date,
     _centered(d, 'ПО СПЕЦСЧЁТУ', f_lab, INK_SOFT, right_cx, top + 58)
     _centered(d, money(interest), f_val, INK, right_cx, top + 108)
 
+    # израсходовано на работы — только если в этом месяце были расходы
+    rest_top = 542
+    if has_spent:
+        d.rectangle([PAD, 522, W - PAD, 662], fill=TILE_GREY)
+        _centered(d, 'ИЗРАСХОДОВАНО НА РАБОТЫ', f_lab, INK_SOFT, cx, 544)
+        _centered(d, money(spent), f_val, INK, cx, 578)
+        if spent_note:
+            _centered(d, spent_note, f_note, INK_SOFT, cx, 628)
+        rest_top = 690
+
     # остаток
-    d.rectangle([PAD, 542, W - PAD, 748], fill=TILE_TQ)
+    d.rectangle([PAD, rest_top, W - PAD, rest_top + 206], fill=TILE_TQ)
     _centered(d, f'ОСТАТОК ОБЩЕЙ СУММЫ НА СЧЁТЕ на {date_ru(balance_date)}',
-              f_lab_big, INK, cx, 578)
-    _centered(d, money(balance), f_val_big, INK, cx, 646)
+              f_lab_big, INK, cx, rest_top + 36)
+    _centered(d, money(balance), f_val_big, INK, cx, rest_top + 104)
 
     img.save(out, optimize=True)
     return out
@@ -161,10 +187,14 @@ def main():
     p.add_argument('--balance-date', required=True, help='дата остатка, например 2026-06-30')
     p.add_argument('--address', default='Магистральная, 2')
     p.add_argument('--out', default='announcement.png')
+    p.add_argument('--spent', type=float, default=None,
+                   help='израсходовано на работы; без него плашки не будет')
+    p.add_argument('--spent-note', default='', help='на что израсходовано')
     a = p.parse_args()
 
     path = render(a.period, a.paid, a.interest, a.balance,
-                  a.balance_date, a.address, a.out)
+                  a.balance_date, a.address, a.out,
+                  spent=a.spent, spent_note=a.spent_note)
     print(path)
 
 

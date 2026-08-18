@@ -7,7 +7,7 @@
    ─────────────────────────────────────────────────────────── */
 
 window.DomovedAnnouncement = (function () {
-  var W = 1180, H = 810, PAD = 56;
+  var W = 1180, H_BASE = 810, H_SPENT = 946, PAD = 56;
 
   var C = {
     head:  '#0E766D',
@@ -62,8 +62,14 @@ window.DomovedAnnouncement = (function () {
     ctx.fillText(text, cx, y);
   }
 
-  /* Рисует объявление в переданный <canvas>. m — запись месяца. */
+  function hasSpent(m) {
+    return m.spent !== null && m.spent !== undefined && m.spent !== '';
+  }
+
+  /* Рисует объявление в переданный <canvas>. m — запись месяца.
+     Плашка «израсходовано» появляется только если у месяца задан spent. */
   function draw(canvas, m, address) {
+    var H = hasSpent(m) ? H_SPENT : H_BASE;
     var scale = window.devicePixelRatio > 1 ? 2 : 1;
     canvas.width = W * scale;
     canvas.height = H * scale;
@@ -103,11 +109,21 @@ window.DomovedAnnouncement = (function () {
     centered(ctx, 'ПО СПЕЦСЧЁТУ', 27, '700', C.inkSoft, rightCx, top + 58);
     centered(ctx, money(m.interest), 44, '700', C.ink, rightCx, top + 106);
 
+    var restTop = 542;
+    if (hasSpent(m)) {
+      ctx.fillStyle = C.grey;
+      ctx.fillRect(PAD, 522, W - PAD * 2, 140);
+      centered(ctx, 'ИЗРАСХОДОВАНО НА РАБОТЫ', 27, '700', C.inkSoft, cx, 544);
+      centered(ctx, money(m.spent), 44, '700', C.ink, cx, 576);
+      if (m.spentNote) centered(ctx, m.spentNote, 22, '400', C.inkSoft, cx, 628);
+      restTop = 690;
+    }
+
     ctx.fillStyle = C.tile;
-    ctx.fillRect(PAD, 542, W - PAD * 2, 206);
+    ctx.fillRect(PAD, restTop, W - PAD * 2, 206);
     centered(ctx, 'ОСТАТОК ОБЩЕЙ СУММЫ НА СЧЁТЕ на ' + dateRu(m.balanceDate),
-             29, '700', C.ink, cx, 576);
-    centered(ctx, money(m.balance), 60, '700', C.ink, cx, 642);
+             29, '700', C.ink, cx, restTop + 34);
+    centered(ctx, money(m.balance), 60, '700', C.ink, cx, restTop + 100);
   }
 
   function fileName(m) {
@@ -120,7 +136,7 @@ window.DomovedAnnouncement = (function () {
     monthName: monthName,
     dateRu: dateRu,
     fileName: fileName,
-    width: W,
-    height: H
+    hasSpent: hasSpent,
+    width: W
   };
 })();
