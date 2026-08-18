@@ -256,6 +256,20 @@ td.num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;
 .fill.w-date{ width:14ch; }
 .fill.w-long{ width:min(100%,44ch); }
 
+.sheet ol{ margin:0 0 14px; padding-left:24px; }
+.sheet ol li{ margin-bottom:4px; }
+.sheet .consent{
+  margin-top:32px; padding-top:20px; border-top:1px solid var(--line);
+  font-size:.86rem; line-height:1.6; color:var(--ink-2);
+}
+.sheet .consent h3{
+  margin:0 0 10px; text-align:center; font-family:var(--serif);
+  font-weight:400; font-size:1rem; color:var(--ink); text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.sheet .consent p{ margin:0 0 10px; }
+.sheet .consent .sign{ margin-top:22px; }
+
 /* значения, подставляемые автоматически */
 .auto{ font-weight:600; }
 .auto.empty{ color:var(--marker); font-weight:600; }

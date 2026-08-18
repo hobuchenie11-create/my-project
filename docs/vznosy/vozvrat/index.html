@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>Заявление о возврате средств — Домовед</title>
-<meta name="description" content="Шаблон заявления о возврате ошибочно перечисленных денежных средств по взносам на капитальный ремонт, дом Магистральная, 2.">
+<title>Заявление на возврат средств — Домовед</title>
+<meta name="description" content="Бланк РФКР МКД: заявление на возврат излишне или ошибочно уплаченных взносов на капитальный ремонт, дом Магистральная, 2.">
 <meta name="theme-color" content="#EDF1EC" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://hobuchenie11-create.github.io/magistralnaya-2/vznosy/vozvrat/">
@@ -13,8 +13,8 @@
 <meta property="og:site_name" content="Домовед">
 <meta property="og:locale" content="ru_RU">
 <meta property="og:url" content="https://hobuchenie11-create.github.io/magistralnaya-2/vznosy/vozvrat/">
-<meta property="og:title" content="Заявление о возврате средств по капремонту">
-<meta property="og:description" content="Домовед · Магистральная, 2. Готовый бланк: заполнить на телефоне и распечатать.">
+<meta property="og:title" content="Заявление на возврат взносов на капремонт">
+<meta property="og:description" content="Домовед · Магистральная, 2. Бланк фонда и список документов: заполнить на телефоне и распечатать.">
 <meta property="og:image" content="https://hobuchenie11-create.github.io/magistralnaya-2/og-kapremont.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314473A'/%3E%3Cpath d='M7 16l9-7 9 7v9H7z' fill='none' stroke='%23EDF1EC' stroke-width='2.2' stroke-linejoin='round'/%3E%3Cpath d='M13 25v-6h6v6' fill='none' stroke='%23D93C1C' stroke-width='2.2'/%3E%3C/svg%3E">
@@ -26,13 +26,13 @@
 
   <nav class="crumbs" aria-label="Навигация">
     <a href="../">← Взносы на капремонт</a>
-    <span class="where">Заявление о возврате</span>
+    <span class="where">Заявление на возврат</span>
   </nav>
 
   <header class="masthead noprint">
-    <p class="eyebrow">Документы · спец.счёт</p>
-    <h1>Заявление о возврате средств</h1>
-    <p class="sub">Пригодится, если деньги перечислены по ошибке: дважды за один период, не за свою квартиру или не тому получателю — и зачесть их в счёт будущих взносов не нужно.</p>
+    <p class="eyebrow">Документы · бланк фонда</p>
+    <h1>Заявление на возврат средств</h1>
+    <p class="sub">Нужно, если взносы уплачены излишне или ошибочно и возвращаются плательщику: двойная оплата, платёж не за своё помещение, прекращение обязанности платить.</p>
   </header>
 
   <section class="noprint" aria-label="Как подать">
@@ -42,56 +42,94 @@
     </div>
     <div class="note" style="margin-top:8px">
       <span class="bang">2</span>
-      <p>Понадобятся банковские реквизиты для возврата — их можно взять в приложении банка: раздел «Реквизиты счёта».</p>
+      <p>Банковские реквизиты для возврата возьмите в приложении банка: раздел «Реквизиты счёта». Нужны номер счёта, корр. счёт, банк с городом, БИК и ИНН/КПП банка.</p>
     </div>
     <div class="note warn" style="margin-top:8px">
       <span class="bang">!</span>
-      <p>Шаблон типовой. Уточните у получателя платежа его форму заявления и срок возврата — он может отличаться.</p>
+      <p>Оригиналы платёжных документов берите с собой: копии заверяют по оригиналам в абонентском отделе фонда.</p>
     </div>
+
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:18px">
       <button class="btn primary" type="button" data-print>Распечатать или сохранить PDF</button>
+      <a class="btn" href="../blanki/zayavlenie-vozvrat-rfkr.docx" download>Скачать бланк фонда (.docx)</a>
     </div>
   </section>
 
   <section class="sheet" aria-label="Бланк заявления">
     <div class="to">
-      <p>В <span class="auto" data-dm="account.owner"></span></p>
-      <p><span class="auto" data-dm="account.ownerFull" data-empty="(полное наименование получателя)"></span></p>
-      <p>от собственника помещения в многоквартирном доме</p>
-      <p>по адресу: <span class="auto" data-dm="house.city" data-empty="г. ______"></span>, ул. <span class="auto" data-dm="house.address"></span>,
-         кв. <input class="fill w-flat" type="text" placeholder="___" aria-label="Номер квартиры"></p>
-      <p><input class="fill w-name" type="text" placeholder="фамилия, имя, отчество" aria-label="ФИО заявителя"></p>
-      <p>телефон: <input class="fill w-flat" style="width:16ch" type="tel" placeholder="+7 ___" aria-label="Телефон"></p>
+      <p>Директору <span class="auto" data-dm="account.ownerFull"></span></p>
+      <p><span class="auto" data-dm="account.director"></span></p>
+      <p>от <input class="fill w-name" type="text" placeholder="фамилия, имя, отчество" aria-label="ФИО заявителя"></p>
+      <p>проживающего(-ей) по адресу:</p>
+      <p><input class="fill w-long" type="text" placeholder="адрес регистрации" aria-label="Адрес"></p>
+      <p>паспорт: серия <input class="fill" style="width:8ch" type="text" placeholder="____" aria-label="Серия паспорта">
+         номер <input class="fill" style="width:10ch" type="text" placeholder="______" aria-label="Номер паспорта"></p>
+      <p>выдан <input class="fill w-long" type="text" placeholder="кем и когда выдан" aria-label="Кем выдан паспорт"></p>
+      <p>ИНН <input class="fill" style="width:16ch" type="text" placeholder="____________" aria-label="ИНН"></p>
+      <p>Телефон: <input class="fill" style="width:18ch" type="tel" placeholder="+7 ___" aria-label="Телефон"></p>
     </div>
 
-    <h2>Заявление о возврате денежных средств</h2>
+    <h2>Заявление<br>на возврат излишне или ошибочно уплаченных взносов<br>на капитальный ремонт</h2>
 
-    <p><input class="fill w-date" type="text" placeholder="«__» _______ 20__ г." aria-label="Дата платежа">
-       мною ошибочно перечислены денежные средства в размере
-       <input class="fill w-sum" type="text" placeholder="0,00" aria-label="Сумма платежа"> руб.
-       на расчётный счёт <span class="auto" data-dm="account.number"></span>
-       (взносы на капитальный ремонт, дом <span class="auto" data-dm="house.address"></span>).</p>
+    <p>Прошу Вас вернуть мне денежные средства в сумме
+       <input class="fill w-sum" type="text" placeholder="0" aria-label="Сумма, рублей"> рублей
+       <input class="fill" style="width:6ch" type="text" placeholder="00" aria-label="Сумма, копеек"> копеек
+       (<input class="fill w-long" type="text" placeholder="сумма прописью" aria-label="Сумма прописью">)</p>
 
-    <p>Причина ошибки: <input class="fill w-long" type="text" placeholder="повторная оплата за тот же период / оплата не за своё помещение / иное" aria-label="Причина"></p>
+    <p>по причине <input class="fill w-long" type="text" placeholder="например: повторная оплата за один период" aria-label="Причина возврата"></p>
 
-    <p>Прошу вернуть указанную сумму по следующим реквизитам:</p>
+    <p style="margin-bottom:6px">По следующим реквизитам:</p>
+    <p>№ расчётного счёта банка: <input class="fill" style="width:26ch" type="text" placeholder="20 цифр" aria-label="Расчётный счёт"><br>
+       № корреспондентского счёта банка: <input class="fill" style="width:26ch" type="text" placeholder="20 цифр" aria-label="Корреспондентский счёт"><br>
+       Наименование банка, город: <input class="fill w-long" type="text" placeholder="банк, город" aria-label="Банк и город"><br>
+       БИК банка: <input class="fill" style="width:12ch" type="text" placeholder="9 цифр" aria-label="БИК"><br>
+       ИНН / КПП банка: <input class="fill" style="width:24ch" type="text" placeholder="ИНН / КПП" aria-label="ИНН и КПП банка"></p>
 
-    <p>получатель: <input class="fill w-name" type="text" placeholder="фамилия, имя, отчество полностью" aria-label="Получатель возврата"><br>
-       счёт получателя: <input class="fill" style="width:26ch" type="text" placeholder="20 цифр" aria-label="Счёт получателя"><br>
-       банк: <input class="fill w-long" type="text" placeholder="наименование банка" aria-label="Банк"><br>
-       БИК: <input class="fill" style="width:12ch" type="text" placeholder="9 цифр" aria-label="БИК">
-       корр. счёт: <input class="fill" style="width:26ch" type="text" placeholder="20 цифр" aria-label="Корреспондентский счёт"></p>
+    <p style="margin-bottom:6px">К заявлению прилагаются:</p>
+    <p><input class="fill w-long" type="text" placeholder="перечислите документы" aria-label="Приложения, строка 1"><br>
+       <input class="fill w-long" type="text" placeholder="" aria-label="Приложения, строка 2"></p>
 
-    <p>Приложение: копия платёжного документа на 1 л.</p>
+    <div class="consent">
+      <h3>Согласие на обработку персональных данных</h3>
+      <p>Настоящим во исполнение требований Федерального закона «О персональных данных» № 152-ФЗ от 27.07.2006 г. я даю своё согласие РФКР МКД на обработку моих персональных данных в целях обеспечения возврата денежных средств по указанным реквизитам. Настоящее согласие выдано без ограничения срока его действия.</p>
+      <p>Под обработкой персональных данных я понимаю сбор, систематизацию, накопление, хранение (в открытой сети Интернет), уточнение (обновление, изменение), использование, распространение (в том числе передачу), обезличивание, блокирование, уничтожение и любые другие действия (операции) с персональными данными.</p>
+      <p>Под персональными данными я понимаю любую информацию, относящуюся ко мне, как к субъекту персональных данных, в том числе мою фамилию, имя, отчество, год, месяц, дату и место рождения, адрес, паспортные данные (серия, номер, кем выдан, дата выдачи), прочее.</p>
+      <div class="sign">
+        <span>_______________<br>Дата</span>
+        <span>_______________<br>Подпись</span>
+        <span>__________________________<br>Расшифровка</span>
+      </div>
+    </div>
+  </section>
 
-    <div class="sign">
-      <span>«___» ____________ 20___ г.</span>
-      <span>_________________ / ______________________</span>
+  <section aria-label="Список документов">
+    <h2>Какие документы приложить</h2>
+    <p class="lede">Перечень фонда — что представляют вместе с заявлением о возврате.</p>
+
+    <h3 style="font-family:var(--serif); font-weight:400; font-size:1.05rem; margin:0 0 8px">Обязательно</h3>
+    <ol style="margin:0 0 22px; padding-left:22px; color:var(--ink-2)">
+      <li>Платёжные документы — оригиналы либо копии с предъявлением оригиналов.</li>
+      <li>Копия паспорта заявителя: 2–3 страница и страница с регистрацией.</li>
+      <li>Банковские реквизиты для возврата денежных средств.</li>
+    </ol>
+
+    <h3 style="font-family:var(--serif); font-weight:400; font-size:1.05rem; margin:0 0 8px">При необходимости</h3>
+    <ol style="margin:0; padding-left:22px; color:var(--ink-2)">
+      <li>Копия свидетельства о праве собственности — если дом исключён из региональной программы.</li>
+      <li>Копия ордера на квартиру, договора социального найма, выписки из муниципальной казны или квитанции за последний месяц по оплате соцнайма — если у нанимателя нет обязанности платить взносы.</li>
+      <li>Копия договора купли-продажи помещения — если обязанность платить взносы прекратилась.</li>
+      <li>Доверенность на представление интересов собственника.</li>
+      <li>Иные документы для подтверждения личности, полномочий и прав на собственность — по требованию сотрудника абонентского отдела фонда.</li>
+    </ol>
+
+    <div class="note" style="margin-top:18px">
+      <span class="bang">i</span>
+      <p>Оригиналы для подтверждения копий предоставляются при личном обращении в абонентский отдел фонда.</p>
     </div>
   </section>
 
   <footer>
-    <p>Домовед · дом <span data-dm="house.address"></span>. Вопросы по заявлению — через раздел <a href="../">«Взносы на капремонт»</a>.</p>
+    <p>Домовед · дом <span data-dm="house.address"></span>. Текст соответствует бланку РФКР МКД. Вопросы — через раздел <a href="../">«Взносы на капремонт»</a>.</p>
   </footer>
 </div>
 
