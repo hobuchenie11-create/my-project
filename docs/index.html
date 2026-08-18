@@ -188,20 +188,42 @@
 
   <!-- Разделы. Чтобы добавить новый: скопируйте <a class="tab"> и создайте папку с index.html. -->
   <nav class="tabs" aria-label="Разделы">
-    <a class="tab" href="./" aria-current="page">Спец.счёт</a>
+    <a class="tab" href="vznosy/">Взносы на капремонт</a>
   </nav>
 
   <section aria-label="Спец.счёт">
     <h2>Специальный счёт на капитальный ремонт</h2>
     <p class="lede">Взносы на капремонт нашего дома копятся на собственном специальном счёте, а не у регионального оператора. Поэтому платёж оформляется по расчётному счёту дома.</p>
 
-    <a class="feature" href="spec-schet/">
+    <a class="feature" href="vznosy/">
+      <div class="txt">
+        <h3>Взносы на капитальный ремонт</h3>
+        <p>Памятка по оплате, состояние спецсчёта по месяцам, заявления на перезачёт и возврат средств, заказ акта сверки.</p>
+      </div>
+      <span class="go">Открыть модуль →</span>
+    </a>
+
+    <a class="feature" href="spec-schet/" style="margin-top:12px">
       <div class="txt">
         <h3>Как оплатить взнос через Сбербанк Онлайн</h3>
         <p>Памятка из 5 шагов с экранами приложения: ЖКХ → Капремонт → РФКР МКД → расчётный счёт → проверка названия дома.</p>
       </div>
       <span class="go">Открыть памятку →</span>
     </a>
+
+    <div class="req" style="margin-top:16px" id="balanceBox" hidden>
+      <div>
+        <div class="lab">На счёте дома</div>
+        <div class="val" id="hbalance">—</div>
+      </div>
+      <div>
+        <div class="lab">Данные за</div>
+        <div class="val" id="hperiod">—</div>
+      </div>
+      <div style="display:flex; align-items:center">
+        <a class="tab" href="vznosy/schet/">Подробнее →</a>
+      </div>
+    </div>
 
     <div class="req" style="margin-top:16px">
       <div>
@@ -265,6 +287,7 @@
   </footer>
 </div>
 
+<script src="data.js"></script>
 <script>
   (function(){
     var btn = document.getElementById('reqCopy');
@@ -277,6 +300,25 @@
         navigator.clipboard.writeText(acc).then(done, function(){ note.textContent = acc; });
       } else { note.textContent = acc; }
     });
+  })();
+
+  /* Остаток на спецсчёте — из data.js */
+  (function(){
+    var months = ((window.DOMOVED || {}).months || []);
+    if (!months.length) return;
+    var last = months[months.length - 1];
+    var MONTHS = ['январь','февраль','март','апрель','май','июнь',
+                  'июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+    function money(n){
+      var whole = Math.floor(Math.abs(n));
+      var cents = Math.round((Math.abs(n) - whole) * 100);
+      return String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') +
+             ',' + String(cents).padStart(2,'0') + ' ₽';
+    }
+    var p = String(last.period).split('-');
+    document.getElementById('hbalance').textContent = money(last.balance);
+    document.getElementById('hperiod').textContent = MONTHS[Number(p[1])-1] + ' ' + p[0];
+    document.getElementById('balanceBox').hidden = false;
   })();
 </script>
 </body>

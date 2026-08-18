@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Состояние спецсчёта — Домовед</title>
+<meta name="description" content="Ежемесячная информация для собственников дома Магистральная, 2: оплачено собственниками, начислено процентов, остаток на специальном счёте капремонта.">
+<meta name="theme-color" content="#EDF1EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://hobuchenie11-create.github.io/magistralnaya-2/vznosy/schet/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Домовед">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:url" content="https://hobuchenie11-create.github.io/magistralnaya-2/vznosy/schet/">
+<meta property="og:title" content="Спецсчёт на капремонт: сколько на счёте дома">
+<meta property="og:description" content="Домовед · Магистральная, 2. Ежемесячная сводка по специальному счёту: оплачено собственниками, проценты банка, остаток.">
+<meta property="og:image" content="https://hobuchenie11-create.github.io/magistralnaya-2/og-kapremont.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314473A'/%3E%3Cpath d='M7 16l9-7 9 7v9H7z' fill='none' stroke='%23EDF1EC' stroke-width='2.2' stroke-linejoin='round'/%3E%3Cpath d='M13 25v-6h6v6' fill='none' stroke='%23D93C1C' stroke-width='2.2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../assets/domoved.css">
+<style>
+  .poster{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:14px; box-shadow:var(--shadow);
+  }
+  .poster canvas{ display:block; width:100%; height:auto; border-radius:6px; }
+  .posterbar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    margin-top:14px;
+  }
+  .monthpick{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    font-size:.9rem; color:var(--ink-2);
+  }
+  .monthpick select{
+    font:inherit; font-size:.92rem; padding:8px 12px; border-radius:8px;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+  }
+  .monthpick select:focus-visible{ outline:2px solid var(--tq); outline-offset:2px; }
+  .empty-state{
+    background:var(--card); border:1px dashed var(--line); border-radius:12px;
+    padding:28px 24px; text-align:center; color:var(--ink-2);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <nav class="crumbs" aria-label="Навигация">
+    <a href="../">← Взносы на капремонт</a>
+    <span class="where">Состояние спецсчёта</span>
+  </nav>
+
+  <header class="masthead">
+    <a class="brand" href="../../">
+      <svg class="brandmark" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M4 15 16 5l12 10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M7 14v12h18V14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M13 26v-7h6v7" fill="none" stroke="var(--marker)" stroke-width="2.2" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <p class="wordmark">Домовед</p>
+        <p class="addr" data-dm="house.address"></p>
+      </div>
+    </a>
+    <p class="eyebrow">Спец.счёт · информация для собственников</p>
+    <h1>Сколько денег на счёте дома</h1>
+    <p class="sub">Взносы на капремонт нашего дома копятся на отдельном счёте. Каждый месяц публикуем, сколько поступило, сколько начислил банк и сколько накоплено всего.</p>
+  </header>
+
+  <section aria-label="Объявление за месяц">
+    <div class="monthpick noprint" id="pickWrap" hidden>
+      <label for="monthSel">Месяц:</label>
+      <select id="monthSel"></select>
+    </div>
+
+    <div class="poster" id="posterBox">
+      <canvas id="poster" role="img" aria-label="Сводка по специальному счёту за выбранный месяц"></canvas>
+      <div class="posterbar noprint">
+        <button class="btn primary" id="dl" type="button">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 19h14"/>
+          </svg>
+          Скачать картинку
+        </button>
+        <button class="btn" data-print type="button">Распечатать</button>
+        <span class="hintline" id="posterNote"></span>
+      </div>
+    </div>
+
+    <div class="empty-state" id="noData" hidden>
+      Данные по спецсчёту ещё не внесены. Как только появится первая запись, здесь будет ежемесячная сводка.
+    </div>
+  </section>
+
+  <section aria-label="Показатели за месяц">
+    <h2>Цифры за <span id="curMonth">месяц</span></h2>
+    <p class="lede">Те же данные текстом — их удобно скопировать или прочитать с экрана.</p>
+    <div class="stats">
+      <div class="stat">
+        <span class="lab">Оплачено собственниками</span>
+        <span class="val" id="sPaid">—</span>
+        <span class="sub">взносы, поступившие за месяц</span>
+      </div>
+      <div class="stat">
+        <span class="lab">Начислено процентов</span>
+        <span class="val" id="sInterest">—</span>
+        <span class="sub">банк начисляет на остаток счёта</span>
+      </div>
+      <div class="stat lead">
+        <span class="lab">Остаток на счёте</span>
+        <span class="val" id="sBalance">—</span>
+        <span class="sub" id="sBalanceDate">накоплено всего</span>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="История по месяцам" id="historyWrap" hidden>
+    <h2>По месяцам</h2>
+    <p class="lede">Как менялся счёт с начала наблюдений.</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Месяц</th>
+            <th scope="col" style="text-align:right">Оплачено</th>
+            <th scope="col" style="text-align:right">Проценты</th>
+            <th scope="col" style="text-align:right">Остаток</th>
+          </tr>
+        </thead>
+        <tbody id="histBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-label="Пояснения">
+    <h2>Что означают эти цифры</h2>
+    <div class="qa" style="display:flex; flex-direction:column; gap:8px">
+      <div class="note">
+        <span class="bang">₽</span>
+        <p><strong>Оплачено собственниками</strong> — сумма взносов, которая поступила на спецсчёт за месяц от жителей дома.</p>
+      </div>
+      <div class="note">
+        <span class="bang">%</span>
+        <p><strong>Начислено процентов</strong> — банк начисляет проценты на остаток спецсчёта. Эти деньги остаются на счёте дома и тратятся только на капремонт.</p>
+      </div>
+      <div class="note">
+        <span class="bang">Σ</span>
+        <p><strong>Остаток на счёте</strong> — сколько накоплено на дату выписки. Деньги можно расходовать только на капитальный ремонт по решению общего собрания собственников.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p class="updated"><span class="dot"></span><span id="fillState"></span></p>
+    <p style="margin:10px 0 0">Домовед · дом <span data-dm="house.address"></span>. Сведения публикует председатель совета дома по выписке со специального счёта. Вопросы и расхождения — через раздел <a href="../">«Взносы на капремонт»</a>.</p>
+  </footer>
+</div>
+
+<script src="../../data.js"></script>
+<script src="../../assets/announcement.js"></script>
+<script>
+  (function () {
+    var D = window.DOMOVED || {};
+    var A = window.DomovedAnnouncement;
+    var months = (D.months || []).slice().sort(function (a, b) {
+      return String(a.period) < String(b.period) ? -1 : 1;
+    });
+
+    var canvasBox = document.getElementById('posterBox');
+    var noData = document.getElementById('noData');
+    var pickWrap = document.getElementById('pickWrap');
+    var sel = document.getElementById('monthSel');
+    var canvas = document.getElementById('poster');
+    var note = document.getElementById('posterNote');
+
+    if (!months.length) {
+      canvasBox.hidden = true;
+      noData.hidden = false;
+      document.getElementById('curMonth').textContent = 'месяц';
+      return;
+    }
+
+    /* выбор месяца */
+    months.forEach(function (m, i) {
+      var o = document.createElement('option');
+      o.value = String(i);
+      o.textContent = A.monthName(m.period);
+      sel.appendChild(o);
+    });
+    sel.value = String(months.length - 1);
+    if (months.length > 1) pickWrap.hidden = false;
+
+    function show(i) {
+      var m = months[i];
+      A.draw(canvas, m, (D.house && D.house.address) || '');
+      document.getElementById('curMonth').textContent = A.monthName(m.period, true);
+      document.getElementById('sPaid').textContent = A.money(m.paid);
+      document.getElementById('sInterest').textContent = A.money(m.interest);
+      document.getElementById('sBalance').textContent = A.money(m.balance);
+      document.getElementById('sBalanceDate').textContent =
+        m.balanceDate ? 'на ' + A.dateRu(m.balanceDate) : 'накоплено всего';
+      canvas.setAttribute('aria-label',
+        'Спецсчёт за ' + A.monthName(m.period, true) +
+        ': оплачено ' + A.money(m.paid) +
+        ', начислено процентов ' + A.money(m.interest) +
+        ', остаток ' + A.money(m.balance));
+    }
+
+    sel.addEventListener('change', function () { show(Number(sel.value)); });
+    show(months.length - 1);
+
+    /* история */
+    if (months.length > 1) {
+      var body = document.getElementById('histBody');
+      months.slice().reverse().forEach(function (m) {
+        var tr = document.createElement('tr');
+        [A.monthName(m.period), A.money(m.paid), A.money(m.interest), A.money(m.balance)]
+          .forEach(function (t, k) {
+            var td = document.createElement('td');
+            td.textContent = t;
+            if (k) td.className = 'num';
+            tr.appendChild(td);
+          });
+        body.appendChild(tr);
+      });
+      document.getElementById('historyWrap').hidden = false;
+    }
+
+    /* скачивание картинки */
+    document.getElementById('dl').addEventListener('click', function () {
+      var m = months[Number(sel.value)];
+      canvas.toBlob(function (blob) {
+        if (!blob) { note.textContent = 'Не удалось сохранить картинку'; return; }
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = A.fileName(m);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        note.textContent = 'Сохранено: ' + A.fileName(m);
+      }, 'image/png');
+    });
+
+    /* дата последних данных */
+    var last = months[months.length - 1];
+    var state = document.getElementById('fillState');
+    if (state) {
+      state.textContent = 'Последние данные — за ' + A.monthName(last.period, true) +
+        (last.balanceDate ? ', остаток на ' + A.dateRu(last.balanceDate) : '');
+    }
+  })();
+</script>
+<script src="../../assets/domoved.js"></script>
+</body>
+</html>
