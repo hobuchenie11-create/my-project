@@ -458,7 +458,7 @@
     width: 54px; height: 54px; border-radius: 50%;
     background: var(--lilac); color: #fff; border: none; cursor: pointer;
     font-size: 24px; box-shadow: 0 8px 24px rgba(90,63,150,.4);
-    display: none; place-items: center;
+    display: none; place-items: center; text-decoration: none;
   }
   @media (max-width: 860px) { .tg-fab { display: grid; } }
 
@@ -984,7 +984,7 @@
         </div>
         <div class="form-actions">
           <button class="btn btn-primary" type="submit">Отправить заявку</button>
-          <button class="btn tg-btn" type="button" id="tgBtn">✈ Написать в Telegram</button>
+          <a class="btn tg-btn" id="tgBtn" href="https://t.me/vk8elena" target="_blank" rel="noopener">✈ Написать в Telegram</a>
         </div>
         <p class="demo-note">Прототип: заявка пока никуда не отправляется. На готовом сайте
           она будет приходить вам в Telegram или на почту.</p>
@@ -1011,7 +1011,7 @@
   </div>
 </footer>
 
-<button class="tg-fab" id="tgFab" aria-label="Написать в Telegram">✈</button>
+<a class="tg-fab" id="tgFab" href="https://t.me/vk8elena" target="_blank" rel="noopener" aria-label="Написать в Telegram">✈</a>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script>
@@ -1548,10 +1548,5 @@
     toast('Заявка отправлена! Отвечу в течение рабочего дня.');
     this.reset();
   });
-  function tgStub() {
-    toast('Прототип: сюда подставим ссылку на ваш Telegram');
-  }
-  $('#tgBtn').addEventListener('click', tgStub);
-  $('#tgFab').addEventListener('click', tgStub);
 })();
 </script>
