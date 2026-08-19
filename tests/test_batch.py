@@ -181,3 +181,74 @@ def test_resident_cannot_paste_several_flats_into_the_chat(db):
 
     assert _values(db, "5") == {}
     assert message.dm and "только по своей" in message.dm[0]
+
+
+# ---------------------------------------------------------------------------
+# Показания председателя не должны попадать в её собственную квартиру
+# ---------------------------------------------------------------------------
+
+def test_chairman_message_without_a_flat_number_is_refused_in_chat(db):
+    """Без номера квартиры показания председателя не идут в её строку."""
+    message = Msg("Эл.эн 15230\nХвс 123\nГвс 88", chat_type="supergroup")
+    asyncio.run(group.handle_group_message(message))
+
+    assert _values(db, "1") == {}                  # квартира председателя пуста
+    assert message.dm and "без номера квартиры" in message.dm[0]
+
+
+def test_resident_message_without_a_number_still_uses_their_flat(db):
+    """У жителя подстановка своей квартиры остаётся — это привычный ввод."""
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "7")
+        repository.create_user(conn, RESIDENT, "Житель", flat["id"])
+    finally:
+        conn.close()
+
+    message = Msg("Эл.эн 15230\nХвс 123", tg_id=RESIDENT, chat_type="supergroup")
+    asyncio.run(group.handle_group_message(message))
+
+    assert _values(db, "7")["electricity"] == 15230.0
+
+
+def test_chairman_message_without_a_number_is_refused_in_private(db):
+    message = Msg("Эл.эн 15230\nХвс 123")
+    asyncio.run(manual.manual_readings(message))
+
+    assert _values(db, "1") == {}
+    assert "Не понял, к какому помещению" in message.answers[0]
+
+
+def test_pasted_readings_in_the_dialog_need_a_flat_number(db, monkeypatch):
+    """Открыт диалог по своей квартире, а вставлены чужие показания."""
+    from bot.handlers import readings as readings_handler
+
+    real_connect = repository.connect
+    monkeypatch.setattr(readings_handler.repository, "connect",
+                        lambda *a, **kw: real_connect(db))
+    monkeypatch.setattr(readings_handler, "config",
+                        replace(readings_handler.config, admin_ids=(CHAIRMAN,)))
+
+    conn = repository.connect(db)
+    try:
+        own = repository.get_apartment_by_number(conn, "1")
+    finally:
+        conn.close()
+
+    class State:
+        def __init__(self):
+            self.cleared = False
+
+        async def get_data(self):
+            return {"apartment_id": own["id"], "user_id": None,
+                    "queue": ["electricity"], "saved": {}, "warnings": []}
+
+        async def clear(self):
+            self.cleared = True
+
+    message, state = Msg("Эл.эн 15230\nХвс 123\nГвс 88"), State()
+    asyncio.run(readings_handler.process_value(message, state))
+
+    assert _values(db, "1") == {}                  # ничего не записали
+    assert "нет номера квартиры" in message.answers[0]
+    assert not state.cleared                       # диалог не закрыт

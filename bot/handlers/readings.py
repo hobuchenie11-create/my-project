@@ -126,9 +126,24 @@ async def _try_whole_message(message: Message, state: FSMContext) -> bool:
         return False
 
     data = await state.get_data()
+    is_admin = message.from_user.id in config.admin_ids
     conn = repository.connect()
     try:
         apartment = repository.get_apartment_by_id(conn, data["apartment_id"])
+
+        # Председатель переносит показания за жителей, поэтому её квартиру
+        # молча подставлять нельзя: без номера в тексте показания соседа
+        # ушли бы в её собственную строку.
+        if is_admin and parsed.apartment_number is None:
+            await message.answer(
+                f"В тексте нет номера квартиры, а сейчас открыт ввод по "
+                f"кв. {apartment['number']} — вашей.\n\n"
+                "Если это показания жителя, нажмите «❌ Отмена» и пришлите "
+                "текст с номером в первой строке: «Кв. 15».\n"
+                "Если это ваши показания — допишите «Кв. "
+                f"{apartment['number']}» первой строкой.")
+            return True
+
         # Вставили показания за другую квартиру — записывать их сюда нельзя
         if (parsed.apartment_number
                 and parsed.apartment_number != apartment["number"]):

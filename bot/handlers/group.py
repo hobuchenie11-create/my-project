@@ -102,18 +102,27 @@ async def handle_group_message(message: Message) -> None:
     try:
         user = repository.get_user_by_tg(conn, message.from_user.id)
 
+        is_admin = message.from_user.id in config.admin_ids
         apartment = None
         if parsed.apartment_number:
             apartment = repository.get_apartment_by_number(conn, parsed.apartment_number)
-        elif parsed.apartment_unreadable:
-            # Номер квартиры назвали, но прочитать не смогли. Подставить
-            # квартиру отправителя нельзя: показания уйдут не туда.
+        elif parsed.apartment_unreadable or is_admin:
+            # Номер квартиры не прочитали — либо его вовсе нет, а пишет
+            # председатель: она переносит показания за жителей, и её
+            # собственная квартира тут не подойдёт.
             pass
         elif user and user["apartment_id"]:
             apartment = repository.get_apartment_by_id(conn, user["apartment_id"])
 
         if apartment is None:
             if parsed.is_empty:
+                return
+            if is_admin and not parsed.apartment_unreadable:
+                await _guidance(
+                    message, "Вижу показания, но без номера квартиры. "
+                             "Укажите его в первой строке — «Кв. 15»: ваша "
+                             "квартира подставляется только жителям, чтобы "
+                             "чужие показания не попали в вашу строку.")
                 return
             if parsed.apartment_unreadable:
                 await _guidance(
