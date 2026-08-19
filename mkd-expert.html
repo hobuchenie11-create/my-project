@@ -1,6 +1,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Марина Соколова — консультант председателей МКД</title>
+<meta name="description" content="Практические решения для председателей МКД, частных мастеров и родительских комитетов: таблицы учёта показаний и коммунальных расходов, автоматизация рутины, приложения для записи клиентов и учёта сборов.">
+<title>Порядок вместо хаоса</title>
 <style>
   /* ── Токены ─────────────────────────────────────────── */
   :root {
@@ -14,8 +15,7 @@
     --teal:       #17A392;
     --teal-deep:  #0B6B61;
     --teal-soft:  #E2F4F1;
-    --against:    #C75C7E;  /* «против» — приглушённый розово-сиреневый */
-    --abstain:    #8B8598;
+    --alert:      #C75C7E;  /* долг, ошибка — приглушённый розово-сиреневый */
     --border:     #E3DCF0;
     --shadow:     0 10px 30px rgba(46, 35, 67, .08);
     --radius:     14px;
@@ -24,7 +24,7 @@
     --font-data:  ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --paper:   #1B1628;
       --surface: #251E38;
       --block:   #2C2444;
@@ -35,8 +35,7 @@
       --teal:    #2BC1B0;
       --teal-deep: #6ADCCE;
       --teal-soft: #1E3B3A;
-      --against: #E07E9E;
-      --abstain: #9A93AB;
+      --alert:   #E07E9E;
       --border:  #3A3153;
       --shadow:  0 10px 30px rgba(0, 0, 0, .35);
     }
@@ -52,26 +51,9 @@
     --teal:    #2BC1B0;
     --teal-deep: #6ADCCE;
     --teal-soft: #1E3B3A;
-    --against: #E07E9E;
-    --abstain: #9A93AB;
+    --alert:   #E07E9E;
     --border:  #3A3153;
     --shadow:  0 10px 30px rgba(0, 0, 0, .35);
-  }
-  :root[data-theme="light"] {
-    --paper:   #FBFAFE;
-    --surface: #FFFFFF;
-    --block:   #F1ECFA;
-    --ink:     #2E2343;
-    --muted:   #6E6383;
-    --lilac:   #8A6FC8;
-    --lilac-deep: #5A3F96;
-    --teal:    #17A392;
-    --teal-deep: #0B6B61;
-    --teal-soft: #E2F4F1;
-    --against: #C75C7E;
-    --abstain: #8B8598;
-    --border:  #E3DCF0;
-    --shadow:  0 10px 30px rgba(46, 35, 67, .08);
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -133,20 +115,21 @@
     width: 46px; height: 46px; flex-shrink: 0;
     border: 2px solid var(--lilac); border-radius: 8px;
     display: grid; place-items: center;
-    font-family: var(--font-display); font-size: 13px; font-weight: 700;
-    color: var(--lilac-deep); letter-spacing: .05em;
-    transform: rotate(-4deg);
+    font-family: var(--font-display); font-size: 15px; font-weight: 700;
+    color: var(--lilac-deep); letter-spacing: .02em; line-height: 1;
+    transform: rotate(-4deg); text-align: center;
   }
+  .stamp small { display: block; font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
   .brand { line-height: 1.25; }
   .brand strong { display: block; font-size: 15px; }
   .brand span { font-size: 12px; color: var(--muted); }
   .site-nav { margin-left: auto; display: flex; gap: 4px; align-items: center; }
   .site-nav .nav-link {
     font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none;
-    padding: 6px 12px; border-radius: 8px; transition: background .15s, color .15s;
+    padding: 6px 10px; border-radius: 8px; transition: background .15s, color .15s;
   }
   .site-nav .nav-link:hover { background: var(--block); color: var(--lilac-deep); }
-  @media (max-width: 760px) { .site-nav .nav-link { display: none; } }
+  @media (max-width: 860px) { .site-nav .nav-link { display: none; } }
 
   /* ── Герой ──────────────────────────────────────────── */
   .hero { padding: 72px 0 56px; }
@@ -154,7 +137,7 @@
     display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; align-items: center;
   }
   @media (max-width: 860px) { .hero .wrap { grid-template-columns: 1fr; } }
-  .hero h1 { font-size: clamp(32px, 4.6vw, 50px); letter-spacing: -.01em; }
+  .hero h1 { font-size: clamp(30px, 4.4vw, 48px); letter-spacing: -.01em; }
   .hero h1 em { font-style: normal; color: var(--teal-deep); }
   .hero .lead { margin-top: 18px; font-size: 18px; color: var(--muted); max-width: 34em; }
   .hero-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
@@ -162,64 +145,130 @@
     display: flex; gap: 28px; flex-wrap: wrap; margin-top: 36px;
     font-family: var(--font-data); font-size: 13px; color: var(--muted);
   }
-  .facts b { display: block; font-size: 20px; color: var(--ink); font-weight: 600; }
+  .facts b { display: block; font-size: 18px; color: var(--ink); font-weight: 600; }
 
-  /* Живой виджет кворума */
-  .quorum-card {
+  /* Живой виджет сбора показаний */
+  .live-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
     box-shadow: var(--shadow); padding: 24px; position: relative; overflow: hidden;
   }
-  .quorum-card::before {
+  .live-card::before {
     content: ""; position: absolute; inset: 0 0 auto 0; height: 5px;
     background: linear-gradient(90deg, var(--lilac), var(--teal));
   }
-  .quorum-card .qc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-  .quorum-card h3 { font-size: 17px; }
-  .qc-live {
+  .live-card .lc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .live-card h3 { font-size: 17px; }
+  .lc-live {
     font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
     color: var(--teal-deep); display: inline-flex; align-items: center; gap: 6px;
   }
-  .qc-live::before {
+  .lc-live::before {
     content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--teal);
     animation: pulse 1.6s infinite;
   }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-  .qc-big { margin-top: 18px; font-family: var(--font-data); font-size: 44px; font-weight: 600; line-height: 1; }
-  .qc-big small { font-size: 15px; color: var(--muted); font-weight: 400; margin-left: 8px; }
-  .qc-bar {
+  .lc-big { margin-top: 18px; font-family: var(--font-data); font-size: 42px; font-weight: 600; line-height: 1; }
+  .lc-big small { font-size: 15px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .lc-bar {
     margin-top: 14px; height: 12px; border-radius: 99px; background: var(--block);
     position: relative; overflow: hidden;
   }
-  .qc-bar-fill {
+  .lc-bar-fill {
     height: 100%; width: 0; border-radius: 99px;
     background: linear-gradient(90deg, var(--lilac), var(--teal));
     transition: width 1.4s cubic-bezier(.2,.7,.3,1);
   }
-  .qc-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--against); left: 50%; }
-  .qc-mark::after {
-    content: "кворум 50%"; position: absolute; top: -20px; left: -32px;
-    font-size: 10px; color: var(--muted); white-space: nowrap; font-family: var(--font-data);
-  }
-  .qc-rows { margin-top: 26px; display: grid; gap: 8px; font-size: 14px; }
-  .qc-row { display: flex; justify-content: space-between; gap: 12px; }
-  .qc-row .num { color: var(--muted); }
-  .qc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; }
+  .lc-rows { margin-top: 26px; display: grid; gap: 8px; font-size: 14px; }
+  .lc-row { display: flex; justify-content: space-between; gap: 12px; }
+  .lc-row .num { color: var(--muted); }
+  .lc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; }
 
   /* ── Секции ─────────────────────────────────────────── */
   section { padding: 64px 0; }
   section h2 { font-size: clamp(26px, 3.4vw, 36px); margin-bottom: 10px; }
-  .section-lead { color: var(--muted); max-width: 40em; margin-bottom: 36px; }
+  .section-lead { color: var(--muted); max-width: 42em; margin-bottom: 36px; }
   .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s, transform .6s; }
   .reveal.on { opacity: 1; transform: none; }
   @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+
+  /* ── Обо мне ────────────────────────────────────────── */
+  .about-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: start; }
+  @media (max-width: 860px) { .about-grid { grid-template-columns: 1fr; } }
+  .about-quote {
+    border-left: 3px solid var(--teal); padding: 6px 0 6px 20px; margin-top: 22px;
+    font-family: var(--font-display); font-size: 18px; line-height: 1.55;
+  }
+  .about-card {
+    background: var(--block); border-radius: var(--radius); padding: 28px; text-align: center;
+  }
+  .about-card .big {
+    font-family: var(--font-display); font-size: 60px; font-weight: 700; line-height: 1;
+    color: var(--lilac-deep);
+  }
+  .about-card .big small { display: block; font-size: 16px; color: var(--muted); font-family: var(--font-body); font-weight: 400; margin-top: 6px; }
+  .about-tags { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .about-tags span {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 99px;
+    padding: 5px 14px; font-size: 13px; font-weight: 600; color: var(--teal-deep);
+  }
+
+  /* ── Карточки «С чем помогаю» ───────────────────────── */
+  .cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+  .svc {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 26px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px;
+  }
+  .svc h3 { font-size: 18px; }
+  .svc p { font-size: 14.5px; color: var(--muted); flex: 1; }
+  .svc .btn { align-self: flex-start; }
+  .svc-icon {
+    width: 44px; height: 44px; border-radius: 10px; background: var(--teal-soft);
+    display: grid; place-items: center; font-size: 22px;
+  }
+
+  /* ── Направления ────────────────────────────────────── */
+  .dir {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 32px; margin-bottom: 24px;
+    display: grid; grid-template-columns: 1.1fr .9fr; gap: 32px; align-items: start;
+  }
+  @media (max-width: 860px) { .dir { grid-template-columns: 1fr; } }
+  .dir h3 { font-size: 22px; margin-bottom: 4px; }
+  .dir .dir-sub { font-family: var(--font-display); font-style: italic; color: var(--lilac-deep); margin-bottom: 14px; }
+  .dir ul { margin: 0 0 16px; padding-left: 18px; color: var(--muted); font-size: 14.5px; display: grid; gap: 5px; }
+  .flow {
+    background: var(--block); border-radius: 10px; padding: 18px 20px;
+    font-size: 14px; line-height: 1.9;
+  }
+  .flow b { display: block; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--teal-deep); margin-bottom: 8px; }
+  .flow .step-arrow { color: var(--teal); font-weight: 700; padding: 0 2px; }
+  .psr { display: grid; gap: 6px; margin-top: 14px; font-size: 13.5px; }
+  .psr div { display: flex; gap: 10px; }
+  .psr dt-label { flex-shrink: 0; }
+  .psr .k { font-weight: 700; flex-shrink: 0; width: 92px; color: var(--lilac-deep); }
+  .psr .k.res { color: var(--teal-deep); }
+  .psr .v { color: var(--muted); }
+
+  /* ── Для кого ───────────────────────────────────────── */
+  .aud-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+  .aud {
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 18px 14px; text-align: center; cursor: pointer;
+    font: inherit; color: var(--ink);
+    transition: transform .15s, border-color .15s, box-shadow .15s;
+  }
+  .aud:hover { transform: translateY(-3px); border-color: var(--teal); box-shadow: var(--shadow); }
+  .aud .em { font-size: 30px; display: block; margin-bottom: 8px; }
+  .aud b { font-size: 14px; display: block; }
+  .aud span { font-size: 12px; color: var(--muted); }
 
   /* ── Демо-стенд ─────────────────────────────────────── */
   .demo-section { background: var(--block); }
   .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
   .tab {
-    padding: 12px 20px; border: 1px solid var(--border); border-bottom: none;
+    padding: 12px 18px; border: 1px solid var(--border); border-bottom: none;
     border-radius: 12px 12px 0 0; background: transparent; color: var(--muted);
-    font-size: 15px; font-weight: 600; cursor: pointer;
+    font-size: 14.5px; font-weight: 600; cursor: pointer;
   }
   .tab[aria-selected="true"] { background: var(--surface); color: var(--ink); }
   .tab:hover { color: var(--lilac-deep); }
@@ -234,7 +283,7 @@
   .demo-note { font-size: 13px; color: var(--muted); margin-top: 14px; }
 
   .table-scroll { overflow-x: auto; }
-  table.sheet { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+  table.sheet { border-collapse: collapse; width: 100%; min-width: 540px; font-size: 14px; }
   .sheet th {
     text-align: left; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
     color: var(--muted); font-weight: 600; padding: 8px 12px; border-bottom: 2px solid var(--border);
@@ -254,128 +303,170 @@
   }
   .chip-ok      { background: var(--teal-soft); color: var(--teal-deep); }
   .chip-warn    { background: color-mix(in srgb, var(--lilac) 18%, transparent); color: var(--lilac-deep); }
-  .chip-err     { background: color-mix(in srgb, var(--against) 16%, transparent); color: var(--against); }
+  .chip-err     { background: color-mix(in srgb, var(--alert) 16%, transparent); color: var(--alert); }
   .sheet tfoot td { font-weight: 600; border-bottom: none; padding-top: 12px; }
 
   select, .field input, .field textarea {
     padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px;
     font-family: inherit; font-size: 14px; background: var(--paper); color: var(--ink);
+    max-width: 100%;
   }
   select:focus, .field input:focus, .field textarea:focus { border-color: var(--teal); outline: none; }
-
-  /* Голосование */
-  .vote-summary {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;
-    margin-bottom: 20px;
-  }
-  .vs-card { background: var(--paper); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
-  .vs-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
-  .vs-card .value { font-family: var(--font-data); font-size: 24px; font-weight: 600; margin-top: 4px; }
-  .vs-card .value.ok { color: var(--teal-deep); }
-  .vs-card .value.no { color: var(--against); }
-  .vote-bar { height: 10px; border-radius: 99px; background: var(--block); overflow: hidden; display: flex; margin-bottom: 20px; }
-  .vote-bar i { display: block; height: 100%; transition: width .4s; }
-  .seg { display: inline-flex; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
-  .seg button {
-    padding: 6px 12px; border: none; background: transparent; cursor: pointer;
-    font-size: 13px; font-weight: 700; color: var(--muted); border-right: 1.5px solid var(--border);
-  }
-  .seg button:last-child { border-right: none; }
-  .seg button[aria-pressed="true"].v-for     { background: var(--teal); color: #fff; }
-  .seg button[aria-pressed="true"].v-against { background: var(--against); color: #fff; }
-  .seg button[aria-pressed="true"].v-abstain { background: var(--abstain); color: #fff; }
-
-  /* Протокол */
-  .proto-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 28px; }
-  @media (max-width: 860px) { .proto-grid { grid-template-columns: 1fr; } }
   .field { display: grid; gap: 6px; margin-bottom: 14px; }
   .field label { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .field input, .field textarea, .field select { width: 100%; }
   .field textarea { resize: vertical; min-height: 84px; }
-  .proto-paper {
-    background: var(--paper); border: 1px solid var(--border); border-radius: 10px;
-    padding: 28px 30px; font-family: var(--font-display); font-size: 14.5px; line-height: 1.7;
-    max-height: 460px; overflow-y: auto;
-  }
-  .proto-paper h4 { text-align: center; margin: 0 0 4px; font-size: 16px; letter-spacing: .04em; }
-  .proto-paper .center { text-align: center; }
-  .proto-paper .meta { display: flex; justify-content: space-between; margin: 14px 0; }
-  .proto-paper ol { padding-left: 20px; margin: 8px 0; }
-  .proto-paper .resolved { margin: 8px 0 14px; }
-  .proto-paper .sign { margin-top: 22px; display: grid; gap: 10px; }
 
-  /* ── Услуги ─────────────────────────────────────────── */
-  .cards3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
-  .svc {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 26px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px;
+  .summary-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px;
+    margin-bottom: 20px;
   }
-  .svc h3 { font-size: 19px; }
-  .svc p { font-size: 14.5px; color: var(--muted); flex: 1; }
-  .svc .btn { align-self: flex-start; }
+  .sm-card { background: var(--paper); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .sm-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+  .sm-card .value { font-family: var(--font-data); font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .sm-card .value.ok { color: var(--teal-deep); }
+  .sm-card .value.no { color: var(--alert); }
 
-  /* ── Прайс ──────────────────────────────────────────── */
-  .price-section { background: var(--block); }
-  .price {
-    background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius);
-    padding: 28px; display: flex; flex-direction: column; gap: 10px; position: relative;
+  /* Чат-бот */
+  .chat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+  @media (max-width: 860px) { .chat-grid { grid-template-columns: 1fr; } }
+  .chat-win {
+    background: var(--paper); border: 1px solid var(--border); border-radius: 14px;
+    display: flex; flex-direction: column; height: 440px; overflow: hidden;
   }
-  .price.featured { border-color: var(--teal); box-shadow: 0 12px 34px rgba(23,163,146,.18); }
-  .price .badge {
-    position: absolute; top: -12px; right: 20px; background: var(--teal); color: #fff;
-    font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-    padding: 4px 12px; border-radius: 99px;
+  .chat-head {
+    padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface);
+    display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px;
   }
-  .price h3 { font-size: 18px; }
-  .price .cost { font-family: var(--font-data); font-size: 34px; font-weight: 600; }
-  .price .cost small { font-size: 14px; color: var(--muted); font-weight: 400; }
-  .price ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14px; color: var(--muted); flex: 1; }
-  .price ul li::before { content: "— "; color: var(--teal); font-weight: 700; }
+  .chat-ava {
+    width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--lilac), var(--teal));
+    display: grid; place-items: center; color: #fff; font-size: 15px;
+  }
+  .chat-head small { display: block; font-weight: 400; font-size: 11px; color: var(--teal-deep); }
+  .chat-log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 85%; padding: 9px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5; }
+  .msg.bot { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; align-self: flex-start; }
+  .msg.user { background: var(--teal); color: #fff; border-bottom-right-radius: 4px; align-self: flex-end; }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 12px; }
+  .quick button {
+    border: 1.5px solid var(--teal); background: transparent; color: var(--teal-deep);
+    border-radius: 99px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .quick button:hover { background: var(--teal-soft); }
+  .chat-inrow { display: flex; gap: 8px; padding: 0 16px 14px; }
+  .chat-inrow[hidden] { display: none; }
+  .chat-inrow input {
+    flex: 1; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: var(--font-data); font-size: 14px; background: var(--surface); color: var(--ink);
+  }
+  .chat-inrow input:focus { border-color: var(--teal); outline: none; }
 
-  /* ── FAQ ────────────────────────────────────────────── */
-  .faq details {
-    border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
-    padding: 0 20px; margin-bottom: 10px;
-  }
-  .faq summary {
-    cursor: pointer; font-weight: 600; padding: 16px 0; list-style: none;
+  /* Запись клиентов */
+  .book-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; align-items: start; }
+  @media (max-width: 860px) { .book-grid { grid-template-columns: 1fr; } }
+  .svc-opts { display: grid; gap: 8px; margin-bottom: 18px; }
+  .svc-opt {
     display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 16px;
+    background: transparent; cursor: pointer; font: inherit; color: var(--ink); text-align: left;
   }
-  .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: "+"; font-size: 20px; color: var(--lilac); flex-shrink: 0; }
-  .faq details[open] summary::after { content: "–"; }
-  .faq details p { padding: 0 0 16px; color: var(--muted); font-size: 14.5px; }
+  .svc-opt:hover { border-color: var(--lilac); }
+  .svc-opt[aria-pressed="true"] { border-color: var(--teal); background: var(--teal-soft); }
+  .svc-opt b { font-size: 14.5px; }
+  .svc-opt span { font-family: var(--font-data); font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+  .slot {
+    padding: 9px 4px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: transparent; color: var(--ink); font-family: var(--font-data); font-size: 13.5px;
+    cursor: pointer;
+  }
+  .slot:hover:not(:disabled) { border-color: var(--teal); background: var(--teal-soft); }
+  .slot:disabled { opacity: .35; cursor: not-allowed; text-decoration: line-through; }
+  .cal { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .cal-head { background: var(--block); padding: 10px 16px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between; }
+  .cal table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  .cal td { border-top: 1px solid var(--border); padding: 6px 10px; height: 30px; }
+  .cal td.t { width: 56px; font-family: var(--font-data); color: var(--muted); border-right: 1px solid var(--border); }
+  .cal td.free { color: var(--border); }
+  .cal td.busy {
+    background: color-mix(in srgb, var(--lilac) 14%, var(--surface));
+    border-left: 3px solid var(--lilac); font-weight: 600; vertical-align: top; padding-top: 8px;
+  }
+  .cal td.busy.new { background: var(--teal-soft); border-left-color: var(--teal); }
+  .cal td.busy small { display: block; font-weight: 400; color: var(--muted); }
+
+  /* Родительский комитет */
+  .pc-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; align-items: start; }
+  @media (max-width: 860px) { .pc-grid { grid-template-columns: 1fr; } }
+  .pc-exp { margin: 0 0 14px; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+  .pc-exp li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 6px; }
+  .report-paper {
+    background: var(--paper); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 26px; font-family: var(--font-display); font-size: 14.5px; line-height: 1.7;
+    white-space: pre-wrap; max-height: 420px; overflow-y: auto;
+  }
+
+  /* ── Шаги и преимущества ────────────────────────────── */
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .step-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; position: relative;
+  }
+  .step-card .n {
+    font-family: var(--font-display); font-size: 34px; color: var(--lilac); font-weight: 700;
+    line-height: 1; margin-bottom: 10px;
+  }
+  .step-card h3 { font-size: 16px; margin-bottom: 6px; }
+  .step-card p { font-size: 13.5px; color: var(--muted); }
+  .adv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
+  .adv { display: flex; gap: 14px; align-items: flex-start; }
+  .adv .mark {
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+    background: var(--teal-soft); color: var(--teal-deep); display: grid; place-items: center;
+    font-weight: 700; font-size: 16px;
+  }
+  .adv b { display: block; font-size: 15px; }
+  .adv p { font-size: 13.5px; color: var(--muted); }
+
+  /* ── Индивидуальная разработка ──────────────────────── */
+  .custom-band {
+    background: linear-gradient(120deg, color-mix(in srgb, var(--lilac) 16%, var(--surface)), color-mix(in srgb, var(--teal) 14%, var(--surface)));
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 40px; text-align: center;
+  }
+  .custom-band h2 { margin-bottom: 12px; }
+  .custom-band p { color: var(--muted); max-width: 42em; margin: 0 auto 22px; }
 
   /* ── Заявка ─────────────────────────────────────────── */
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+  .contact-grid > * { min-width: 0; }
+  @media (max-width: 860px) { .contact-grid { grid-template-columns: 1fr; } }
   .contact-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    box-shadow: var(--shadow); padding: 32px; max-width: 560px;
+    box-shadow: var(--shadow); padding: 32px;
   }
-  .form-actions { display: flex; gap: 12px; align-items: center; margin-top: 6px; }
+  .form-actions { display: flex; gap: 12px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+  .tg-note { display: flex; align-items: center; gap: 12px; margin-top: 26px; }
+  .tg-btn {
+    background: var(--lilac); color: #fff; box-shadow: 0 4px 14px rgba(138,111,200,.4);
+  }
+  .tg-btn:hover { background: var(--lilac-deep); }
+
+  /* Плавающая кнопка Telegram (мобильная) */
+  .tg-fab {
+    position: fixed; right: 18px; bottom: 18px; z-index: 90;
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--lilac); color: #fff; border: none; cursor: pointer;
+    font-size: 24px; box-shadow: 0 8px 24px rgba(90,63,150,.4);
+    display: none; place-items: center;
+  }
+  @media (max-width: 860px) { .tg-fab { display: grid; } }
 
   /* ── Футер ──────────────────────────────────────────── */
   footer { border-top: 1px solid var(--border); padding: 28px 0 36px; font-size: 13px; color: var(--muted); }
   footer .wrap { display: grid; gap: 6px; }
 
-  /* ── Модалки и тосты ────────────────────────────────── */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(30, 22, 48, .55); z-index: 100;
-    display: grid; place-items: center; padding: 20px;
-  }
-  .modal-overlay[hidden] { display: none; }
-  .modal {
-    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
-    padding: 28px; width: 100%; max-width: 440px; position: relative;
-  }
-  .modal h3 { font-size: 20px; margin-bottom: 6px; }
-  .modal .sub { font-size: 14px; color: var(--muted); margin-bottom: 18px; }
-  .modal-close {
-    position: absolute; top: 14px; right: 14px; width: 32px; height: 32px;
-    border: none; background: var(--block); color: var(--muted); border-radius: 8px;
-    font-size: 16px; cursor: pointer;
-  }
-  .modal-close:hover { color: var(--ink); }
-
-  .toasts { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 200; display: grid; gap: 8px; }
+  .toasts { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 200; display: grid; gap: 8px; width: max-content; max-width: 92vw; }
   .toast {
     background: var(--ink); color: var(--paper); padding: 12px 20px; border-radius: 10px;
     font-size: 14px; font-weight: 600; box-shadow: var(--shadow);
@@ -387,17 +478,19 @@
 <!-- ── Шапка ─────────────────────────────────────────── -->
 <header class="site-header">
   <div class="wrap">
-    <div class="stamp" aria-hidden="true">МКД</div>
+    <div class="stamp" aria-hidden="true">12<small>лет</small></div>
     <div class="brand">
-      <strong>Марина Соколова</strong>
-      <span>консультант председателей МКД</span>
+      <!-- Имя эксперта подставим, когда пришлёте -->
+      <strong>Порядок вместо хаоса</strong>
+      <span>учёт · автоматизация · приложения под задачу</span>
     </div>
     <nav class="site-nav" aria-label="Разделы">
-      <a class="nav-link" href="#demo">Демо таблиц</a>
-      <a class="nav-link" href="#services">Консультации</a>
-      <a class="nav-link" href="#price">Цены</a>
-      <a class="nav-link" href="#faq">Вопросы</a>
-      <a class="btn btn-primary btn-small" href="#contact">Записаться</a>
+      <a class="nav-link" href="#about">Обо мне</a>
+      <a class="nav-link" href="#help">Что решаю</a>
+      <a class="nav-link" href="#solutions">Решения</a>
+      <a class="nav-link" href="#demo">Демо</a>
+      <a class="nav-link" href="#how">Как это работает</a>
+      <a class="btn btn-primary btn-small" href="#contact" data-need="consult">Получить консультацию</a>
     </nav>
   </div>
 </header>
@@ -407,37 +500,213 @@
 <section class="hero">
   <div class="wrap">
     <div>
-      <p class="eyebrow">Совет дома · практика, а не теория</p>
-      <h1>Порядок в&nbsp;доме начинается с&nbsp;<em>правильной таблицы</em></h1>
-      <p class="lead">Помогаю председателям советов МКД проводить собрания без ошибок:
-        готовые таблицы для показаний счётчиков, подсчёта голосов и оформления протоколов —
-        плюс консультации по спорным вопросам с&nbsp;УК и жильцами.</p>
+      <p class="eyebrow">Эксперт-практик · учёт · контроль · автоматизация</p>
+      <h1>Помогаю навести порядок в учёте, управлении и повседневной работе — <em>без лишней рутины</em></h1>
+      <p class="lead">12 лет практического опыта в управлении многоквартирным домом и создании понятных
+        инструментов: таблиц учёта, систем контроля и простых приложений — для председателей МКД,
+        частных мастеров и родительских комитетов.</p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="#demo">Попробовать таблицы</a>
-        <a class="btn btn-ghost" href="#contact">Задать вопрос</a>
+        <a class="btn btn-primary" href="#contact" data-need="consult">Получить консультацию</a>
+        <a class="btn btn-ghost" href="#solutions">Посмотреть решения</a>
       </div>
-      <div class="facts num" aria-label="Опыт в цифрах">
-        <div><b>12 лет</b>в советах МКД</div>
-        <div><b>300+</b>проведённых ОСС</div>
-        <div><b>40 домов</b>на сопровождении</div>
+      <div class="facts">
+        <div><b>12 лет</b>практики в МКД</div>
+        <div><b>3 сферы</b>дом · мастера · родители</div>
+        <div><b>0 терминов</b>говорю на языке задач</div>
       </div>
     </div>
 
-    <div class="quorum-card" aria-label="Пример подсчёта кворума">
-      <div class="qc-head">
-        <h3>ОСС № 2 — ул. Садовая, 15</h3>
-        <span class="qc-live">идёт подсчёт</span>
+    <div class="live-card" aria-label="Пример автоматического сбора показаний">
+      <div class="lc-head">
+        <h3>Сбор показаний — август</h3>
+        <span class="lc-live">идёт сбор</span>
       </div>
-      <div class="qc-big"><span id="heroQuorum">0,0</span>%<small>голосов собрано</small></div>
-      <div class="qc-bar">
-        <div class="qc-bar-fill" id="heroBar"></div>
-        <div class="qc-mark" aria-hidden="true"></div>
+      <div class="lc-big"><span id="heroCount">0</span><small>из 48 квартир передали</small></div>
+      <div class="lc-bar"><div class="lc-bar-fill" id="heroBar"></div></div>
+      <div class="lc-rows">
+        <div class="lc-row"><span><i class="lc-dot" style="background:var(--teal)"></i>Через бота, без участия председателя</span><span class="num">39</span></div>
+        <div class="lc-row"><span><i class="lc-dot" style="background:var(--lilac)"></i>Напоминания отправлены автоматически</span><span class="num">6</span></div>
+        <div class="lc-row"><span><i class="lc-dot" style="background:var(--alert)"></i>Ошибок переноса в таблицу</span><span class="num">0</span></div>
       </div>
-      <div class="qc-rows num">
-        <div class="qc-row"><span><i class="qc-dot" style="background:var(--teal)"></i>За</span><span class="num">4 218,7 м² · 65,7%</span></div>
-        <div class="qc-row"><span><i class="qc-dot" style="background:var(--against)"></i>Против</span><span class="num">312,4 м² · 4,9%</span></div>
-        <div class="qc-row"><span><i class="qc-dot" style="background:var(--abstain)"></i>Воздержались</span><span class="num">198,0 м² · 3,1%</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Обо мне ───────────────────────────────────────── -->
+<section id="about">
+  <div class="wrap reveal">
+    <p class="eyebrow">Обо мне</p>
+    <h2>Знаю эти проблемы не из теории</h2>
+    <div class="about-grid">
+      <div>
+        <p class="section-lead" style="margin-bottom:16px">12 лет я работаю председателем МКД: жители, управляющая компания,
+          коммунальные платежи, показания приборов, документы и десятки чатов. Всё, что можно было
+          делать вручную, я делала вручную — а потом научилась превращать эту рутину в таблицы,
+          системы учёта и небольшие приложения, которые работают сами.</p>
+        <p class="section-lead" style="margin-bottom:0">Теперь я помогаю другим: председателям и старшим по дому, частным мастерам,
+          родительским комитетам — всем, у кого повседневный учёт расползся по сообщениям,
+          блокнотам и разрозненным файлам.</p>
+        <p class="about-quote">«Я не предлагаю сложные решения ради самих решений. Я создаю инструменты,
+          которые реально экономят время и помогают держать ситуацию под контролем».</p>
       </div>
+      <div class="about-card">
+        <div class="big">12<small>лет практики в управлении МКД</small></div>
+        <div class="about-tags">
+          <span>учёт</span><span>контроль</span><span>автоматизация</span><span>цифровые инструменты</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── С чем помогаю ─────────────────────────────────── -->
+<section id="help" style="padding-top:0">
+  <div class="wrap reveal">
+    <p class="eyebrow">Что решаю</p>
+    <h2>С чем я помогаю</h2>
+    <p class="section-lead">Пять типовых ситуаций, с которыми ко мне приходят. Если ваша задача не похожа
+      ни на одну — это тоже нормальный случай: посмотрите блок «Индивидуальная разработка».</p>
+    <div class="cards3">
+      <div class="svc">
+        <div class="svc-icon" aria-hidden="true">💧</div>
+        <h3>Учёт коммунальных ресурсов</h3>
+        <p>Таблицы учёта воды, электроэнергии и газа: показания по квартирам, история передачи,
+          контроль тех, кто не передал, итоговые ведомости для УК.</p>
+      </div>
+      <div class="svc">
+        <div class="svc-icon" aria-hidden="true">🧾</div>
+        <h3>Контроль коммунальных расходов</h3>
+        <p>Понятные таблицы начислений, оплат и задолженности — по периодам, с итогами
+          за месяц и год. Видно, куда уходят деньги и где копится долг.</p>
+      </div>
+      <div class="svc">
+        <div class="svc-icon" aria-hidden="true">🤖</div>
+        <h3>Автоматизация рутины</h3>
+        <p>Чат-боты и небольшие приложения, которые сами отвечают на типовые вопросы,
+          принимают показания и напоминают жителям о сроках.</p>
+      </div>
+      <div class="svc">
+        <div class="svc-icon" aria-hidden="true">📅</div>
+        <h3>Решения для частных мастеров</h3>
+        <p>Запись клиентов 24/7 без переписок: клиент сам выбирает услугу и время,
+          мастер видит готовое расписание.</p>
+      </div>
+      <div class="svc">
+        <div class="svc-icon" aria-hidden="true">🎒</div>
+        <h3>Системы для родительских комитетов</h3>
+        <p>Прозрачный учёт сборов, расходов и остатка. Каждый родитель видит,
+          на что потрачены общие деньги.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Что я создаю: 3 направления ───────────────────── -->
+<section id="solutions" class="demo-section">
+  <div class="wrap reveal">
+    <p class="eyebrow">Решения</p>
+    <h2>Что я создаю</h2>
+    <p class="section-lead">Три направления — и у каждого внизу страницы есть работающее демо,
+      которое можно потрогать прямо сейчас.</p>
+
+    <article class="dir" id="dir-mkd">
+      <div>
+        <h3>Таблицы и учёт для дома</h3>
+        <p class="dir-sub">«Таблица, которая держит всё под контролем»</p>
+        <ul>
+          <li>показания воды, электроэнергии и газа по квартирам;</li>
+          <li>сводные ведомости и автоматические расчёты;</li>
+          <li>учёт коммунальных расходов и контроль оплаты;</li>
+          <li>чат-бот, принимающий показания у жителей;</li>
+          <li>версии для компьютера и телефона.</li>
+        </ul>
+        <p style="font-size:13.5px;color:var(--muted)">Таблица создаётся не по шаблону,
+          а под конкретную задачу вашего дома.</p>
+        <p style="margin-top:14px"><button class="btn btn-ghost btn-small demo-jump" data-tab="tab-meters">Открыть демо учёта →</button></p>
+      </div>
+      <div class="flow">
+        <b>Как это работает</b>
+        Житель <span class="step-arrow">→</span> открывает бота <span class="step-arrow">→</span> вводит показания
+        <span class="step-arrow">→</span> бот проверяет формат <span class="step-arrow">→</span> данные сами попадают в таблицу
+        <span class="step-arrow">→</span> председатель видит только результат и исключения.
+        <div class="psr">
+          <div><span class="k">Проблема</span><span class="v">десятки сообщений с цифрами в личке, ручной перенос, ошибки</span></div>
+          <div><span class="k">Решение</span><span class="v">бот и таблица с автоматической проверкой</span></div>
+          <div><span class="k res">Результат</span><span class="v">председатель — контролёр процесса, а не диспетчер вручную</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="dir" id="dir-masters">
+      <div>
+        <h3>Приложения для частных мастеров</h3>
+        <p class="dir-sub">«Ваш мини-сервис вместо десятков переписок»</p>
+        <ul>
+          <li>парикмахеры, мастера маникюра, визажисты, косметологи;</li>
+          <li>кондитеры, репетиторы, швеи, мастера handmade;</li>
+          <li>запись клиентов 24/7 — без ответов на сообщения в полночь;</li>
+          <li>гибкая длительность услуг: 30 минут, час, 2–3 часа или своё время;</li>
+          <li>расписание само учитывает длительность и закрывает занятые окна.</li>
+        </ul>
+        <p style="margin-top:14px"><button class="btn btn-ghost btn-small demo-jump" data-tab="tab-book">Открыть демо записи →</button></p>
+      </div>
+      <div class="flow">
+        <b>Как это работает</b>
+        Клиент <span class="step-arrow">→</span> выбирает услугу <span class="step-arrow">→</span> видит свободное время
+        <span class="step-arrow">→</span> записывается <span class="step-arrow">→</span> получает подтверждение
+        <span class="step-arrow">→</span> мастер видит готовое расписание.
+        <div class="psr">
+          <div><span class="k">Проблема</span><span class="v">клиенты пишут в любое время, накладки, потерянные заявки</span></div>
+          <div><span class="k">Решение</span><span class="v">персональное приложение записи с вашими услугами</span></div>
+          <div><span class="k res">Результат</span><span class="v">запись идёт сама, даже когда мастер работает или спит</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="dir" id="dir-parents">
+      <div>
+        <h3>Учёт для родительских комитетов</h3>
+        <p class="dir-sub">«Прозрачный учёт денег класса или группы — без бесконечных таблиц и переписок»</p>
+        <ul>
+          <li>список участников, суммы взносов, даты оплаты;</li>
+          <li>поступления, расходы, остаток и задолженность;</li>
+          <li>прозрачная история операций;</li>
+          <li>готовые отчёты для родителей в один клик;</li>
+          <li>напоминания тем, кто ещё не сдал.</li>
+        </ul>
+        <p style="font-size:13.5px;color:var(--muted)">Это не бухгалтерская система, а понятный
+          инструмент для прозрачного учёта общих денежных сборов.</p>
+        <p style="margin-top:14px"><button class="btn btn-ghost btn-small demo-jump" data-tab="tab-parents">Открыть демо учёта сборов →</button></p>
+      </div>
+      <div class="flow">
+        <b>Как это работает</b>
+        Казначей <span class="step-arrow">→</span> отмечает оплаты и расходы <span class="step-arrow">→</span> система сама считает остаток
+        <span class="step-arrow">→</span> родители получают понятный отчёт <span class="step-arrow">→</span> вопросов «а куда делись деньги?» больше нет.
+        <div class="psr">
+          <div><span class="k">Проблема</span><span class="v">сборы в чате, расчёты вручную, путаница и недоверие</span></div>
+          <div><span class="k">Решение</span><span class="v">приложение учёта сборов с историей операций</span></div>
+          <div><span class="k res">Результат</span><span class="v">каждый видит картину движения общих средств</span></div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ── Для кого ──────────────────────────────────────── -->
+<section id="audience">
+  <div class="wrap reveal">
+    <p class="eyebrow">Для кого</p>
+    <h2>Для кого мои решения</h2>
+    <p class="section-lead">Нажмите на карточку — откроется подходящее направление.</p>
+    <div class="aud-grid">
+      <button class="aud" data-target="dir-mkd"><span class="em" aria-hidden="true">🏠</span><b>Председатели МКД</b><span>учёт и автоматизация</span></button>
+      <button class="aud" data-target="dir-mkd"><span class="em" aria-hidden="true">🏢</span><b>Старшие по дому, ТСЖ</b><span>порядок в данных</span></button>
+      <button class="aud" data-target="dir-masters"><span class="em" aria-hidden="true">💇</span><b>Салоны и мастера красоты</b><span>запись клиентов</span></button>
+      <button class="aud" data-target="dir-masters"><span class="em" aria-hidden="true">🎂</span><b>Кондитеры</b><span>заказы без хаоса</span></button>
+      <button class="aud" data-target="dir-masters"><span class="em" aria-hidden="true">📚</span><b>Репетиторы</b><span>расписание занятий</span></button>
+      <button class="aud" data-target="dir-masters"><span class="em" aria-hidden="true">🧵</span><b>Мастера handmade</b><span>учёт заказов</span></button>
+      <button class="aud" data-target="dir-parents"><span class="em" aria-hidden="true">👨‍👩‍👧</span><b>Родительские комитеты</b><span>прозрачные сборы</span></button>
+      <button class="aud" data-target="dir-parents"><span class="em" aria-hidden="true">🏫</span><b>Детские сады и школы</b><span>учёт и отчёты</span></button>
     </div>
   </div>
 </section>
@@ -445,27 +714,28 @@
 <!-- ── Демо-стенд ────────────────────────────────────── -->
 <section class="demo-section" id="demo">
   <div class="wrap reveal">
-    <p class="eyebrow">Демо-стенд</p>
-    <h2>Попробуйте таблицы прямо сейчас</h2>
-    <p class="section-lead">Это уменьшенные, но полностью рабочие копии моих таблиц.
-      Вводите цифры, нажимайте кнопки — всё считается сразу, как в полной версии.</p>
+    <p class="eyebrow">Что можно автоматизировать</p>
+    <h2>Попробуйте приложения в демо-режиме</h2>
+    <p class="section-lead">Это уменьшенные, но полностью рабочие копии уже созданных инструментов.
+      Вводите цифры, записывайтесь, отмечайте оплаты — всё считается сразу. Данные условные.</p>
 
-    <div class="tabs" role="tablist" aria-label="Демо таблиц">
+    <div class="tabs" role="tablist" aria-label="Демонстрации">
       <button class="tab" role="tab" id="tab-meters" aria-controls="panel-meters" aria-selected="true">Показания счётчиков</button>
-      <button class="tab" role="tab" id="tab-votes" aria-controls="panel-votes" aria-selected="false">Подсчёт голосов ОСС</button>
-      <button class="tab" role="tab" id="tab-proto" aria-controls="panel-proto" aria-selected="false">Протокол собрания</button>
+      <button class="tab" role="tab" id="tab-bot" aria-controls="panel-bot" aria-selected="false">Чат-бот для жителей</button>
+      <button class="tab" role="tab" id="tab-costs" aria-controls="panel-costs" aria-selected="false">Коммунальные расходы</button>
+      <button class="tab" role="tab" id="tab-book" aria-controls="panel-book" aria-selected="false">Запись клиентов</button>
+      <button class="tab" role="tab" id="tab-parents" aria-controls="panel-parents" aria-selected="false">Родительский комитет</button>
     </div>
 
-    <!-- Показания -->
+    <!-- Демо 1: показания -->
     <div class="demo-panel" id="panel-meters" role="tabpanel" aria-labelledby="tab-meters">
       <div class="demo-toolbar">
-        <label for="resourceSel" style="font-size:14px;font-weight:600">Ресурс:</label>
-        <select id="resourceSel">
+        <select id="resourceSel" aria-label="Ресурс">
           <option value="cold">Холодная вода, м³</option>
           <option value="hot">Горячая вода, м³</option>
           <option value="el">Электроэнергия, кВт·ч</option>
         </select>
-        <div class="spacer"></div>
+        <span class="spacer"></span>
         <button class="btn btn-ghost btn-small" id="addFlat">+ Добавить квартиру</button>
         <button class="btn btn-ghost btn-small" id="resetMeters">Сбросить</button>
       </div>
@@ -473,308 +743,275 @@
         <table class="sheet" id="meterTable">
           <thead>
             <tr>
-              <th>Кв.</th>
-              <th class="num">Прошлый месяц</th>
-              <th class="num">Текущие показания</th>
-              <th class="num">Расход</th>
-              <th>Статус</th>
+              <th class="num">Кв.</th><th class="num">Прошлые</th><th class="num">Текущие</th>
+              <th class="num">Расход</th><th>Статус</th>
             </tr>
           </thead>
           <tbody></tbody>
           <tfoot>
             <tr>
-              <td colspan="3">Итого по дому</td>
+              <td colspan="3">Итого расход по дому</td>
               <td class="num" id="meterTotal">0</td>
               <td></td>
             </tr>
           </tfoot>
         </table>
       </div>
-      <p class="demo-note">Таблица сама помечает подозрительный расход («проверить» — вдвое выше обычного)
-        и не даёт записать показания меньше прошлых.</p>
+      <p class="demo-note">Введите текущие показания — расход посчитается сам. Значение меньше прошлых
+        помечается как ошибка, подозрительно большой расход — «проверить».</p>
     </div>
 
-    <!-- Голоса -->
-    <div class="demo-panel" id="panel-votes" role="tabpanel" aria-labelledby="tab-votes" hidden>
-      <div class="demo-toolbar">
-        <label for="questionType" style="font-size:14px;font-weight:600">Тип вопроса:</label>
-        <select id="questionType">
-          <option value="simple">Обычный — большинство от участвующих</option>
-          <option value="twothirds">Капремонт и др. — 2/3 от всех голосов дома</option>
-        </select>
-        <div class="spacer"></div>
-        <button class="btn btn-ghost btn-small" id="allFor">Все «за»</button>
-        <button class="btn btn-ghost btn-small" id="clearVotes">Очистить</button>
+    <!-- Демо 2: чат-бот -->
+    <div class="demo-panel" id="panel-bot" role="tabpanel" aria-labelledby="tab-bot" hidden>
+      <div class="chat-grid">
+        <div>
+          <h3 style="font-size:18px;margin-bottom:10px">Бот отвечает вместо председателя</h3>
+          <p style="font-size:14.5px;color:var(--muted);margin-bottom:14px">Типовые вопросы жителей — «куда передать показания?»,
+            «когда платить?» — бот закрывает сам, в любое время суток. Показания он принимает,
+            проверяет и сразу записывает в таблицу.</p>
+          <ul style="font-size:14px;color:var(--muted);padding-left:18px;display:grid;gap:6px;margin:0">
+            <li>отвечает на частые вопросы;</li>
+            <li>принимает показания приборов учёта;</li>
+            <li>напоминает о сроках передачи;</li>
+            <li>принимает типовые обращения;</li>
+            <li>снижает поток сообщений председателю.</li>
+          </ul>
+          <p class="demo-note">Попробуйте в окне справа: нажмите «Передать показания» и пройдите путь жителя.</p>
+        </div>
+        <div class="chat-win" aria-label="Демо чат-бота">
+          <div class="chat-head">
+            <span class="chat-ava" aria-hidden="true">🏠</span>
+            <span>Помощник дома<small>онлайн · отвечает мгновенно</small></span>
+          </div>
+          <div class="chat-log" id="chatLog" aria-live="polite"></div>
+          <div class="quick" id="chatQuick"></div>
+          <div class="chat-inrow" id="chatInRow" hidden>
+            <input id="chatInput" inputmode="decimal" placeholder="Например: 251,4" aria-label="Показания">
+            <button class="btn btn-primary btn-small" id="chatSend">Отправить</button>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <div class="vote-summary num" aria-live="polite">
-        <div class="vs-card">
-          <div class="label">Кворум</div>
-          <div class="value" id="vQuorum">0%</div>
-        </div>
-        <div class="vs-card">
-          <div class="label">Собрание правомочно</div>
-          <div class="value" id="vLegal">—</div>
-        </div>
-        <div class="vs-card">
-          <div class="label">«За» по вопросу</div>
-          <div class="value" id="vFor">0%</div>
-        </div>
-        <div class="vs-card">
-          <div class="label">Решение</div>
-          <div class="value" id="vDecision">—</div>
-        </div>
+    <!-- Демо 3: расходы -->
+    <div class="demo-panel" id="panel-costs" role="tabpanel" aria-labelledby="tab-costs" hidden>
+      <div class="summary-cards">
+        <div class="sm-card"><div class="label">Начислено за год</div><div class="value num" id="costAcc">0 ₽</div></div>
+        <div class="sm-card"><div class="label">Оплачено</div><div class="value num" id="costPaid">0 ₽</div></div>
+        <div class="sm-card"><div class="label">Текущий долг</div><div class="value num" id="costDebt">0 ₽</div></div>
       </div>
-      <div class="vote-bar" aria-hidden="true">
-        <i id="barFor" style="background:var(--teal)"></i>
-        <i id="barAgainst" style="background:var(--against)"></i>
-        <i id="barAbstain" style="background:var(--abstain)"></i>
-      </div>
-
       <div class="table-scroll">
-        <table class="sheet" id="voteTable">
+        <table class="sheet" id="costTable">
           <thead>
             <tr>
-              <th>Кв.</th>
-              <th class="num">Площадь, м²</th>
-              <th class="num">Доля голосов</th>
-              <th>Голос</th>
+              <th>Месяц</th><th class="num">Начислено, ₽</th><th class="num">Оплачено, ₽</th>
+              <th class="num">Долг на конец</th><th>Статус</th>
             </tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
-      <p class="demo-note">Голос каждой квартиры весит пропорционально её площади — как требует Жилищный кодекс.
-        Попробуйте переключить тип вопроса: порог принятия решения изменится.</p>
+      <p class="demo-note">Меняйте начисления и оплаты — долг пересчитывается нарастающим итогом.
+        Так видно, в каком месяце начал копиться долг и когда он закрыт.</p>
     </div>
 
-    <!-- Протокол -->
-    <div class="demo-panel" id="panel-proto" role="tabpanel" aria-labelledby="tab-proto" hidden>
-      <div class="proto-grid">
+    <!-- Демо 4: запись клиентов -->
+    <div class="demo-panel" id="panel-book" role="tabpanel" aria-labelledby="tab-book" hidden>
+      <div class="book-grid">
         <div>
-          <div class="field">
-            <label for="pAddr">Адрес дома</label>
-            <input id="pAddr" type="text" value="г. Тверь, ул. Садовая, д. 15">
+          <h3 style="font-size:18px;margin-bottom:12px">Шаг 1. Клиент выбирает услугу</h3>
+          <div class="svc-opts" id="svcOpts" role="group" aria-label="Услуги"></div>
+          <div class="field" style="max-width:260px">
+            <label for="bkName">Ваше имя (для записи)</label>
+            <input id="bkName" type="text" value="Ирина">
           </div>
-          <div class="field">
-            <label for="pNum">Номер протокола</label>
-            <input id="pNum" type="text" value="2/2026">
+          <h3 style="font-size:18px;margin:6px 0 12px">Шаг 2. Выбирает свободное время</h3>
+          <div class="slots" id="slotGrid" role="group" aria-label="Свободное время"></div>
+          <p class="demo-note">Переключите услугу — доступные окна пересчитаются под её длительность:
+            для «Свадебного образа» (3 часа) свободных начал меньше, чем для «Стрижки» (30 минут).</p>
+        </div>
+        <div>
+          <h3 style="font-size:18px;margin-bottom:12px">Шаг 3. Мастер видит расписание</h3>
+          <div class="cal">
+            <div class="cal-head"><span>Сегодня</span><span style="color:var(--muted);font-weight:400">09:00–18:00</span></div>
+            <table id="calTable" aria-label="Расписание мастера"><tbody></tbody></table>
           </div>
-          <div class="field">
-            <label for="pDate">Дата собрания</label>
-            <input id="pDate" type="date" value="2026-07-25">
+          <p style="margin-top:12px"><button class="btn btn-ghost btn-small" id="bkReset">Сбросить демо</button></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Демо 5: родительский комитет -->
+    <div class="demo-panel" id="panel-parents" role="tabpanel" aria-labelledby="tab-parents" hidden>
+      <div class="summary-cards">
+        <div class="sm-card"><div class="label">Собрано</div><div class="value num ok" id="pcIn">0 ₽</div></div>
+        <div class="sm-card"><div class="label">Расходы</div><div class="value num" id="pcOut">0 ₽</div></div>
+        <div class="sm-card"><div class="label">Остаток</div><div class="value num" id="pcRest">0 ₽</div></div>
+        <div class="sm-card"><div class="label">Ещё не сдали</div><div class="value num no" id="pcDebt">0</div></div>
+      </div>
+      <div class="pc-grid">
+        <div>
+          <div class="demo-toolbar" style="margin-bottom:12px">
+            <label for="pcFee" style="font-size:13px;font-weight:600;color:var(--muted)">Взнос, ₽</label>
+            <input id="pcFee" type="number" value="1500" min="0" step="100"
+              style="width:110px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font-data);background:var(--paper);color:var(--ink);text-align:right">
           </div>
-          <div class="field">
-            <label for="pForm">Форма проведения</label>
-            <select id="pForm">
-              <option>очно-заочная</option>
-              <option>очная</option>
-              <option>заочная</option>
+          <div class="table-scroll">
+            <table class="sheet" id="pcTable" style="min-width:380px">
+              <thead><tr><th>Родитель</th><th>Статус</th><th class="num">Сумма</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <h3 style="font-size:16px;margin:22px 0 10px">Расходы</h3>
+          <ul class="pc-exp" id="pcExpList"></ul>
+          <div class="demo-toolbar">
+            <select id="pcExpWhat" aria-label="Статья расхода">
+              <option>Подарки детям</option>
+              <option>Канцтовары</option>
+              <option>Питьевая вода</option>
+              <option>Экскурсия</option>
+              <option>Хознужды</option>
             </select>
-          </div>
-          <div class="field">
-            <label for="pAgenda">Повестка — по одному вопросу на строку</label>
-            <textarea id="pAgenda">Выбор председателя и секретаря собрания
-Утверждение плана текущего ремонта подъездов
-Установка общедомового счётчика тепла</textarea>
-          </div>
-          <div class="form-actions">
-            <button class="btn btn-primary btn-small" id="copyProto">Скопировать текст</button>
-            <button class="btn btn-ghost btn-small" id="fillProto">Заполнить примером</button>
+            <input id="pcExpSum" type="number" placeholder="Сумма" min="1"
+              style="width:110px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font-data);background:var(--paper);color:var(--ink);text-align:right">
+            <button class="btn btn-ghost btn-small" id="pcExpAdd">+ Добавить расход</button>
           </div>
         </div>
-        <div class="proto-paper" id="protoPreview" aria-live="polite"></div>
+        <div>
+          <div class="demo-toolbar">
+            <h3 style="font-size:16px">Отчёт для родителей</h3>
+            <span class="spacer"></span>
+            <button class="btn btn-primary btn-small" id="pcCopy">Скопировать текст</button>
+          </div>
+          <div class="report-paper" id="pcReport" aria-live="polite"></div>
+          <p class="demo-note">Отчёт обновляется сам при каждой отметке об оплате или новом расходе —
+            остаётся отправить его в чат родителей.</p>
+        </div>
       </div>
-      <p class="demo-note">Предпросмотр обновляется на лету. Полная версия собирает протокол
-        по требованиям приказа Минстроя № 44/пр — с реестром собственников и итогами голосования.</p>
     </div>
   </div>
 </section>
 
-<!-- ── Консультации ──────────────────────────────────── -->
-<section id="services">
+<!-- ── Как это работает ──────────────────────────────── -->
+<section id="how">
   <div class="wrap reveal">
-    <p class="eyebrow">Консультации</p>
-    <h2>С чем ко мне приходят председатели</h2>
-    <p class="section-lead">Каждый вопрос разбираем на вашем доме, с вашими документами — не «в среднем по стране».</p>
-    <div class="cards3">
-      <article class="svc">
-        <h3>Собрание под ключ</h3>
-        <p>Повестка без юридических ловушек, уведомления в срок, бюллетени, подсчёт и протокол,
-          который примет ГЖИ с первого раза.</p>
-        <button class="btn btn-ghost btn-small" data-consult="Собрание под ключ">Задать вопрос</button>
-      </article>
-      <article class="svc">
-        <h3>Спор с управляющей компанией</h3>
-        <p>Проверю начисления и акты, помогу составить претензию и подготовиться к разговору с УК —
-          с цифрами на руках, а не на эмоциях.</p>
-        <button class="btn btn-ghost btn-small" data-consult="Спор с управляющей компанией">Задать вопрос</button>
-      </article>
-      <article class="svc">
-        <h3>Учёт по дому с нуля</h3>
-        <p>Настрою учёт показаний, платежей и обращений жильцов в таблицах под ваш дом
-          и научу вести его за 15 минут в месяц.</p>
-        <button class="btn btn-ghost btn-small" data-consult="Учёт по дому с нуля">Задать вопрос</button>
-      </article>
+    <p class="eyebrow">Как это работает</p>
+    <h2>От задачи до готового инструмента — 4 шага</h2>
+    <p class="section-lead">Не нужно разбираться в программировании: вы объясняете задачу,
+      я превращаю её в удобный инструмент.</p>
+    <div class="steps">
+      <div class="step-card"><div class="n">1</div><h3>Вы рассказываете задачу</h3><p>Что сейчас приходится делать вручную — в Excel, блокноте или чатах.</p></div>
+      <div class="step-card"><div class="n">2</div><h3>Я разбираю процесс</h3><p>Определяю, что можно упростить, а что — автоматизировать полностью.</p></div>
+      <div class="step-card"><div class="n">3</div><h3>Создаю решение</h3><p>Таблицу, систему учёта или приложение — под вашу задачу, не по шаблону.</p></div>
+      <div class="step-card"><div class="n">4</div><h3>Вы получаете инструмент</h3><p>Которым можно пользоваться сразу, без сложного обучения.</p></div>
     </div>
   </div>
 </section>
 
-<!-- ── Прайс ─────────────────────────────────────────── -->
-<section class="price-section" id="price">
+<!-- ── Почему обращаются ─────────────────────────────── -->
+<section id="why" style="padding-top:0">
   <div class="wrap reveal">
-    <p class="eyebrow">Таблицы</p>
-    <h2>Готовые таблицы для вашего дома</h2>
-    <p class="section-lead">Работают в Excel и Google Таблицах. Оплатили — получили файл и видеоинструкцию на почту.</p>
-    <div class="cards3">
-      <article class="price">
-        <h3>Показания счётчиков</h3>
-        <div class="cost num">990 ₽<small> · разовый платёж</small></div>
-        <ul>
-          <li>ХВС, ГВС, электричество, тепло</li>
-          <li>Автопроверка ошибок ввода</li>
-          <li>Сводка для передачи в УК</li>
-        </ul>
-        <button class="btn btn-primary" data-buy="Показания счётчиков" data-cost="990 ₽">Купить</button>
-      </article>
-      <article class="price featured">
-        <span class="badge">Берут чаще всего</span>
-        <h3>Комплект председателя</h3>
-        <div class="cost num">3 900 ₽<small> · всё сразу</small></div>
-        <ul>
-          <li>Все три таблицы + шаблон протокола</li>
-          <li>Реестр собственников с долями</li>
-          <li>Час консультации в подарок</li>
-        </ul>
-        <button class="btn btn-primary" data-buy="Комплект председателя" data-cost="3 900 ₽">Купить комплект</button>
-      </article>
-      <article class="price">
-        <h3>Голоса ОСС + протокол</h3>
-        <div class="cost num">1 490 ₽<small> · разовый платёж</small></div>
-        <ul>
-          <li>Подсчёт по долям, кворум сам</li>
-          <li>Итоги сразу в текст протокола</li>
-          <li>Порог решения по типу вопроса</li>
-        </ul>
-        <button class="btn btn-primary" data-buy="Голоса ОСС + протокол" data-cost="1 490 ₽">Купить</button>
-      </article>
+    <p class="eyebrow">Почему ко мне обращаются</p>
+    <h2>Убираем ручную работу. Наводим порядок.</h2>
+    <div class="adv-grid" style="margin-top:32px">
+      <div class="adv"><div class="mark">✓</div><div><b>Практический опыт</b><p>12 лет работы с реальными задачами, а не только теорией.</p></div></div>
+      <div class="adv"><div class="mark">✓</div><div><b>Понятный подход</b><p>Без сложной терминологии и ненужных функций.</p></div></div>
+      <div class="adv"><div class="mark">✓</div><div><b>Решение под задачу</b><p>Не универсальный шаблон, а инструмент под конкретную ситуацию.</p></div></div>
+      <div class="adv"><div class="mark">✓</div><div><b>Автоматизация</b><p>Максимально убираем повторяющиеся ручные действия.</p></div></div>
+      <div class="adv"><div class="mark">✓</div><div><b>Контроль</b><p>Информация становится структурированной и доступной.</p></div></div>
+      <div class="adv"><div class="mark">✓</div><div><b>Экономия времени</b><p>Инструмент помогает, а не создаёт новую работу.</p></div></div>
     </div>
   </div>
 </section>
 
-<!-- ── FAQ ───────────────────────────────────────────── -->
-<section id="faq">
+<!-- ── Индивидуальная разработка ─────────────────────── -->
+<section id="custom" style="padding-top:0">
   <div class="wrap reveal">
-    <p class="eyebrow">Вопросы</p>
-    <h2>Частые вопросы</h2>
-    <div class="faq" style="max-width:720px">
-      <details>
-        <summary>Подойдут ли таблицы, если я работаю только с телефона?</summary>
-        <p>Да. Таблицы открываются в бесплатном приложении Google Таблицы на любом смартфоне.
-          Формулы защищены от случайного удаления — сломать ничего не получится.</p>
-      </details>
-      <details>
-        <summary>Признает ли ГЖИ протокол, оформленный по вашему шаблону?</summary>
-        <p>Шаблон собран по приказу Минстроя № 44/пр — с обязательными реквизитами, реестром
-          и итогами голосования. По нему уже оформлены сотни протоколов, принятых жилищными инспекциями.</p>
-      </details>
-      <details>
-        <summary>Что, если в моём доме 300 квартир — таблицы потянут?</summary>
-        <p>Потянут: таблицы рассчитаны на дома до 1 000 помещений. Реестр собственников заполняется
-          один раз, дальше всё подставляется автоматически.</p>
-      </details>
-      <details>
-        <summary>Таблица обновится, если изменится законодательство?</summary>
-        <p>Да, обновления бесплатны. Когда меняются требования к протоколам или расчётам,
-          я присылаю новую версию всем покупателям на почту.</p>
-      </details>
+    <div class="custom-band">
+      <h2>Не нашли готового решения? Создадим своё.</h2>
+      <p>Если у вас есть задача, которую сейчас приходится решать вручную — в Excel, блокноте,
+        мессенджерах или десятках чатов, — возможно, этот процесс можно превратить
+        в удобный цифровой инструмент.</p>
+      <a class="btn btn-primary" href="#contact" data-need="custom">Рассказать о своей задаче</a>
     </div>
   </div>
 </section>
 
-<!-- ── Заявка ────────────────────────────────────────── -->
-<section id="contact">
+<!-- ── Консультация ──────────────────────────────────── -->
+<section id="consult" style="padding-top:0">
   <div class="wrap reveal">
-    <p class="eyebrow">Связаться</p>
-    <h2>Запишитесь на консультацию</h2>
-    <p class="section-lead">Опишите ситуацию — отвечу в течение рабочего дня и предложу план действий.</p>
-    <form class="contact-card" id="contactForm" novalidate>
-      <div class="field">
-        <label for="cName">Как к вам обращаться</label>
-        <input id="cName" type="text" required placeholder="Имя">
+    <p class="eyebrow">Консультация</p>
+    <h2>Консультация и разбор задачи</h2>
+    <p class="section-lead">Обратиться можно не только за разработкой. На консультации разберём
+      текущую ситуацию, найдём узкие места, подберём удобный способ учёта и определим,
+      что можно автоматизировать — а что проще оставить как есть.</p>
+    <a class="btn btn-primary" href="#contact" data-need="consult">Записаться на консультацию</a>
+  </div>
+</section>
+
+<!-- ── CTA + форма ───────────────────────────────────── -->
+<section id="contact" class="demo-section">
+  <div class="wrap reveal">
+    <p class="eyebrow">Контакты</p>
+    <h2>Расскажите, какую задачу сегодня приходится решать вручную</h2>
+    <p class="section-lead">Вместе определим, можно ли превратить её в понятную таблицу,
+      удобную систему учёта или простое приложение.</p>
+    <div class="contact-grid">
+      <form class="contact-card" id="contactForm" novalidate>
+        <div class="field">
+          <label for="cName">Имя</label>
+          <input id="cName" type="text" required placeholder="Как к вам обращаться">
+        </div>
+        <div class="field">
+          <label for="cPhone">Телефон или Telegram</label>
+          <input id="cPhone" type="text" required placeholder="+7 ___ ___-__-__ или @ник">
+        </div>
+        <div class="field">
+          <label for="cNeed">Что вам нужно</label>
+          <select id="cNeed">
+            <option value="consult">Консультация</option>
+            <option value="table">Таблица учёта</option>
+            <option value="costs">Контроль коммунальных расходов</option>
+            <option value="master">Приложение для мастера / записи клиентов</option>
+            <option value="parents">Приложение для родительского комитета</option>
+            <option value="custom">Индивидуальное решение</option>
+            <option value="other">Другое</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="cQuestion">Краткое описание задачи</label>
+          <textarea id="cQuestion" required placeholder="Например: собираю показания в чате дома, трачу на это два вечера в месяц…"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Отправить заявку</button>
+          <button class="btn tg-btn" type="button" id="tgBtn">✈ Написать в Telegram</button>
+        </div>
+        <p class="demo-note">Прототип: заявка пока никуда не отправляется. На готовом сайте
+          она будет приходить вам в Telegram или на почту.</p>
+      </form>
+      <div>
+        <h3 style="font-size:18px;margin-bottom:12px">Что будет после заявки</h3>
+        <div class="psr" style="font-size:14.5px">
+          <div><span class="k" style="width:auto;min-width:24px">1.</span><span class="v">Отвечу в течение рабочего дня.</span></div>
+          <div><span class="k" style="width:auto;min-width:24px">2.</span><span class="v">Задам 2–3 уточняющих вопроса о вашем процессе.</span></div>
+          <div><span class="k" style="width:auto;min-width:24px">3.</span><span class="v">Предложу вариант решения и сроки — без обязательств.</span></div>
+        </div>
+        <p class="about-quote" style="margin-top:26px">«Порядок вместо хаоса. Автоматизация вместо рутины.
+          Понятные инструменты вместо сложных систем».</p>
       </div>
-      <div class="field">
-        <label for="cPhone">Телефон или Telegram</label>
-        <input id="cPhone" type="text" required placeholder="+7 ___ ___-__-__ или @ник">
-      </div>
-      <div class="field">
-        <label for="cQuestion">Ваш вопрос</label>
-        <textarea id="cQuestion" required placeholder="Например: УК не отдаёт техническую документацию…"></textarea>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-primary" type="submit">Отправить заявку</button>
-        <span style="font-size:13px;color:var(--muted)">Без спама и рассылок</span>
-      </div>
-    </form>
+    </div>
   </div>
 </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <span>© 2026 Марина Соколова · Консультации председателей советов МКД · Таблицы для учёта и собраний</span>
-    <span>Прототип: имя, цифры и цены — образец для демонстрации; формы не отправляют данные.</span>
+    <span><b>Порядок вместо хаоса</b> — учёт, контроль и автоматизация: МКД · частные мастера · родительские комитеты.</span>
+    <span>Прототип сайта. Все данные в демонстрациях условные.</span>
   </div>
 </footer>
 
-<!-- ── Модалка заказа ────────────────────────────────── -->
-<div class="modal-overlay" id="orderOverlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="orderTitle">
-    <button class="modal-close" data-close="orderOverlay" aria-label="Закрыть">✕</button>
-    <h3 id="orderTitle">Заказ таблицы</h3>
-    <p class="sub" id="orderSub">Файл и видеоинструкция придут на почту после оплаты.</p>
-    <form id="orderForm" novalidate>
-      <div class="field">
-        <label for="oName">Имя</label>
-        <input id="oName" type="text" required placeholder="Имя">
-      </div>
-      <div class="field">
-        <label for="oEmail">Электронная почта</label>
-        <input id="oEmail" type="email" required placeholder="pochta@example.ru">
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-primary" type="submit" id="orderSubmit">Перейти к оплате</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- ── Модалка консультации ──────────────────────────── -->
-<div class="modal-overlay" id="consultOverlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="consultTitle">
-    <button class="modal-close" data-close="consultOverlay" aria-label="Закрыть">✕</button>
-    <h3 id="consultTitle">Вопрос по теме</h3>
-    <p class="sub" id="consultSub"></p>
-    <form id="consultForm" novalidate>
-      <div class="field">
-        <label for="qName">Имя</label>
-        <input id="qName" type="text" required placeholder="Имя">
-      </div>
-      <div class="field">
-        <label for="qContact">Телефон или Telegram</label>
-        <input id="qContact" type="text" required placeholder="+7 ___ ___-__-__ или @ник">
-      </div>
-      <div class="field">
-        <label for="qText">Коротко о ситуации</label>
-        <textarea id="qText" required placeholder="Что происходит и чего хотите добиться"></textarea>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-primary" type="submit">Отправить вопрос</button>
-      </div>
-    </form>
-  </div>
-</div>
-
+<button class="tg-fab" id="tgFab" aria-label="Написать в Telegram">✈</button>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script>
@@ -785,8 +1022,8 @@
   var fmt = function (n, d) {
     return n.toLocaleString('ru-RU', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
   };
+  var rub = function (n) { return fmt(n) + ' ₽'; };
 
-  /* ── Тосты ── */
   function toast(msg) {
     var el = document.createElement('div');
     el.className = 'toast';
@@ -795,24 +1032,21 @@
     setTimeout(function () { el.remove(); }, 3400);
   }
 
-  /* ── Герой: анимация кворума ── */
+  /* ── Герой: анимация счётчика ── */
   (function () {
-    var target = 73.7;
-    var label = $('#heroQuorum'), bar = $('#heroBar');
+    var target = 39;
+    var label = $('#heroCount'), bar = $('#heroBar');
+    var pct = target / 48 * 100;
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) {
-      label.textContent = fmt(target, 1);
-      bar.style.width = target + '%';
-      return;
-    }
+    if (reduce) { label.textContent = target; bar.style.width = pct + '%'; return; }
     setTimeout(function () {
-      bar.style.width = target + '%';
+      bar.style.width = pct + '%';
       var t0 = null;
       function step(ts) {
         if (!t0) t0 = ts;
         var p = Math.min((ts - t0) / 1400, 1);
         p = 1 - Math.pow(1 - p, 3);
-        label.textContent = fmt(target * p, 1);
+        label.textContent = Math.round(target * p);
         if (p < 1) requestAnimationFrame(step);
       }
       requestAnimationFrame(step);
@@ -827,21 +1061,31 @@
       });
     }, { threshold: 0.12 });
     $$('.reveal').forEach(function (el) { io.observe(el); });
-    // страховка: если наблюдатель не сработал, показать всё через 2,5 с
     setTimeout(function () {
       $$('.reveal').forEach(function (el) { el.classList.add('on'); });
     }, 2500);
   })();
 
   /* ── Вкладки демо ── */
+  function selectTab(tab) {
+    $$('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t === tab)); });
+    $$('.demo-panel').forEach(function (p) { p.hidden = (p.id !== tab.getAttribute('aria-controls')); });
+  }
   $$('.tab').forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      $$('.tab').forEach(function (t) {
-        t.setAttribute('aria-selected', String(t === tab));
-      });
-      $$('.demo-panel').forEach(function (p) {
-        p.hidden = (p.id !== tab.getAttribute('aria-controls'));
-      });
+    tab.addEventListener('click', function () { selectTab(tab); });
+  });
+  $$('.demo-jump').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tab = document.getElementById(btn.dataset.tab);
+      if (tab) { selectTab(tab); document.getElementById('demo').scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+
+  /* ── Карточки аудиторий ── */
+  $$('.aud').forEach(function (card) {
+    card.addEventListener('click', function () {
+      var el = document.getElementById(card.dataset.target);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   });
 
@@ -879,12 +1123,11 @@
         '<td class="num">' + fmt(r.prev, res === 'el' ? 0 : 1) + '</td>' +
         '<td class="num"><input type="number" inputmode="decimal" step="any" ' +
           'aria-label="Текущие показания, квартира ' + r.flat + '" data-flat="' + r.flat + '" ' +
-          'value="' + (curr !== undefined ? curr : '') + '" placeholder="' + fmt(r.prev, res === 'el' ? 0 : 1).replace(/ /g, '') + '"></td>' +
+          'value="' + (curr !== undefined ? curr : '') + '" placeholder="' + fmt(r.prev, res === 'el' ? 0 : 1).replace(/ /g, '') + '"></td>' +
         '<td class="num usage-cell">—</td>' +
         '<td class="status-cell"></td>';
       tbody.appendChild(tr);
     });
-    // средний расход для пометки аномалий
     var median = 0;
     if (usages.length) {
       var sorted = usages.slice().sort(function (a, b) { return a - b; });
@@ -921,7 +1164,7 @@
       var again = $('#meterTable input[data-flat="' + focused + '"]');
       if (again) {
         again.focus();
-        var v = again.value; again.value = ''; again.value = v; // курсор в конец
+        var v = again.value; again.value = ''; again.value = v;
       }
     }
   });
@@ -944,218 +1187,371 @@
   });
   renderMeters();
 
-  /* ── Демо 2: голоса ── */
-  var flats = [
-    { n: 1,  area: 33.4 }, { n: 2,  area: 45.2 }, { n: 3,  area: 45.8 },
-    { n: 4,  area: 60.1 }, { n: 5,  area: 33.6 }, { n: 6,  area: 45.0 },
-    { n: 7,  area: 60.3 }, { n: 8,  area: 74.8 }, { n: 9,  area: 33.2 },
-    { n: 10, area: 45.5 }, { n: 11, area: 60.0 }, { n: 12, area: 74.6 }
-  ];
-  var votes = { 1: 'for', 2: 'for', 4: 'for', 7: 'for', 8: 'against', 11: 'abstain' };
-  var totalArea = flats.reduce(function (s, f) { return s + f.area; }, 0);
+  /* ── Демо 2: чат-бот ── */
+  var chatLog = $('#chatLog'), chatQuick = $('#chatQuick'), chatInRow = $('#chatInRow'), chatInput = $('#chatInput');
+  var chatFlat = null;
+  var chatPrev = { '12': 245.1, '45': 318.7, '78': 156.2 };
 
-  function renderVotes() {
-    var tbody = $('#voteTable tbody');
+  function botSay(text) {
+    var el = document.createElement('div');
+    el.className = 'msg bot';
+    el.textContent = text;
+    chatLog.appendChild(el);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+  function userSay(text) {
+    var el = document.createElement('div');
+    el.className = 'msg user';
+    el.textContent = text;
+    chatLog.appendChild(el);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+  function setQuick(items) {
+    chatQuick.innerHTML = '';
+    items.forEach(function (it) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = it.t;
+      b.addEventListener('click', it.act);
+      chatQuick.appendChild(b);
+    });
+  }
+  function chatMenu(greeting) {
+    chatInRow.hidden = true;
+    if (greeting) botSay(greeting);
+    setQuick([
+      { t: 'Передать показания', act: function () {
+          userSay('Передать показания');
+          botSay('Выберите вашу квартиру:');
+          setQuick([
+            { t: 'Кв. 12', act: pickFlat('12') },
+            { t: 'Кв. 45', act: pickFlat('45') },
+            { t: 'Кв. 78', act: pickFlat('78') }
+          ]);
+        } },
+      { t: 'Когда передавать?', act: function () {
+          userSay('Когда передавать показания?');
+          botSay('Показания принимаются с 18 по 25 число каждого месяца. 18-го я сам напомню вам в этом чате 🙂');
+        } },
+      { t: 'Куда платить?', act: function () {
+          userSay('Куда платить за коммунальные услуги?');
+          botSay('В реальном боте здесь будут реквизиты вашей УК и ссылка на оплату. Житель получает ответ мгновенно — без звонка председателю.');
+        } },
+      { t: 'Начать заново', act: function () {
+          chatLog.innerHTML = '';
+          chatFlat = null;
+          chatMenu('Здравствуйте! Я помощник вашего дома. Чем могу помочь?');
+        } }
+    ]);
+  }
+  function pickFlat(n) {
+    return function () {
+      chatFlat = n;
+      userSay('Кв. ' + n);
+      botSay('Введите показания холодной воды. Прошлые: ' + fmt(chatPrev[n], 1) + ' м³.');
+      chatQuick.innerHTML = '';
+      chatInRow.hidden = false;
+      chatInput.value = '';
+      chatInput.focus();
+    };
+  }
+  function chatSubmit() {
+    var raw = chatInput.value.trim().replace(',', '.');
+    var val = Number(raw);
+    if (!raw || isNaN(val)) { botSay('Не разобрал число. Введите показания цифрами, например: 251,4'); return; }
+    userSay(chatInput.value.trim());
+    var prev = chatPrev[chatFlat];
+    if (val < prev) {
+      botSay('Хм, это меньше прошлых показаний (' + fmt(prev, 1) + '). Проверьте, пожалуйста, и введите ещё раз.');
+      chatInput.value = '';
+      return;
+    }
+    botSay('Принято! Кв. ' + chatFlat + ', холодная вода: ' + fmt(val, 1) + ' м³ (расход ' + fmt(val - prev, 1) +
+      ' м³). Данные уже в таблице председателя — пересылать ничего не нужно ✔');
+    chatPrev[chatFlat] = val;
+    chatMenu('Могу помочь с чем-то ещё?');
+  }
+  $('#chatSend').addEventListener('click', chatSubmit);
+  chatInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); chatSubmit(); } });
+  chatMenu('Здравствуйте! Я помощник вашего дома. Отвечаю на вопросы и принимаю показания — в любое время. Чем могу помочь?');
+
+  /* ── Демо 3: коммунальные расходы ── */
+  var costMonths = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август'];
+  var costData = [
+    { acc: 4820, paid: 4820 },
+    { acc: 4795, paid: 4795 },
+    { acc: 5110, paid: 5000 },
+    { acc: 4930, paid: 5040 },
+    { acc: 4610, paid: 4610 },
+    { acc: 4880, paid: 3000 },
+    { acc: 4750, paid: '' },
+    { acc: '', paid: '' }
+  ];
+
+  function renderCosts(focusRef) {
+    var tbody = $('#costTable tbody');
     tbody.innerHTML = '';
-    flats.forEach(function (f) {
+    var debt = 0, sumAcc = 0, sumPaid = 0;
+    costData.forEach(function (row, i) {
+      var acc = row.acc === '' ? 0 : Number(row.acc) || 0;
+      var paid = row.paid === '' ? 0 : Number(row.paid) || 0;
+      sumAcc += acc; sumPaid += paid;
+      debt += acc - paid;
+      var filled = row.acc !== '' || row.paid !== '';
+      var status = '';
+      if (filled) {
+        if (debt > 0.5) status = '<span class="chip chip-err">долг ' + rub(Math.round(debt)) + '</span>';
+        else if (debt < -0.5) status = '<span class="chip chip-warn">переплата ' + rub(Math.round(-debt)) + '</span>';
+        else status = '<span class="chip chip-ok">в ноль</span>';
+      }
       var tr = document.createElement('tr');
-      var v = votes[f.n];
       tr.innerHTML =
-        '<td class="num">' + f.n + '</td>' +
-        '<td class="num">' + fmt(f.area, 1) + '</td>' +
-        '<td class="num">' + fmt(f.area / totalArea * 100, 2) + '%</td>' +
-        '<td><span class="seg" role="group" aria-label="Голос квартиры ' + f.n + '">' +
-          '<button type="button" class="v-for" data-flat="' + f.n + '" data-vote="for" aria-pressed="' + (v === 'for') + '">За</button>' +
-          '<button type="button" class="v-against" data-flat="' + f.n + '" data-vote="against" aria-pressed="' + (v === 'against') + '">Против</button>' +
-          '<button type="button" class="v-abstain" data-flat="' + f.n + '" data-vote="abstain" aria-pressed="' + (v === 'abstain') + '">Возд.</button>' +
-        '</span></td>';
+        '<td>' + costMonths[i] + '</td>' +
+        '<td class="num"><input type="number" min="0" data-i="' + i + '" data-k="acc" value="' + row.acc + '" aria-label="Начислено, ' + costMonths[i] + '"></td>' +
+        '<td class="num"><input type="number" min="0" data-i="' + i + '" data-k="paid" value="' + row.paid + '" aria-label="Оплачено, ' + costMonths[i] + '"></td>' +
+        '<td class="num">' + (filled ? rub(Math.round(debt)) : '—') + '</td>' +
+        '<td>' + status + '</td>';
       tbody.appendChild(tr);
     });
-    updateVoteSummary();
+    $('#costAcc').textContent = rub(sumAcc);
+    $('#costPaid').textContent = rub(sumPaid);
+    var el = $('#costDebt');
+    el.textContent = rub(Math.max(0, Math.round(debt)));
+    el.className = 'value num ' + (debt > 0.5 ? 'no' : 'ok');
+    if (focusRef) {
+      var again = $('#costTable input[data-i="' + focusRef.i + '"][data-k="' + focusRef.k + '"]');
+      if (again) { again.focus(); var v = again.value; again.value = ''; again.value = v; }
+    }
   }
+  $('#costTable').addEventListener('input', function (e) {
+    if (e.target.matches('input[type="number"]')) {
+      costData[e.target.dataset.i][e.target.dataset.k] = e.target.value;
+      renderCosts({ i: e.target.dataset.i, k: e.target.dataset.k });
+    }
+  });
+  renderCosts();
 
-  function updateVoteSummary() {
-    var forA = 0, againstA = 0, abstainA = 0;
-    flats.forEach(function (f) {
-      if (votes[f.n] === 'for') forA += f.area;
-      else if (votes[f.n] === 'against') againstA += f.area;
-      else if (votes[f.n] === 'abstain') abstainA += f.area;
+  /* ── Демо 4: запись клиентов ── */
+  var bkServices = [
+    { id: 'cut',   name: 'Стрижка',          dur: 1, time: '30 мин' },
+    { id: 'mani',  name: 'Маникюр',          dur: 2, time: '1 час' },
+    { id: 'color', name: 'Окрашивание',      dur: 4, time: '2 часа' },
+    { id: 'bride', name: 'Свадебный образ',  dur: 6, time: '3 часа' }
+  ];
+  var BK_DAY = 18; /* полчаса с 09:00 до 18:00 */
+  function bkSeed() {
+    return [
+      { start: 2, len: 2, label: 'Маникюр', client: 'Анна', seed: true },
+      { start: 8, len: 4, label: 'Окрашивание', client: 'Ольга', seed: true }
+    ];
+  }
+  var bkBookings = bkSeed();
+  var bkSel = 'mani';
+
+  function bkTime(i) {
+    var h = 9 + Math.floor(i / 2);
+    return (h < 10 ? '0' : '') + h + ':' + (i % 2 ? '30' : '00');
+  }
+  function bkBusyMap() {
+    var b = new Array(BK_DAY).fill(null);
+    bkBookings.forEach(function (bk) {
+      for (var i = bk.start; i < bk.start + bk.len && i < BK_DAY; i++) b[i] = bk;
     });
-    var voted = forA + againstA + abstainA;
-    var quorumPct = voted / totalArea * 100;
-    var hasQuorum = quorumPct > 50;
-    $('#vQuorum').textContent = fmt(quorumPct, 1) + '%';
-    var legal = $('#vLegal');
-    legal.textContent = hasQuorum ? 'Да' : 'Нет';
-    legal.className = 'value ' + (hasQuorum ? 'ok' : 'no');
+    return b;
+  }
+  function renderBooking() {
+    var svc = bkServices.filter(function (s) { return s.id === bkSel; })[0];
+    var busy = bkBusyMap();
 
-    var type = $('#questionType').value;
-    var forPct, passed, forLabel;
-    if (type === 'simple') {
-      forPct = voted > 0 ? forA / voted * 100 : 0;
-      forLabel = fmt(forPct, 1) + '%';
-      passed = hasQuorum && forPct > 50;
+    var opts = $('#svcOpts');
+    opts.innerHTML = '';
+    bkServices.forEach(function (s) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'svc-opt';
+      b.setAttribute('aria-pressed', String(s.id === bkSel));
+      b.innerHTML = '<b>' + s.name + '</b><span>' + s.time + '</span>';
+      b.addEventListener('click', function () { bkSel = s.id; renderBooking(); });
+      opts.appendChild(b);
+    });
+
+    var grid = $('#slotGrid');
+    grid.innerHTML = '';
+    for (var start = 0; start < BK_DAY; start++) {
+      var fits = start + svc.dur <= BK_DAY;
+      var free = fits;
+      if (fits) {
+        for (var i = start; i < start + svc.dur; i++) { if (busy[i]) { free = false; break; } }
+      }
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'slot';
+      b.textContent = bkTime(start);
+      b.disabled = !free;
+      b.title = free ? 'Записаться на ' + bkTime(start) : (fits ? 'Время занято' : 'Не помещается до конца дня');
+      if (free) {
+        (function (s0) {
+          b.addEventListener('click', function () {
+            var name = ($('#bkName').value || 'Клиент').trim();
+            bkBookings.push({ start: s0, len: svc.dur, label: svc.name, client: name });
+            renderBooking();
+            toast('Запись создана: ' + svc.name + ', ' + bkTime(s0) + '–' + bkTime(s0 + svc.dur) +
+              '. Подтверждение отправлено клиенту.');
+          });
+        })(start);
+      }
+      grid.appendChild(b);
+    }
+
+    var busyNow = bkBusyMap();
+    var html = '';
+    for (var row = 0; row < BK_DAY; row++) {
+      var bk = busyNow[row];
+      html += '<tr><td class="t">' + bkTime(row) + '</td>';
+      if (bk && bk.start === row) {
+        html += '<td class="busy' + (bk.seed ? '' : ' new') + '" rowspan="' + bk.len + '">' +
+          bk.label + '<small>' + bk.client + ' · до ' + bkTime(bk.start + bk.len) + '</small></td>';
+      } else if (!bk) {
+        html += '<td class="free">свободно</td>';
+      }
+      html += '</tr>';
+    }
+    $('#calTable tbody').innerHTML = html;
+  }
+  $('#bkReset').addEventListener('click', function () {
+    bkBookings = bkSeed();
+    renderBooking();
+    toast('Демо записи сброшено');
+  });
+  renderBooking();
+
+  /* ── Демо 5: родительский комитет ── */
+  var pcParents = [
+    { name: 'Анна В.', paid: true }, { name: 'Дмитрий К.', paid: true },
+    { name: 'Елена С.', paid: true }, { name: 'Игорь М.', paid: false },
+    { name: 'Мария П.', paid: true }, { name: 'Наталья Р.', paid: false },
+    { name: 'Олег Т.', paid: true }, { name: 'Светлана Ж.', paid: false }
+  ];
+  var pcExpenses = [
+    { what: 'Подарки детям', sum: 4200 },
+    { what: 'Канцтовары', sum: 1350 }
+  ];
+
+  function pcFee() { return Math.max(0, Number($('#pcFee').value) || 0); }
+
+  function renderPC() {
+    var fee = pcFee();
+    var tbody = $('#pcTable tbody');
+    tbody.innerHTML = '';
+    pcParents.forEach(function (p, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + p.name + '</td>' +
+        '<td>' + (p.paid ? '<span class="chip chip-ok">оплачено</span>' : '<span class="chip chip-err">не сдано</span>') + '</td>' +
+        '<td class="num">' + (p.paid ? rub(fee) : '—') + '</td>' +
+        '<td><button type="button" class="btn btn-ghost btn-small" data-i="' + i + '">' +
+          (p.paid ? 'Отменить' : 'Отметить оплату') + '</button></td>';
+      tbody.appendChild(tr);
+    });
+
+    var list = $('#pcExpList');
+    list.innerHTML = '';
+    pcExpenses.forEach(function (e) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span>' + e.what + '</span><span class="num">' + rub(e.sum) + '</span>';
+      list.appendChild(li);
+    });
+
+    var paidCount = pcParents.filter(function (p) { return p.paid; }).length;
+    var collected = paidCount * fee;
+    var spent = pcExpenses.reduce(function (s, e) { return s + e.sum; }, 0);
+    var rest = collected - spent;
+    var debtors = pcParents.filter(function (p) { return !p.paid; });
+
+    $('#pcIn').textContent = rub(collected);
+    $('#pcOut').textContent = rub(spent);
+    var restEl = $('#pcRest');
+    restEl.textContent = rub(rest);
+    restEl.className = 'value num ' + (rest < 0 ? 'no' : '');
+    $('#pcDebt').textContent = debtors.length;
+
+    var today = new Date().toLocaleDateString('ru-RU');
+    var lines = [];
+    lines.push('ОТЧЁТ ПО СБОРАМ ГРУППЫ');
+    lines.push('на ' + today);
+    lines.push('');
+    lines.push('Взнос: ' + rub(fee) + '. Сдали: ' + paidCount + ' из ' + pcParents.length + '.');
+    lines.push('Собрано: ' + rub(collected));
+    lines.push('');
+    lines.push('Расходы:');
+    if (pcExpenses.length) {
+      pcExpenses.forEach(function (e) { lines.push('  — ' + e.what + ': ' + rub(e.sum)); });
     } else {
-      forPct = forA / totalArea * 100;
-      forLabel = fmt(forPct, 1) + '%';
-      passed = hasQuorum && forA >= totalArea * 2 / 3;
+      lines.push('  пока нет');
     }
-    $('#vFor').textContent = forLabel;
-    var dec = $('#vDecision');
-    dec.textContent = !hasQuorum ? 'Нет кворума' : (passed ? 'Принято' : 'Не принято');
-    dec.className = 'value ' + (passed && hasQuorum ? 'ok' : 'no');
-
-    $('#barFor').style.width = (forA / totalArea * 100) + '%';
-    $('#barAgainst').style.width = (againstA / totalArea * 100) + '%';
-    $('#barAbstain').style.width = (abstainA / totalArea * 100) + '%';
-  }
-
-  $('#voteTable').addEventListener('click', function (e) {
-    var b = e.target.closest('button[data-vote]');
-    if (!b) return;
-    var flat = Number(b.dataset.flat);
-    votes[flat] = (votes[flat] === b.dataset.vote) ? undefined : b.dataset.vote;
-    $$('#voteTable button[data-flat="' + flat + '"]').forEach(function (btn) {
-      btn.setAttribute('aria-pressed', String(votes[flat] === btn.dataset.vote));
-    });
-    updateVoteSummary();
-  });
-  $('#questionType').addEventListener('change', updateVoteSummary);
-  $('#allFor').addEventListener('click', function () {
-    flats.forEach(function (f) { votes[f.n] = 'for'; });
-    renderVotes();
-    toast('Все квартиры проголосовали «за»');
-  });
-  $('#clearVotes').addEventListener('click', function () {
-    votes = {};
-    renderVotes();
-    toast('Бюллетени очищены');
-  });
-  renderVotes();
-
-  /* ── Демо 3: протокол ── */
-  var monthsRu = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-  function renderProto() {
-    var addr = $('#pAddr').value || '__________';
-    var num = $('#pNum').value || '____';
-    var dateVal = $('#pDate').value;
-    var dateStr = '«___» ________ 20__ г.';
-    if (dateVal) {
-      var d = new Date(dateVal + 'T00:00:00');
-      dateStr = '«' + d.getDate() + '» ' + monthsRu[d.getMonth()] + ' ' + d.getFullYear() + ' г.';
+    lines.push('Итого расходов: ' + rub(spent));
+    lines.push('');
+    lines.push('ОСТАТОК: ' + rub(rest));
+    if (debtors.length) {
+      lines.push('');
+      lines.push('Ожидаем взнос: ' + debtors.map(function (p) { return p.name; }).join(', '));
     }
-    var form = $('#pForm').value;
-    var agenda = $('#pAgenda').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
-    var html =
-      '<h4>ПРОТОКОЛ № ' + esc(num) + '</h4>' +
-      '<p class="center">внеочередного общего собрания собственников помещений<br>в многоквартирном доме по адресу:<br><strong>' + esc(addr) + '</strong></p>' +
-      '<div class="meta"><span>' + esc(addr.split(',')[0] || '') + '</span><span>' + dateStr + '</span></div>' +
-      '<p>Форма проведения собрания: <strong>' + esc(form) + '</strong>.</p>' +
-      '<p>Общая площадь жилых и нежилых помещений дома: <span class="num">6 418,3 м²</span>. ' +
-      'В собрании приняли участие собственники, обладающие <span class="num">4 729,1 м²</span> (<span class="num">73,7%</span> голосов). Кворум имеется.</p>' +
-      '<p><strong>Повестка дня:</strong></p><ol>' +
-      agenda.map(function (q) { return '<li>' + esc(q) + '</li>'; }).join('') +
-      '</ol>' +
-      agenda.map(function (q, i) {
-        return '<p class="resolved"><strong>По вопросу ' + (i + 1) + ':</strong> СЛУШАЛИ, ПОСТАНОВИЛИ — ' + esc(q.toLowerCase()) +
-          '. Итоги: «за» — <span class="num">89,2%</span>, «против» — <span class="num">6,6%</span>, «воздержались» — <span class="num">4,2%</span>. Решение принято.</p>';
-      }).join('') +
-      '<div class="sign"><span>Председатель собрания ________________ /____________/</span>' +
-      '<span>Секретарь собрания ________________ /____________/</span></div>';
-    $('#protoPreview').innerHTML = html;
+    lines.push('');
+    lines.push('Полная история операций доступна каждому родителю в приложении.');
+    $('#pcReport').textContent = lines.join('\n');
   }
-  function esc(s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
-    });
-  }
-  ['pAddr', 'pNum', 'pDate', 'pForm', 'pAgenda'].forEach(function (id) {
-    $('#' + id).addEventListener('input', renderProto);
-    $('#' + id).addEventListener('change', renderProto);
+  $('#pcTable').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-i]');
+    if (!btn) return;
+    var p = pcParents[btn.dataset.i];
+    p.paid = !p.paid;
+    renderPC();
+    toast(p.paid ? 'Оплата отмечена: ' + p.name : 'Отметка снята: ' + p.name);
   });
-  $('#fillProto').addEventListener('click', function () {
-    $('#pAddr').value = 'г. Казань, пр-т Победы, д. 42, корп. 1';
-    $('#pNum').value = '3/2026';
-    $('#pDate').value = '2026-08-14';
-    $('#pForm').value = 'заочная';
-    $('#pAgenda').value = 'Выбор совета многоквартирного дома\nЗаключение договора на обслуживание домофонов\nБлагоустройство двора: установка ограждений газонов';
-    renderProto();
-    toast('Подставлен пример');
+  $('#pcFee').addEventListener('input', function () { renderPC(); });
+  $('#pcExpAdd').addEventListener('click', function () {
+    var sum = Number($('#pcExpSum').value);
+    if (!sum || sum <= 0) { toast('Укажите сумму расхода'); return; }
+    pcExpenses.push({ what: $('#pcExpWhat').value, sum: Math.round(sum) });
+    $('#pcExpSum').value = '';
+    renderPC();
+    toast('Расход добавлен');
   });
-  $('#copyProto').addEventListener('click', function () {
-    var text = $('#protoPreview').innerText;
-    function done() { toast('Текст протокола скопирован'); }
+  $('#pcCopy').addEventListener('click', function () {
+    var text = $('#pcReport').textContent;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
-    } else { fallbackCopy(text); done(); }
+      navigator.clipboard.writeText(text).then(
+        function () { toast('Отчёт скопирован — можно отправлять в чат родителей'); },
+        function () { toast('Не удалось скопировать — выделите текст вручную'); }
+      );
+    } else {
+      toast('Не удалось скопировать — выделите текст вручную');
+    }
   });
-  function fallbackCopy(text) {
-    var ta = document.createElement('textarea');
-    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); } catch (e) {}
-    ta.remove();
-  }
-  renderProto();
+  renderPC();
 
-  /* ── Модалки ── */
-  function openModal(id) {
-    $('#' + id).hidden = false;
-    var first = $('#' + id + ' input');
-    if (first) first.focus();
-    document.body.style.overflow = 'hidden';
-  }
-  function closeModal(id) {
-    $('#' + id).hidden = true;
-    document.body.style.overflow = '';
-  }
-  $$('.modal-overlay').forEach(function (ov) {
-    ov.addEventListener('click', function (e) { if (e.target === ov) closeModal(ov.id); });
-  });
-  $$('[data-close]').forEach(function (b) {
-    b.addEventListener('click', function () { closeModal(b.dataset.close); });
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') $$('.modal-overlay').forEach(function (ov) { if (!ov.hidden) closeModal(ov.id); });
-  });
-
-  /* Покупка */
-  $$('[data-buy]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      $('#orderTitle').textContent = b.dataset.buy;
-      $('#orderSub').textContent = 'Стоимость ' + b.dataset.cost + '. Файл и видеоинструкция придут на почту после оплаты.';
-      $('#orderForm').reset();
-      openModal('orderOverlay');
+  /* ── Форма заявки ── */
+  $$('a[data-need], .btn[data-need]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var sel = $('#cNeed');
+      if (sel) sel.value = el.dataset.need;
     });
   });
-  $('#orderForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!this.reportValidity()) return;
-    closeModal('orderOverlay');
-    toast('Заявка принята — в рабочей версии здесь откроется оплата');
-  });
-
-  /* Вопрос по услуге */
-  $$('[data-consult]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      $('#consultSub').textContent = 'Тема: ' + b.dataset.consult + '. Отвечу в течение рабочего дня.';
-      $('#consultForm').reset();
-      openModal('consultOverlay');
-    });
-  });
-  $('#consultForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!this.reportValidity()) return;
-    closeModal('consultOverlay');
-    toast('Вопрос отправлен — отвечу в течение рабочего дня');
-  });
-
-  /* Форма заявки */
   $('#contactForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    if (!this.reportValidity()) return;
+    var name = $('#cName'), phone = $('#cPhone'), q = $('#cQuestion');
+    var bad = null;
+    [name, phone, q].forEach(function (f) {
+      if (!f.value.trim() && !bad) bad = f;
+    });
+    if (bad) { bad.focus(); toast('Заполните, пожалуйста, все поля'); return; }
+    toast('Заявка отправлена! Отвечу в течение рабочего дня.');
     this.reset();
-    toast('Заявка отправлена — отвечу в течение рабочего дня');
   });
+  function tgStub() {
+    toast('Прототип: сюда подставим ссылку на ваш Telegram');
+  }
+  $('#tgBtn').addEventListener('click', tgStub);
+  $('#tgFab').addEventListener('click', tgStub);
 })();
 </script>
