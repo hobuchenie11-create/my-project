@@ -86,6 +86,8 @@ def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
     # а не отдельный прибор: жители часто дописывают его для проверки.
     folded = _fold_totals(values, available)
     hws_total = hws_total if hws_total is not None else folded.get("hws")
+    # Обратный случай: прибор один, а показание подписано местом установки
+    _fold_locations(values, available, outcome, apartment)
 
     for kind, value in values.items():
         target = _resolve_meter_kind(kind, available)
@@ -121,6 +123,31 @@ def _fold_totals(values: dict[str, float],
         if single in values and single not in available and kitchen in available:
             totals[single] = values.pop(single)
     return totals
+
+
+def _fold_locations(values: dict[str, float], available: set[str],
+                    outcome: SaveOutcome, apartment: sqlite3.Row) -> None:
+    """Прибор один, а показание подписано местом: «ХВС сан.узел» = «ХВС».
+
+    В однокомнатной счётчики обычно стоят в санузле, и жители пишут именно
+    место. Пока показание одно, двусмысленности нет — записываем в
+    единственный прибор. Если мест названо два, а прибор один, это уже
+    расхождение со справочником: молча выбирать одно из значений нельзя.
+    """
+    for single, parts in (("cws", ("cws_kitchen", "cws_bathroom")),
+                          ("hws", ("hws_kitchen", "hws_bathroom"))):
+        if single not in available or single in values:
+            continue
+        present = [kind for kind in parts if kind in values]
+        if len(present) == 1:
+            values[single] = values.pop(present[0])
+        elif len(present) > 1:
+            named = " и ".join(f"«{METER_KINDS[kind]}»" for kind in present)
+            outcome.errors.append(
+                f"{named}: у {_display(apartment)} один счётчик "
+                f"{METER_KINDS[single]} — уточните, какое показание записать")
+            for kind in present:
+                values.pop(kind)
 
 
 def _resolve_meter_kind(kind: str, available: set[str]) -> str | None:
