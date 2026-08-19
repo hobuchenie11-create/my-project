@@ -19,7 +19,8 @@ from aiogram.exceptions import TelegramAPIError
 from aiogram.types import Message, ReactionTypeEmoji
 
 from bot.config import config
-from bot.services.parser import parse_message
+from bot.services.batch_service import import_batch
+from bot.services.parser import parse_message, split_messages
 from bot.services.reading_service import (current_period, is_late, receipt_text,
                                           save_parsed_readings)
 from bot.texts import late_submission_text
@@ -85,6 +86,13 @@ async def handle_group_message(message: Message) -> None:
         _hinted_chats.add(message.chat.id)
         logger.info("Чат «%s»: GROUP_CHAT_ID=%s (впишите в .env, чтобы собирать "
                     "показания только отсюда)", message.chat.title, message.chat.id)
+
+    # В чат вставили несколько сообщений сразу (перенос из WhatsApp).
+    # Разбирать их как одно нельзя: показания всех квартир ушли бы в первую.
+    blocks = split_messages(message.text)
+    if len(blocks) > 1:
+        await _handle_batch(message, blocks)
+        return
 
     parsed = parse_message(message.text)
     if parsed.is_empty and not parsed.apartment_number:
@@ -176,6 +184,33 @@ async def _confirm_in_chat(message: Message, apartment) -> None:
         return
 
     await message.reply(f"✅ {apartment['number']}: показания приняты")
+
+
+async def _handle_batch(message: Message, blocks: list[str]) -> None:
+    """Пачка сообщений в чате. Разносит её только председатель.
+
+    У жителя такое сообщение — это показания за несколько квартир сразу;
+    записывать чужие с его слов нельзя, поэтому просим прислать по одной.
+    """
+    if message.from_user.id not in config.admin_ids:
+        await _guidance(
+            message, "Вижу показания сразу по нескольким квартирам. "
+                     "Пришлите, пожалуйста, показания только по своей "
+                     "квартире — отдельным сообщением.")
+        return
+
+    conn = repository.connect()
+    try:
+        user = repository.get_user_by_tg(conn, message.from_user.id)
+        result = import_batch(conn, blocks, user["id"] if user else None,
+                              tg_id=message.from_user.id)
+    finally:
+        conn.close()
+
+    logger.info("Пачка из чата: сообщений %s, записано показаний %s",
+                result.messages, result.saved)
+    if not await _dm(message, result.text()):
+        await message.reply(result.text())
 
 
 async def _guidance(message: Message, text: str) -> None:

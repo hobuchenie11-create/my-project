@@ -15,7 +15,8 @@ from aiogram import F, Router
 from aiogram.types import Message
 
 from bot.config import config
-from bot.services.parser import parse_message
+from bot.services.batch_service import import_batch
+from bot.services.parser import parse_message, split_messages
 from bot.services.reading_service import (current_period, is_late, receipt_text,
                                           save_parsed_readings)
 from bot.texts import late_submission_text
@@ -29,8 +30,16 @@ router.message.filter(F.chat.type == "private")
 
 @router.message(F.text)
 async def manual_readings(message: Message) -> None:
-    parsed = parse_message(message.text)
     is_admin = message.from_user.id in config.admin_ids
+
+    # Председатель вставил пачку сообщений из чата WhatsApp — разносим все
+    if is_admin:
+        blocks = split_messages(message.text)
+        if len(blocks) > 1:
+            await _import_batch(message, blocks)
+            return
+
+    parsed = parse_message(message.text)
 
     if parsed.is_empty and not parsed.apartment_number:
         # Не показания — значит вопрос. Ищем ответ в памятках Домоведа.
@@ -75,6 +84,21 @@ async def manual_readings(message: Message) -> None:
     if outcome.anything_saved and is_late():
         text += "\n\n" + late_submission_text()
     await message.answer(text)
+
+
+async def _import_batch(message: Message, blocks: list[str]) -> None:
+    """Разносит вставленную пачку сообщений и отвечает одной сводкой."""
+    conn = repository.connect()
+    try:
+        user = repository.get_user_by_tg(conn, message.from_user.id)
+        result = import_batch(conn, blocks, user["id"] if user else None,
+                              tg_id=message.from_user.id)
+    finally:
+        conn.close()
+
+    logger.info("Пачка: сообщений %s, записано показаний %s",
+                result.messages, result.saved)
+    await message.answer(result.text())
 
 
 async def _answer_as_question(message: Message) -> None:

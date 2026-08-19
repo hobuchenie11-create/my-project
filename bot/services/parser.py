@@ -58,6 +58,53 @@ LEADING_VALUE_RE = re.compile(
 SEGMENT_RE = re.compile(r"[;,](?=\s*[а-яёa-z])", re.IGNORECASE)
 
 
+# Служебные приписки скопированной переписки: «[19.08.2026, 21:03] Мария:»,
+# «19.08.2026, 21:03 - Мария:». Убираем их, иначе имя автора склеится с
+# показанием («Светлана» + число превратились бы в электроэнергию).
+CHAT_META_RE = re.compile(
+    r"^\s*\[?\s*\d{1,2}[./]\d{1,2}[./]\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?"
+    r"\s*(?:[APap]\.?[Mm]\.?)?\s*\]?\s*[-–—]?\s*(?:[^:\n]{1,40}:)?\s*")
+
+# Начало нового сообщения в пачке: строка называет квартиру или помещение
+_BLOCK_START_RE = re.compile(
+    r"^\s*(?:кв[а-яё]*[\s.,;:№()-]*\d{1,4}|нежило|общедом|одпу|общ\w*\s+прибор)",
+    re.IGNORECASE)
+
+
+def strip_chat_meta(line: str) -> str:
+    """Убирает из строки дату, время и имя автора скопированного сообщения."""
+    return CHAT_META_RE.sub("", line, count=1)
+
+
+def split_messages(text: str) -> list[str]:
+    """Делит вставленную пачку на отдельные сообщения — по строке с квартирой.
+
+    Председатель копирует из WhatsApp несколько сообщений подряд; каждое
+    начинается с номера квартиры. Всё, что идёт до первой такой строки
+    (приветствия, обсуждение), отбрасывается.
+    """
+    blocks: list[list[str]] = []
+    current: list[str] | None = None
+
+    for raw_line in text.splitlines():
+        stripped = strip_chat_meta(raw_line)
+        # Строка начиналась с даты и имени — значит это новое сообщение чата
+        starts_message = stripped != raw_line
+        line = stripped.strip()
+
+        if _BLOCK_START_RE.match(line):
+            current = [line]
+            blocks.append(current)
+        elif starts_message:
+            # Новое сообщение, но квартиру не называет — это разговоры в чате,
+            # и к предыдущим показаниям они отношения не имеют
+            current = None
+        elif line and current is not None:
+            current.append(line)
+
+    return ["\n".join(block) for block in blocks]
+
+
 def _normalize(label: str) -> str:
     """Убирает разделители, оставляя только буквы, для сопоставления по словарю."""
     return re.sub(r"[^а-яёa-z]", "", label.lower())
