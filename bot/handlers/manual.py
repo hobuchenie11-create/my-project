@@ -30,10 +30,13 @@ router.message.filter(F.chat.type == "private")
 @router.message(F.text)
 async def manual_readings(message: Message) -> None:
     parsed = parse_message(message.text)
-    if parsed.is_empty and not parsed.apartment_number:
-        return                      # обычное сообщение, не показания
-
     is_admin = message.from_user.id in config.admin_ids
+
+    if parsed.is_empty and not parsed.apartment_number:
+        # Не показания — значит вопрос. Ищем ответ в памятках Домоведа.
+        await _answer_as_question(message)
+        return
+
     conn = repository.connect()
     try:
         user = repository.get_user_by_tg(conn, message.from_user.id)
@@ -72,6 +75,23 @@ async def manual_readings(message: Message) -> None:
     if outcome.anything_saved and is_late():
         text += "\n\n" + late_submission_text()
     await message.answer(text)
+
+
+async def _answer_as_question(message: Message) -> None:
+    """Свободный текст, не похожий на показания, — вопрос к Домоведу."""
+    from bot.handlers.faq import answer_question
+
+    conn = repository.connect()
+    try:
+        user = repository.get_user_by_tg(conn, message.from_user.id)
+        apartment = ""
+        if user and user["apartment_id"]:
+            row = repository.get_apartment_by_id(conn, user["apartment_id"])
+            apartment = row["number"] if row else ""
+    finally:
+        conn.close()
+
+    await answer_question(message, message.from_user.id, apartment)
 
 
 def _resolve(conn, parsed, user, is_admin):

@@ -510,6 +510,73 @@ def verification_task(conn: sqlite3.Connection, house_meter_id: int,
     ).fetchone()
 
 
+# ---------- памятки Домоведа ----------
+
+def upsert_memo(conn: sqlite3.Connection, code: str, title: str, category: str,
+                keywords: str, body: str, image: str, sort_order: int) -> None:
+    conn.execute(
+        """INSERT INTO faq (code, title, category, keywords, body, image,
+                            sort_order, is_active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+           ON CONFLICT(code) DO UPDATE SET title = excluded.title,
+               category = excluded.category, keywords = excluded.keywords,
+               body = excluded.body, image = excluded.image,
+               sort_order = excluded.sort_order, is_active = 1,
+               updated_at = datetime('now', 'localtime')""",
+        (code, title, category, keywords, body, image, sort_order),
+    )
+    conn.commit()
+
+
+def deactivate_missing_memos(conn: sqlite3.Connection, codes: list[str]) -> None:
+    """Памятки, файлов которых больше нет, убираем из меню (но не из базы)."""
+    placeholders = ",".join("?" * len(codes)) or "''"
+    conn.execute(f"UPDATE faq SET is_active = 0 WHERE code NOT IN ({placeholders})",
+                 codes)
+    conn.commit()
+
+
+def active_memos(conn: sqlite3.Connection,
+                 category: str = "") -> list[sqlite3.Row]:
+    where = "WHERE is_active = 1"
+    params: tuple = ()
+    if category:
+        where += " AND category = ?"
+        params = (category,)
+    return conn.execute(
+        f"SELECT * FROM faq {where} ORDER BY sort_order, title", params
+    ).fetchall()
+
+
+def get_memo(conn: sqlite3.Connection, code: str) -> sqlite3.Row | None:
+    return conn.execute("SELECT * FROM faq WHERE code = ? AND is_active = 1",
+                        (code,)).fetchone()
+
+
+def memo_categories(conn: sqlite3.Connection) -> list[str]:
+    rows = conn.execute(
+        """SELECT category, MIN(sort_order) AS ord FROM faq WHERE is_active = 1
+           GROUP BY category ORDER BY ord, category"""
+    ).fetchall()
+    return [row["category"] for row in rows]
+
+
+def add_faq_gap(conn: sqlite3.Connection, tg_id: int | None, apartment: str,
+                question: str) -> None:
+    conn.execute(
+        "INSERT INTO faq_gaps (tg_id, apartment, question) VALUES (?, ?, ?)",
+        (tg_id, apartment, question),
+    )
+    conn.commit()
+
+
+def faq_gaps(conn: sqlite3.Connection, limit: int = 20) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM faq_gaps WHERE answered = 0 ORDER BY id DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+
+
 def log_event(conn: sqlite3.Connection, tg_id: int | None, action: str, details: str = "") -> None:
     conn.execute(
         "INSERT INTO events (tg_id, action, details) VALUES (?, ?, ?)",

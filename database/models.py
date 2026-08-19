@@ -108,6 +108,22 @@ DEFAULT_HOUSE_METERS = [
 LATE_NOTE = "Переданы после срока сбора показаний"
 
 # ---------------------------------------------------------------------------
+# Модуль «Памятки» — база знаний Домоведа
+# ---------------------------------------------------------------------------
+
+# Разделы памяток. Порядок задаёт порядок кнопок у жителя.
+FAQ_CATEGORIES = {
+    "payments": "💳 Оплата",
+    "gates": "🚗 Ворота и шлагбаум",
+    "access": "🚶 Доступ во двор",
+    "gsm": "📱 GSM-модуль",
+    "meters": "🚰 Показания счётчиков",
+    "contacts": "☎️ Контакты служб",
+    "rules": "📗 Правила проживания",
+    "newcomers": "🔑 Новосёлам",
+}
+
+# ---------------------------------------------------------------------------
 # Модуль «Задачи председателя»
 # ---------------------------------------------------------------------------
 
@@ -354,6 +370,32 @@ CREATE TABLE IF NOT EXISTS verifications (
     document       TEXT NOT NULL DEFAULT '',      -- номер акта/свидетельства
     note           TEXT NOT NULL DEFAULT '',
     created_at     TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+-- Памятки Домоведа. Тексты живут в файлах content/faq/*.md и загружаются
+-- при старте бота — править их удобнее в редакторе, чем в переписке.
+CREATE TABLE IF NOT EXISTS faq (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    code        TEXT NOT NULL UNIQUE,          -- имя файла без расширения
+    title       TEXT NOT NULL,
+    category    TEXT NOT NULL DEFAULT 'other',
+    keywords    TEXT NOT NULL DEFAULT '',      -- через запятую, для поиска
+    body        TEXT NOT NULL DEFAULT '',
+    image       TEXT NOT NULL DEFAULT '',      -- файл в content/faq/images/
+    sort_order  INTEGER NOT NULL DEFAULT 0,
+    is_active   INTEGER NOT NULL DEFAULT 1,
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+-- Вопросы, на которые Домовед не нашёл ответа. Главный источник новых
+-- памяток: раз в неделю смотрим, о чём спрашивали, и дописываем.
+CREATE TABLE IF NOT EXISTS faq_gaps (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    tg_id       INTEGER,
+    apartment   TEXT NOT NULL DEFAULT '',
+    question    TEXT NOT NULL,
+    answered    INTEGER NOT NULL DEFAULT 0,    -- 1 — памятка уже написана
+    created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
 -- Журнал изменений по задачам

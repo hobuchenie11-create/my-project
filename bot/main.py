@@ -8,12 +8,13 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
 from bot.config import config
-from bot.handlers import (admin, common, group, manual, readings,
+from bot.handlers import (admin, common, faq, group, manual, readings,
                           registration, reports, start, tasks)
 from bot.keepawake import keep_awake
 from bot.proxy import make_session
 from bot.scheduler import run_scheduler
 from bot.utils.logger import setup_logging
+from database import repository
 from database.init_db import init_db
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,17 @@ def _apply_registry_if_present() -> None:
     if REGISTRY_PATH.exists():
         count = import_registry(REGISTRY_PATH)
         logger.info("Справочник квартир применен: %s квартир", count)
+
+
+def _load_memos() -> None:
+    """Памятки Домоведа из content/faq/ — перечитываются при каждом запуске."""
+    from bot.services.faq_service import load_memos
+    conn = repository.connect()
+    try:
+        count = load_memos(conn)
+    finally:
+        conn.close()
+    logger.info("Памятки загружены: %s", count)
 
 
 def _log_chats() -> None:
@@ -51,6 +63,7 @@ async def main() -> None:
     init_db()
     _apply_registry_if_present()
     logger.info("База данных готова: %s", config.db_path)
+    _load_memos()
 
     # Если задан PROXY_URL — весь трафик бота идет через прокси (например,
     # локальный порт Nekobox), т.к. Python сам системный VPN не использует.
@@ -69,6 +82,7 @@ async def main() -> None:
     dp.include_router(registration.router)
     dp.include_router(readings.router)
     dp.include_router(reports.router)
+    dp.include_router(faq.router)
     dp.include_router(start.router)
     dp.include_router(group.router)
     # Последним: ручной ввод показаний председателем в личке —

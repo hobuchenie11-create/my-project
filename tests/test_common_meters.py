@@ -153,8 +153,10 @@ def test_unknown_room_is_reported(db):
     assert "нет помещения" in message.answers[0]
 
 
-def test_ordinary_message_gets_no_answer(db):
-    assert _send("Напомнить себе про собрание").answers == []
+def test_ordinary_message_goes_to_the_memos(db):
+    """Не показания — значит вопрос: ищем ответ в памятках."""
+    answer = _send("Напомнить себе про собрание").answers
+    assert answer and "Не нашёл ответа" in answer[0]
 
 
 def _period() -> str:
