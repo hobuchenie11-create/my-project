@@ -14,16 +14,23 @@ def current_period(today: date | None = None) -> str:
     return f"{today.year:04d}-{today.month:02d}"
 
 
-def is_late(today: date | None = None) -> bool:
-    """Показание передано после срока сбора?
+def is_late(moment: date | datetime | None = None) -> bool:
+    """Показание передано после того, как ведомость уже сформирована?
 
-    Сбор идёт с READINGS_DAY_START по READINGS_DAY_END (по умолчанию 15–19).
-    С 20 числа показания принимаются, но идут с пометкой «после срока» и
-    учитываются в следующем расчётном периоде.
+    Сбор идёт с READINGS_DAY_START по READINGS_DAY_END (15–19), но ведомость
+    уходит ресурсникам только STATEMENT_DAY в STATEMENT_HOUR (20 числа в 14:00).
+    Всё, что пришло до этого момента, в ведомость ещё попадает и «опозданием»
+    не считается — иначе утренние показания 20 числа помечались бы зря.
     """
     from bot.config import config
-    today = today or date.today()
-    return today.day > config.readings_day_end
+
+    moment = moment or datetime.now()
+    if moment.day != config.statement_day:
+        return moment.day > config.statement_day
+
+    # В день формирования решает час: до 14:00 показания ещё попадут в ведомость
+    hour = moment.hour if isinstance(moment, datetime) else config.statement_hour
+    return hour >= config.statement_hour
 
 
 def period_title(period: str) -> str:

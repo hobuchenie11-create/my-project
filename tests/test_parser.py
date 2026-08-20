@@ -257,3 +257,29 @@ def test_obshch_gvs_is_a_total():
 def test_obshch_gvs_does_not_hijack_the_flat_number():
     """«Общ. ГВС» не должно принять сообщение за общедомовой прибор."""
     assert parse_message("Кв. 60\nОбщ. ГВС 817").apartment_number == "60"
+
+
+def test_semicolon_after_the_value():
+    """«Хв. Ван. — 34;» — точка с запятой в конце строки не мешает."""
+    parsed = parse_message("Кв. 65\nХв. Ван. — 34;\nХв. Кух.  — 254;\n"
+                           "Гв. Ван. - 378;\nГв. Кух. - 186;\n"
+                           "Общ. Гор. - 288\nЭл. энергия — 12608")
+    assert parsed.apartment_number == "65"
+    assert parsed.values == {
+        "cws_bathroom": 34.0, "cws_kitchen": 254.0,
+        "hws_bathroom": 378.0, "hws_kitchen": 186.0,
+        "hws_total": 288.0, "electricity": 12608.0,
+    }
+
+
+def test_trailing_punctuation_does_not_break_the_value():
+    for line, value in (("Хвс 30;", 30.0), ("Хвс 30.", 30.0),
+                        ("Хвс 30,", 30.0), ("Хвс (30)", 30.0),
+                        ("Хвс 56,78;", 56.78)):
+        assert parse_message(f"Кв 5\n{line}").values == {"cws": value}, line
+
+
+def test_hot_total_written_as_obshch_gor():
+    """«Общ. Гор.» — тоже итог по горячей воде."""
+    parsed = parse_message("Кв. 5\nГв. Кух. 186\nГв. Ван. 378\nОбщ. Гор. 564")
+    assert parsed.values["hws_total"] == 564.0

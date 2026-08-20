@@ -34,9 +34,11 @@ class Config:
     # Период сбора показаний: с 15 по 19 число включительно
     readings_day_start: int = int(os.getenv("READINGS_DAY_START", "15"))
     readings_day_end: int = int(os.getenv("READINGS_DAY_END", "19"))
-    # Ведомость со всеми собранными показаниями: 20 числа в 10:00
+    # Ведомость со всеми собранными показаниями: 20 числа в 14:00.
+    # До этого часа показания ещё попадают в текущий период —
+    # утренние 20 числа не должны считаться опоздавшими.
     statement_day: int = int(os.getenv("STATEMENT_DAY", "20"))
-    statement_hour: int = int(os.getenv("STATEMENT_HOUR", "10"))
+    statement_hour: int = int(os.getenv("STATEMENT_HOUR", "14"))
     reminder_days: tuple[int, ...] = field(
         default_factory=lambda: _parse_int_list(os.getenv("REMINDER_DAYS", "15,17,19")))
     # Когда автоматически формировать ведомость непередавших

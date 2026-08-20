@@ -45,7 +45,9 @@ COMMON_RE = re.compile(r"общедом\w*|одпу|общ\w*\s+прибор|\b�
 # Число в конце строки (допускаем ведущие нули и дробную часть).
 # Знак не захватываем: тире/дефис в сообщениях жителей — это разделитель
 # («Хвс кухня - 6»), а не минус; показания всегда неотрицательны.
-VALUE_RE = re.compile(r"\d[\d\s]*(?:[.,]\d+)?\s*$")
+# После числа жители ставят точку с запятой или точку («Хв. Ван. — 34;») —
+# такой хвост пропускаем, иначе строка выглядит как подпись без показания.
+VALUE_RE = re.compile(r"(\d[\d\s]*(?:[.,]\d+)?)\s*[;.,)\]]*\s*$")
 
 # Обратный порядок: сначала показание, потом прибор — «11882 - Эл.эн».
 # Подпись обязана начинаться с буквы, иначе это просто число.
@@ -175,7 +177,8 @@ def parse_message(text: str) -> ParsedReadings:
             value_match = VALUE_RE.search(line)
             reversed_match = None if value_match else LEADING_VALUE_RE.match(line)
             if value_match:
-                raw_value, label_part = value_match.group(), line[: value_match.start()]
+                raw_value = value_match.group(1)
+                label_part = line[: value_match.start()]
             elif reversed_match:
                 raw_value, label_part = reversed_match.group(1), reversed_match.group(2)
             else:

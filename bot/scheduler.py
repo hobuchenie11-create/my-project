@@ -3,7 +3,10 @@
 Отвечает за автоматические действия по календарю:
   • напоминания должникам в дни из REMINDER_DAYS (по умолчанию 17, 23, 25);
   • ведомость непередавших — в DEBTORS_DAY в DEBTORS_HOUR часов
-    (по умолчанию 20 числа в 09:00) отправляется председателю.
+    (по умолчанию 20 числа в 09:00) отправляется председателю;
+  • итоговая ведомость — в STATEMENT_DAY в STATEMENT_HOUR (20 числа в 14:00),
+    сразу за ней в чат дома уходит сообщение, что сбор завершён, но показания
+    всё ещё принимаются — и будут учтены в следующем периоде.
 """
 import asyncio
 import logging
@@ -16,6 +19,7 @@ from aiogram.types import FSInputFile
 from bot.config import config
 from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import REMINDER_TEXT, pending_targets
+from bot.texts import collection_closed_text
 from database import repository
 
 logger = logging.getLogger(__name__)
@@ -125,6 +129,23 @@ async def send_monthly_statement(bot: Bot) -> None:
         except TelegramAPIError as exc:
             logger.warning("Не удалось отправить ведомость админу %s: %s", admin_id, exc)
     logger.info("Ведомость сформирована: %s (собрано %s из %s)", path, submitted, total)
+
+    await announce_collection_closed(bot)
+
+
+async def announce_collection_closed(bot: Bot) -> bool:
+    """Сообщение в чат дома: сбор закрыт, но показания всё ещё принимаются."""
+    if not config.group_chat_id:
+        logger.info("Чат дома не подключён — сообщение о закрытии сбора "
+                    "не отправлено")
+        return False
+    try:
+        await bot.send_message(config.group_chat_id, collection_closed_text())
+    except TelegramAPIError as exc:
+        logger.warning("Не удалось сообщить в чат о закрытии сбора: %s", exc)
+        return False
+    logger.info("В чат дома отправлено сообщение о завершении сбора")
+    return True
 
 
 async def send_task_reminders(bot: Bot) -> int:
