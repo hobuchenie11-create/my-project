@@ -46,6 +46,13 @@ class Config:
     debtors_hour: int = int(os.getenv("DEBTORS_HOUR", "9"))
     # Во сколько присылать напоминания по задачам председателя
     tasks_reminder_hour: int = int(os.getenv("TASKS_REMINDER_HOUR", "9"))
+    # Квартиры, которые передают показания ресурсникам сами. В печатной
+    # ведомости их строки скрыты (в реестре остаются — при необходимости
+    # достаточно убрать номер отсюда, и строка вернётся).
+    self_reporting_flats: tuple[str, ...] = field(
+        default_factory=lambda: tuple(
+            x.strip() for x in os.getenv("SELF_REPORTING_FLATS", "2,3")
+            .replace(";", ",").split(",") if x.strip()))
 
     base_dir: Path = BASE_DIR
     db_path: Path = BASE_DIR / "database" / "dhos.db"

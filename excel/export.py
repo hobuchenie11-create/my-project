@@ -6,6 +6,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.pagebreak import Break
 
+from bot.config import config
 from bot.services.report_service import STATEMENT_COLUMNS, Statement
 from database.models import LATE_NOTE
 
@@ -38,11 +39,17 @@ FONT_SIZE = 14
 # листе, кв. 41–80 на втором. Поэтому высоты строк заданы явно — иначе одна
 # строка с переносом текста сдвигает границу, и последние квартиры уезжают.
 FLATS_ON_FIRST_PAGE = 40
-FLAT_ROW_HEIGHT = 21      # хватает для шрифта 14 и держит 43 строки на листе
-SPECIAL_ROW_HEIGHT = 44   # нежилые и ОДПУ: подпись переносится на две строки
-TITLE_ROW_HEIGHT = 20
+FLAT_ROW_HEIGHT = 16.5    # плотнее: последние квартиры не должны уезжать на 2-й лист
+SPECIAL_ROW_HEIGHT = 28   # нежилые и ОДПУ: подпись переносится на две строки
+TITLE_ROW_HEIGHT = 18
 SPACER_ROW_HEIGHT = 6
-HEADER_ROW_HEIGHT = 34
+HEADER_ROW_HEIGHT = 26
+
+# Сколько высоты помещается на первом листе (пункты, до масштабирования).
+# А4 — 842 пт, поля сверху и снизу по 0.3", масштаб «вписать по ширине»
+# получается около 0.97: 798.8 / 0.97 ≈ 823. Берём с запасом — у Excel и
+# у принтера свои округления, и именно на них строки уезжали на второй лист.
+PAGE_ONE_BUDGET_PT = 800
 
 # Шапку и примечание печатаем мельче: место нужно цифрам, а не подписям.
 # 10 пунктов — чтобы «Электроэнергия» уместилась в колонку целиком, а не
@@ -91,6 +98,7 @@ def fill_statement_sheet(ws, statement: Statement, period_name: str) -> None:
     body_font = Font(size=FONT_SIZE)
     flats_seen = 0
     break_row = None
+    hidden_rows: list = []
     for i, row in enumerate(statement.rows, start=4):
         cells = row.as_cells()
         cells[0] = SHORT_NAMES.get(cells[0], cells[0])
@@ -117,17 +125,26 @@ def fill_statement_sheet(ws, statement: Statement, period_name: str) -> None:
             ws.row_dimensions[i].height = FLAT_ROW_HEIGHT
         else:
             ws.row_dimensions[i].height = SPECIAL_ROW_HEIGHT
+        if str(row.number).strip() in config.self_reporting_flats:
+            # Квартира передаёт показания сама: в реестре строка остаётся,
+            # но в ведомость и на печать не идёт
+            ws.row_dimensions[i].hidden = True
+            hidden_rows.append(row)
 
     footer_row = len(statement.rows) + 5
-    if any(LATE_NOTE in row.note for row in statement.rows):
+    if any(LATE_NOTE in row.note for row in statement.rows
+           if row not in hidden_rows):
         legend = ws.cell(row=footer_row - 1, column=1,
                          value=f"«{LATE_MARK}» — {LATE_NOTE.lower()}: "
                                "будут учтены в следующем расчётном периоде")
         legend.font = Font(size=FONT_SIZE - 2, italic=True)
 
+    # Скрытые квартиры из счёта тоже убираем — иначе они вечно числились бы
+    # непередавшими, хотя показания уходят ресурснику напрямую
+    submitted = statement.submitted_count - sum(r.submitted for r in hidden_rows)
+    total_count = statement.total_count - len(hidden_rows)
     total = ws.cell(row=footer_row, column=1,
-                    value=f"Сдали показания: {statement.submitted_count} "
-                          f"из {statement.total_count}")
+                    value=f"Сдали показания: {submitted} из {total_count}")
     total.font = Font(size=FONT_SIZE, bold=True)
     sign = ws.cell(row=footer_row + 2, column=1,
                    value="Председатель: ______________________")
@@ -143,8 +160,9 @@ def _setup_print(ws, last_row: int, ncols: int,
     ws.page_setup.orientation = "portrait"
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.fitToWidth = 1
-    # По высоте не сжимаем: ведомость печатается крупным шрифтом на двух листах,
-    # так её удобнее читать и заполнять от руки.
+    # По высоте не сжимаем: «вписать в 2 листа» отменяет ручной разрыв — Excel
+    # и LibreOffice тогда набивают первый лист под завязку. Вместо этого высоты
+    # строк подобраны с запасом (см. PAGE_ONE_BUDGET_PT).
     ws.page_setup.fitToHeight = 0
     ws.sheet_properties.pageSetUpPr.fitToPage = True
 
