@@ -291,6 +291,25 @@ def test_trailing_punctuation_does_not_break_the_value():
         assert parse_message(f"Кв 5\n{line}").values == {"cws": value}, line
 
 
+def test_litres_in_brackets_are_dropped_not_taken_as_the_value():
+    """«1238(13)»: чёрные ролики — кубометры, красные в скобках — литры.
+
+    Раньше в показание уходили как раз цифры из скобок, причём молча:
+    в ведомость вставало 13 вместо 1238.
+    """
+    parsed = parse_message("Кв 1\nХвс кухня 119\nХвс с/у 1238(13)\n"
+                           "Гвс кух 360\nГвс с/у 499\nЭл э  31 668\n"
+                           "сумма гвс 859")
+    assert parsed.values == {
+        "cws_kitchen": 119.0, "cws_bathroom": 1238.0,
+        "hws_kitchen": 360.0, "hws_bathroom": 499.0,
+        "electricity": 31668.0, "hws_total": 859.0,
+    }
+    assert parsed.errors == []
+    # Показание, записанное только в скобках, скобкой и остаётся
+    assert parse_message("Кв 5\nХвс (30)").values == {"cws": 30.0}
+
+
 def test_hot_total_written_as_obshch_gor():
     """«Общ. Гор.» — тоже итог по горячей воде."""
     parsed = parse_message("Кв. 5\nГв. Кух. 186\nГв. Ван. 378\nОбщ. Гор. 564")
