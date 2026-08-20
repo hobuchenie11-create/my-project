@@ -85,7 +85,8 @@ def test_long_note_wraps_instead_of_overflowing(db, tmp_path):
     ws = load_workbook(out).active
     row = next(r for r in range(4, 12) if ws.cell(r, 1).value == "1")
     note = ws.cell(row, 9)
-    assert note.value and "после срока" in note.value
+    # В печатной форме пометка сокращена: длинная фраза занимала три строки
+    assert note.value and "срока" in note.value.lower()
     assert note.alignment.wrap_text is True
     # «Общедомовой прибор учета» в первой колонке тоже длиннее её ширины
     assert ws.cell(4, 1).alignment.wrap_text is True
