@@ -46,18 +46,34 @@ def unit_for(kind: str) -> str:
 
 def save_reading(conn: sqlite3.Connection, apartment_id: int, kind: str, value: float,
                  user_id: int | None, source: str = "bot",
-                 period: str | None = None, late: bool | None = None) -> CheckResult:
-    """Проверяет и сохраняет одно показание. Возвращает результат проверки."""
+                 period: str | None = None, late: bool | None = None,
+                 correction: bool = False) -> CheckResult:
+    """Проверяет и сохраняет одно показание. Возвращает результат проверки.
+
+    Правка (correction=True) переписывает уже принятое показание за период:
+    в ведомость идёт последняя запись, поэтому старую не удаляем — она
+    остаётся в истории. Сверяем такую запись не с ошибочной цифрой этого же
+    месяца, а с показанием прошлого месяца, иначе исправить завышенное
+    показание было бы нечем: «меньше предыдущего» отклоняло бы правку.
+    """
     meter = repository.get_meter(conn, apartment_id, kind)
     if meter is None:
         return CheckResult(ok=False, error=f"У помещения нет прибора «{METER_KINDS[kind]}»")
 
-    last = repository.last_reading(conn, meter["id"])
+    period = period or current_period()
+    previous = repository.reading_for_period(conn, meter["id"], period)
+    last = (repository.last_reading_before_period(conn, meter["id"], period)
+            if correction else repository.last_reading(conn, meter["id"]))
     result = check_reading(kind, value, last["value"] if last else None)
     if result.ok:
-        repository.add_reading(conn, meter["id"], user_id,
-                               period or current_period(), value, source,
-                               late=is_late() if late is None else late)
+        if late is None:
+            # Правка не делает показание опоздавшим: пометку наследуем от той
+            # записи, которую переписываем — исправляют обычно уже после срока
+            late = (bool(previous["late"]) if correction and previous
+                    else is_late())
+        repository.add_reading(conn, meter["id"], user_id, period, value,
+                               "correction" if correction else source,
+                               late=late)
     return result
 
 
@@ -67,6 +83,7 @@ class SaveOutcome:
     saved: dict[str, float] = field(default_factory=dict)  # kind -> value
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    replaced: dict[str, float] = field(default_factory=dict)  # что было до правки
 
     @property
     def anything_saved(self) -> bool:
@@ -76,7 +93,8 @@ class SaveOutcome:
 def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
                          parsed: ParsedReadings, user_id: int | None,
                          source: str = "chat", period: str | None = None,
-                         late: bool | None = None) -> SaveOutcome:
+                         late: bool | None = None,
+                         correction: bool = False) -> SaveOutcome:
     """Раскладывает распознанные показания на приборы конкретной квартиры.
 
     Один ХВС/ГВС (compact-планировка, нежилое) и раздельный учет (full-планировка)
@@ -103,10 +121,16 @@ def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
                 f"«{METER_KINDS.get(kind, kind)}»: у {_display(apartment)} нет такого прибора"
             )
             continue
+        was = (_current_value(conn, apartment["id"], target,
+                              period or current_period())
+               if correction else None)
         result = save_reading(conn, apartment["id"], target, value, user_id,
-                              source=source, period=period, late=late)
+                              source=source, period=period, late=late,
+                              correction=correction)
         if result.ok:
             outcome.saved[target] = value
+            if was is not None and was != value:
+                outcome.replaced[target] = was
             if result.warning:
                 outcome.warnings.append(f"{METER_KINDS[target]}: {result.warning}")
         else:
@@ -116,6 +140,16 @@ def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
     _check_total(outcome, "ХВС", folded.get("cws"), values,
                  ("cws_kitchen", "cws_bathroom"))
     return outcome
+
+
+def _current_value(conn: sqlite3.Connection, apartment_id: int, kind: str,
+                   period: str) -> float | None:
+    """Показание, которое сейчас стоит в ведомости за период (до правки)."""
+    meter = repository.get_meter(conn, apartment_id, kind)
+    if meter is None:
+        return None
+    row = repository.reading_for_period(conn, meter["id"], period)
+    return row["value"] if row else None
 
 
 def _fold_totals(values: dict[str, float],
@@ -209,15 +243,29 @@ def _display(apartment: sqlite3.Row) -> str:
 
 
 def receipt_text(conn: sqlite3.Connection, apartment: sqlite3.Row,
-                 saved: dict[str, float], when: datetime | None = None) -> str:
-    """Квитанция-подтверждение после передачи показаний (Этап 5)."""
+                 saved: dict[str, float], when: datetime | None = None,
+                 replaced: dict[str, float] | None = None) -> str:
+    """Квитанция-подтверждение после передачи показаний (Этап 5).
+
+    Для правки показываем и прежнюю цифру: по квитанции сразу видно, что
+    именно ушло в ведомость вместо ошибочного показания.
+    """
     when = when or datetime.now()
-    lines = [f"✅ {_display(apartment)} — показания приняты", ""]
+    replaced = replaced or {}
+    header = ("✏️ {} — показания исправлены" if replaced
+              else "✅ {} — показания приняты")
+    lines = [header.format(_display(apartment)), ""]
     for meter in repository.meters_for_apartment(conn, apartment["id"]):
-        if meter["kind"] in saved:
-            lines.append(f"{METER_KINDS[meter['kind']]}: {saved[meter['kind']]:g}")
+        kind = meter["kind"]
+        if kind not in saved:
+            continue
+        line = f"{METER_KINDS[kind]}: {saved[kind]:g}"
+        if kind in replaced:
+            line += f"  (было {replaced[kind]:g})"
+        lines.append(line)
     lines.append("")
-    lines.append(f"Передано: {when.strftime('%d.%m.%Y %H:%M')}")
+    lines.append(f"{'Исправлено' if replaced else 'Передано'}: "
+                 f"{when.strftime('%d.%m.%Y %H:%M')}")
     return "\n".join(lines)
 
 

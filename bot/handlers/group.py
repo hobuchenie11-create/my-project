@@ -140,13 +140,19 @@ async def handle_group_message(message: Message) -> None:
                                      "«хвс кухня 123,45».")
             return
 
+        # Правка («Исправить» в первой строке) — только от председателя:
+        # она переписывает уже принятое показание за этот месяц
+        correction = parsed.is_correction and is_admin
         outcome = save_parsed_readings(conn, apartment, parsed,
-                                       user["id"] if user else None, source="chat")
-        repository.log_event(conn, message.from_user.id, "reading_chat",
+                                       user["id"] if user else None,
+                                       source="chat", correction=correction)
+        repository.log_event(conn, message.from_user.id,
+                             "reading_correction" if correction else "reading_chat",
                              f"{apartment['number']}: принято {len(outcome.saved)} "
                              f"за {current_period()}")
 
-        receipt = (receipt_text(conn, apartment, outcome.saved)
+        receipt = (receipt_text(conn, apartment, outcome.saved,
+                                replaced=outcome.replaced)
                    if outcome.anything_saved else "Показания не записаны.")
     finally:
         conn.close()
@@ -167,7 +173,7 @@ async def handle_group_message(message: Message) -> None:
 
     # Подтверждение — в личку жителю
     dm_text = receipt + ("\n\n" + problems_text if problems else "")
-    if outcome.anything_saved and is_late():
+    if outcome.anything_saved and is_late() and not correction:
         dm_text += "\n\n" + late_submission_text()
     delivered = await _dm(message, dm_text)
 

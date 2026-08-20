@@ -15,6 +15,7 @@ BTN_INVITE = "📣 Памятка жителям"
 BTN_CHAT_REMINDER = "🔔 Напоминание в чат"
 BTN_TEMPLATES = "📋 Шаблоны в чат"
 BTN_SPECIAL = "🏢 Нежилые и ОДПУ"
+BTN_CORRECTION = "✏️ Исправить показание"
 BTN_FAQ_GAPS = "❓ Вопросы без ответа"
 BTN_USERS = "👥 Пользователи"
 BTN_SETTINGS = "⚙ Настройки"
@@ -27,7 +28,8 @@ def admin_menu() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=BTN_TASKS)],
             [KeyboardButton(text=BTN_REGISTRY), KeyboardButton(text=BTN_SPECIAL)],
-            [KeyboardButton(text=BTN_STATEMENT)],
+            [KeyboardButton(text=BTN_STATEMENT),
+             KeyboardButton(text=BTN_CORRECTION)],
             [KeyboardButton(text=BTN_WORKBOOK), KeyboardButton(text=BTN_STATS)],
             [KeyboardButton(text=BTN_DEBTORS), KeyboardButton(text=BTN_DEBTORS_DOC)],
             [KeyboardButton(text=BTN_REMIND), KeyboardButton(text=BTN_INVITE)],

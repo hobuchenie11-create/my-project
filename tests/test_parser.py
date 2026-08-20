@@ -241,6 +241,18 @@ def test_single_letter_water_with_location():
     assert parsed.errors == []
 
 
+def test_single_letter_location_means_kitchen():
+    """«ХВС К» — кухня (рядом с «ХВС С/У»); склеенное «хвск» этого не покажет."""
+    parsed = parse_message("Кв. 56\nЭлектр. 61682\nХВС К: 52\nХВС С/У: 418\n"
+                           "ГВС К:   99\nГВС С/У:  569\nСумма ГВС: 668")
+    assert parsed.apartment_number == "56"
+    assert parsed.values == {
+        "electricity": 61682.0, "cws_kitchen": 52.0, "cws_bathroom": 418.0,
+        "hws_kitchen": 99.0, "hws_bathroom": 569.0, "hws_total": 668.0,
+    }
+    assert parsed.errors == []
+
+
 def test_single_letter_needs_a_location_to_count():
     """Одинокая буква прибором не считается — иначе поймает любое слово."""
     assert parse_message("Кв. 5\nХ 277").values == {}

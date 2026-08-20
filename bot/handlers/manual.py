@@ -61,14 +61,26 @@ async def manual_readings(message: Message) -> None:
                 "«Эл.эн 12345», «Хвс 56».")
             return
 
+        # Правку принимаем только от председателя: житель, ошибившийся в
+        # цифре, обращается к ней — так исправление всегда видно одному
+        # человеку, который потом сверяет ведомость
+        correction = parsed.is_correction and is_admin
+        if parsed.is_correction and not is_admin:
+            await message.answer(
+                "Исправить уже принятое показание может только председатель — "
+                "напишите ей, пожалуйста, и она внесёт правку.")
+            return
+
         source = "admin" if is_admin else "bot"
         outcome = save_parsed_readings(conn, apartment, parsed,
                                        user["id"] if user else None,
-                                       source=source)
-        repository.log_event(conn, message.from_user.id, f"reading_{source}",
+                                       source=source, correction=correction)
+        repository.log_event(conn, message.from_user.id,
+                             "reading_correction" if correction else f"reading_{source}",
                              f"{apartment['number']}: принято "
                              f"{len(outcome.saved)} за {current_period()}")
-        text = (receipt_text(conn, apartment, outcome.saved)
+        text = (receipt_text(conn, apartment, outcome.saved,
+                             replaced=outcome.replaced)
                 if outcome.anything_saved else "Показания не записаны.")
     finally:
         conn.close()
@@ -81,7 +93,7 @@ async def manual_readings(message: Message) -> None:
         problems.append("Не учитывается: " + ", ".join(parsed.ignored))
     if problems:
         text += "\n\n" + "\n".join(f"⚠️ {p}" for p in problems)
-    if outcome.anything_saved and is_late():
+    if outcome.anything_saved and is_late() and not correction:
         text += "\n\n" + late_submission_text()
     await message.answer(text)
 

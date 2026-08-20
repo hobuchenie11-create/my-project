@@ -67,6 +67,12 @@ CHAT_META_RE = re.compile(
     r"^\s*\[?\s*\d{1,2}[./]\d{1,2}[./]\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?"
     r"\s*(?:[APap]\.?[Mm]\.?)?\s*\]?\s*[-–—]?\s*(?:[^:\n]{1,40}:)?\s*")
 
+# Пометка правки: председатель переписывает уже принятое показание.
+# Слово убираем из текста до разбора, иначе оно приклеится к подписи прибора.
+CORRECTION_RE = re.compile(
+    r"\b(?:исправ\w*|правка|поправ\w*|корректир\w*|замен\w*\s+показан\w*)\b[\s:.,–—-]*",
+    re.IGNORECASE)
+
 # Начало нового сообщения в пачке: строка называет квартиру или помещение
 _BLOCK_START_RE = re.compile(
     r"^\s*(?:кв[а-яё]*[\s.,;:№()-]*\d{1,4}|нежило|общедом|одпу|общ\w*\s+прибор)",
@@ -112,6 +118,15 @@ def _normalize(label: str) -> str:
     return re.sub(r"[^а-яёa-z]", "", label.lower())
 
 
+def _tokens(label: str) -> list[str]:
+    """Слова подписи по отдельности: «ХВС К» -> ['хвс', 'к'].
+
+    Нужны там, где смысл несёт отдельная буква: в склеенной подписи «хвск»
+    её уже не отличить от любого слова на «к».
+    """
+    return re.findall(r"[а-яёa-z]+", label.lower())
+
+
 # Ключевые слова (по нормализованной подписи). Проверяются как вхождение.
 ELECTRICITY_KW = ("электро", "элэн", "эленер", "элэнер", "эенер", "ээнер",
                   "ээн", "эенер", "эдектро", "свет", "св", "эл", "ээ")
@@ -135,6 +150,7 @@ class ParsedReadings:
     ignored: list[str] = field(default_factory=list)   # газ и прочее, что не учитываем
     errors: list[str] = field(default_factory=list)
     mentions_apartment: bool = False   # в тексте есть «кв», номер мог не читаться
+    is_correction: bool = False        # помечено «Исправить» — переписать принятое
 
     @property
     def is_empty(self) -> bool:
@@ -148,6 +164,9 @@ class ParsedReadings:
 
 def parse_message(text: str) -> ParsedReadings:
     result = ParsedReadings()
+
+    text, marks = CORRECTION_RE.subn("", text)
+    result.is_correction = bool(marks)
 
     m = NONRESIDENTIAL_RE.search(text)
     if m:
@@ -165,7 +184,9 @@ def parse_message(text: str) -> ParsedReadings:
     # Пара «подпись — показание» бывает разорвана: запятой («Сумма» + «гв,292»,
     # «1234» + «Эл.эн») или переводом строки — жители пишут подпись на одной
     # строке, а число на следующей. Держим половинку до её пары.
-    pending_label = ""
+    # Подпись копим как есть: по отдельным словам видно место установки,
+    # записанное одной буквой («ХВС К» — кухня).
+    pending_raw = ""
     pending_value = ""
 
     for raw_line in text.splitlines():
@@ -188,25 +209,26 @@ def parse_message(text: str) -> ParsedReadings:
             # Строка с номером квартиры — не показание. Проверяем по её
             # собственной подписи, чтобы заодно сбросить всё недособранное.
             if own_label in ("кв", "квартира", "кварт"):
-                pending_label = pending_value = ""
+                pending_raw = pending_value = ""
                 continue
 
-            label = pending_label + own_label
+            raw_label = f"{pending_raw} {label_part}".strip()
+            label = _normalize(raw_label)
 
             if not raw_value:
                 if pending_value and label:
                     raw_value, pending_value = pending_value, ""
                 else:
-                    pending_label = label       # подпись без числа — ждём число
+                    pending_raw = raw_label     # подпись без числа — ждём число
                     continue
             elif not label:
                 pending_value = raw_value       # число без подписи — ждём подпись
                 continue
 
-            pending_label = ""
+            pending_raw = ""
             value = parse_value(raw_value)
 
-            kind, context = _classify(label, context)
+            kind, context = _classify(label, context, _tokens(raw_label))
             if kind is None:
                 continue
             if kind == "gas":
@@ -225,11 +247,13 @@ def parse_message(text: str) -> ParsedReadings:
     return result
 
 
-def _classify(label: str, context: str | None) -> tuple[str | None, str | None]:
+def _classify(label: str, context: str | None,
+              tokens: list[str] | None = None) -> tuple[str | None, str | None]:
     """Определяет вид прибора по нормализованной подписи.
 
     Возвращает (вид, новый_контекст_воды). Вид None — строку игнорируем.
     """
+    tokens = tokens or []
     # Электроэнергия и газ — отдельные метки, проверяем первыми
     if _has(label, GAS_KW):
         return "gas", context
@@ -238,7 +262,10 @@ def _classify(label: str, context: str | None) -> tuple[str | None, str | None]:
 
     is_cold = _has(label, COLD_KW)
     is_hot = _has(label, HOT_KW)
-    is_kitchen = _has(label, KITCHEN_KW)
+    # Место установки жители сокращают до буквы: «ХВС К» — кухня (рядом с
+    # «ХВС С/У» — санузел). В склеенной подписи «хвск» такую букву не поймать,
+    # поэтому смотрим на отдельное слово.
+    is_kitchen = _has(label, KITCHEN_KW) or "к" in tokens
     is_bathroom = _has(label, BATHROOM_KW)
     is_total = _has(label, TOTAL_KW)
 

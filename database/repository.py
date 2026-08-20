@@ -146,6 +146,31 @@ def last_reading(conn: sqlite3.Connection, meter_id: int) -> sqlite3.Row | None:
     ).fetchone()
 
 
+def reading_for_period(conn: sqlite3.Connection, meter_id: int,
+                       period: str) -> sqlite3.Row | None:
+    """Показание прибора, которое сейчас идёт в ведомость за этот период."""
+    return conn.execute(
+        """SELECT * FROM readings WHERE meter_id = ? AND period = ?
+           ORDER BY id DESC LIMIT 1""",
+        (meter_id, period),
+    ).fetchone()
+
+
+def last_reading_before_period(conn: sqlite3.Connection, meter_id: int,
+                               period: str) -> sqlite3.Row | None:
+    """Последнее показание прибора за месяцы до указанного.
+
+    Нужно для правок: сверять исправленное показание с ошибочным за тот же
+    месяц бессмысленно — сравнивать надо с прошлым месяцем.
+    """
+    return conn.execute(
+        """SELECT * FROM readings
+           WHERE meter_id = ? AND period < ?
+           ORDER BY period DESC, id DESC LIMIT 1""",
+        (meter_id, period),
+    ).fetchone()
+
+
 def add_reading(conn: sqlite3.Connection, meter_id: int, user_id: int | None,
                 period: str, value: float, source: str = "bot",
                 late: bool = False) -> None:

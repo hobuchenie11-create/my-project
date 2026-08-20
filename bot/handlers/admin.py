@@ -5,8 +5,8 @@ from aiogram.types import FSInputFile, Message
 
 from bot.config import config
 from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTORS,
-                                      BTN_CHAT_REMINDER, BTN_DEBTORS_DOC,
-                                      BTN_FAQ_GAPS,
+                                      BTN_CHAT_REMINDER, BTN_CORRECTION,
+                                      BTN_DEBTORS_DOC, BTN_FAQ_GAPS,
                                       BTN_INVITE, BTN_REGISTRY,
                                       BTN_REMIND, BTN_SETTINGS, BTN_STATEMENT,
                                       BTN_SPECIAL, BTN_STATS, BTN_TEMPLATES,
@@ -18,8 +18,9 @@ from bot.services.apartment_service import registry_summary
 from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
-from bot.texts import (collection_reminder_text, special_readings_text,
-                       template_messages, welcome_residents_text)
+from bot.texts import (collection_reminder_text, correction_text,
+                       special_readings_text, template_messages,
+                       welcome_residents_text)
 from database import repository
 from database.backup import make_backup
 from reports.monthly_statement import generate_statement
@@ -181,6 +182,12 @@ async def send_templates(message: Message) -> None:
 async def show_special(message: Message) -> None:
     """Как передать показания по нежилым помещениям и общедомовому прибору."""
     await message.answer(special_readings_text())
+
+
+@router.message(F.text == BTN_CORRECTION)
+async def show_correction_help(message: Message) -> None:
+    """Как переписать уже принятое показание, если в ведомость попала ошибка."""
+    await message.answer(correction_text())
 
 
 @router.message(F.text == BTN_FAQ_GAPS)
