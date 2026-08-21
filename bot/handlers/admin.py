@@ -5,8 +5,9 @@ from aiogram.types import FSInputFile, Message
 
 from bot.config import config
 from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTORS,
-                                      BTN_CHAT_REMINDER, BTN_CORRECTION,
-                                      BTN_DEBTORS_DOC, BTN_FAQ_GAPS,
+                                      BTN_BLANKS, BTN_CHAT_REMINDER,
+                                      BTN_CORRECTION, BTN_DEBTORS_DOC,
+                                      BTN_FAQ_GAPS,
                                       BTN_INVITE, BTN_REGISTRY,
                                       BTN_REMIND, BTN_SETTINGS, BTN_STATEMENT,
                                       BTN_SPECIAL, BTN_STATS, BTN_TEMPLATES,
@@ -56,6 +57,25 @@ async def send_statement(message: Message) -> None:
     await message.answer_document(
         FSInputFile(path),
         caption=f"📄 Ведомость передачи показаний за {period_title(period)}",
+    )
+
+
+@router.message(F.text == BTN_BLANKS)
+async def send_blanks(message: Message) -> None:
+    """Бумажные бланки на печать — тем, кто передаёт показания на бумаге."""
+    from reports.blank_forms import generate_blank_forms
+
+    period = current_period()
+    await message.answer("Готовлю бланки…")
+    path = generate_blank_forms(period)
+    await message.answer_document(
+        FSInputFile(path),
+        caption=(f"🖨 Бланки для передачи показаний — {period_title(period)}\n\n"
+                 "По одному на квартиру, номер уже напечатан, приборы — из "
+                 "реестра. На листе помещается два-три бланка: печатайте "
+                 "нужные страницы и разрезайте по пунктиру.\n\n"
+                 "Клетки под цифры для того, чтобы почерк читался однозначно: "
+                 "заполненный бланк потом достаточно перенести боту."),
     )
 
 
