@@ -1,5 +1,6 @@
 """Настройка логирования: консоль + файл с ротацией в logs/."""
 import logging
+import sys
 from logging.handlers import RotatingFileHandler
 
 from bot.config import config
@@ -14,10 +15,14 @@ def setup_logging() -> None:
                                        encoding="utf-8")
     file_handler.setFormatter(fmt)
 
-    console = logging.StreamHandler()
-    console.setFormatter(fmt)
-
     root = logging.getLogger()
     root.setLevel(logging.INFO)
     root.addHandler(file_handler)
-    root.addHandler(console)
+
+    # При автозапуске бот работает без окна (pythonw.exe), и консоли у него
+    # нет: sys.stderr равен None. Обработчик консоли в этом случае спотыкался
+    # бы на каждой строке лога — весь журнал остаётся в logs/dhos.log.
+    if sys.stderr is not None:
+        console = logging.StreamHandler()
+        console.setFormatter(fmt)
+        root.addHandler(console)

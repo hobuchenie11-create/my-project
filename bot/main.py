@@ -7,6 +7,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
+from bot import single_instance
 from bot.config import config
 from bot.handlers import (admin, common, faq, group, manual, oek, readings,
                           registration, reports, start, tasks)
@@ -59,6 +60,17 @@ async def main() -> None:
         raise SystemExit(
             "Не задан BOT_TOKEN. Скопируйте .env.example в .env и укажите токен бота."
         )
+
+    # Бот стартует сам при входе в систему, а его нередко запускают и руками.
+    # Два процесса на одном токене Telegram не разводит — сообщения достаются
+    # то одному, то другому, и часть показаний теряется.
+    if not single_instance.acquire():
+        message = ("Домовед уже запущен на этом компьютере — второй экземпляр "
+                   "не нужен. Автозапуск поднимает бота при входе в систему; "
+                   "чтобы запустить его вручную, сначала остановите текущий "
+                   "(задание «DH OS (Домовед)» в Планировщике заданий).")
+        logger.warning(message)
+        raise SystemExit(message)
 
     init_db()
     _apply_registry_if_present()
