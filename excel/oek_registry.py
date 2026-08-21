@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import shutil
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 # Ищем шапку в первых строках: выше неё только реквизиты договора
@@ -101,14 +101,20 @@ class RegistryLayout:
 class _Grid:
     """Единый доступ к листу: у xlrd и openpyxl разные API, логика — одна."""
 
-    def __init__(self, name: str, nrows: int, ncols: int, reader):
+    def __init__(self, name: str, nrows: int, ncols: int, reader, to_date=None):
         self.name = name
         self.nrows = nrows
         self.ncols = ncols
         self._reader = reader
+        # Даты у xlrd — числа, у openpyxl — datetime. Приводим к date здесь,
+        # чтобы читающий код про это не знал.
+        self._to_date = to_date or (lambda value: None)
 
     def value(self, row: int, col: int):
         return self._reader(row, col)
+
+    def to_date(self, value) -> date | None:
+        return self._to_date(value)
 
     def service_text(self) -> str:
         """Что написано в строке «Услуга: …» — по ней и различаем листы."""
@@ -230,7 +236,8 @@ def open_grids(path: Path) -> list[_Grid]:
     if suffix in XLS_SUFFIXES:
         import xlrd
         book = xlrd.open_workbook(path)
-        return [_xls_grid(book.sheet_by_index(i)) for i in range(book.nsheets)]
+        return [_xls_grid(book.sheet_by_index(i), book.datemode)
+                for i in range(book.nsheets)]
     if suffix in XLSX_SUFFIXES:
         from openpyxl import load_workbook
         book = load_workbook(path, data_only=True)
@@ -253,6 +260,30 @@ def inspect_template(path: Path, drop_water_sheets: bool = True) -> TemplateInfo
         reading_header=header[layout.reading_col],
         date_header=header[layout.date_col] if layout.date_col is not None else "",
     )
+
+
+@dataclass(frozen=True)
+class FilledRow:
+    """Строка готового реестра: что стоит в колонках показаний и даты."""
+    apartment: str
+    reading: float | int | None
+    taken_on: date | None
+
+
+def read_filled(path: Path) -> tuple[list[FilledRow], RegistryLayout]:
+    """Читает уже заполненный реестр — чтобы перенести столбцы в другой файл."""
+    grids = open_grids(path)
+    target, _ = _choose_sheets(grids, drop_water=False)
+    layout = find_layout(target)
+
+    filled: list[FilledRow] = []
+    for row, key in data_rows(target, layout):
+        raw = target.value(row, layout.reading_col)
+        reading = raw if isinstance(raw, (int, float)) else None
+        taken_on = (target.to_date(target.value(row, layout.date_col))
+                    if layout.date_col is not None else None)
+        filled.append(FilledRow(key, reading, taken_on))
+    return filled, layout
 
 
 # ---------------------------------------------------------------------------
@@ -346,7 +377,8 @@ def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
     from xlutils.filter import XLRDReader, XLWTWriter, process
 
     book = xlrd.open_workbook(template, formatting_info=True)
-    grids = [_xls_grid(book.sheet_by_index(i)) for i in range(book.nsheets)]
+    grids = [_xls_grid(book.sheet_by_index(i), book.datemode)
+             for i in range(book.nsheets)]
     target, dropped = _choose_sheets(grids, drop_water)
     layout = find_layout(target)
     rows = data_rows(target, layout)
@@ -433,14 +465,26 @@ def _fill_xlsx(template: Path, readings: dict[str, float], out_path: Path,
 # Вспомогательное
 # ---------------------------------------------------------------------------
 
-def _xls_grid(sheet) -> _Grid:
+def _xls_grid(sheet, datemode: int = 0) -> _Grid:
+    def to_date(value):
+        from xlrd.xldate import xldate_as_datetime
+        if not isinstance(value, (int, float)) or not value:
+            return None
+        return xldate_as_datetime(value, datemode).date()
+
     return _Grid(sheet.name, sheet.nrows, sheet.ncols,
-                 lambda r, c, s=sheet: s.cell_value(r, c))
+                 lambda r, c, s=sheet: s.cell_value(r, c), to_date)
 
 
 def _xlsx_grid(sheet) -> _Grid:
+    def to_date(value):
+        if isinstance(value, datetime):
+            return value.date()
+        return value if isinstance(value, date) else None
+
     return _Grid(sheet.title, sheet.max_row, sheet.max_column,
-                 lambda r, c, s=sheet: s.cell(row=r + 1, column=c + 1).value)
+                 lambda r, c, s=sheet: s.cell(row=r + 1, column=c + 1).value,
+                 to_date)
 
 
 def _choose_sheets(grids: list[_Grid], drop_water: bool) -> tuple[_Grid, list[str]]:
