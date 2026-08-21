@@ -128,8 +128,10 @@ def page(ws, area, titles=None, landscape=False, fit_h=0):
     ws.oddFooter.center.text = "&\"Arial\"&8Журнал арендных платежей  •  стр. &P из &N"
     ws.oddFooter.center.color = "7A7590"
 
-def protect(ws):
-    ws.protection.password = PWD
+def protect(ws, rows=False):
+    """Защита формул без пароля: снимается одним щелчком, но случайно
+    формулу не сотрёшь. Пароль намеренно не ставим — часть мобильных
+    приложений считает лист с паролем полностью нередактируемым."""
     ws.protection.sheet = True
     ws.protection.enable()
     ws.protection.formatCells = False
@@ -139,6 +141,9 @@ def protect(ws):
     ws.protection.autoFilter = False
     ws.protection.selectLockedCells = False
     ws.protection.selectUnlockedCells = False
+    if rows:                       # в журнале разрешаем добавлять/удалять строки
+        ws.protection.insertRows = False
+        ws.protection.deleteRows = False
 
 # ---------- книга ----------
 wb = Workbook()
@@ -288,9 +293,9 @@ ws.row_dimensions[26].height = 12
 section(ws, "A27:E27", "  КАК ПОЛЬЗОВАТЬСЯ")
 tips = [
     "1.  Заполните карточку договора — поля с бирюзовой рамкой (белый фон) открыты для ввода.",
-    "2.  Каждый платёж вносите на листе «Регистрация»: дата, категория, месяц, сумма, способ.",
+    "2.  Каждый платёж вносите на листе «Регистрация»: дата, категория, сумма — месяц подставится сам.",
     "3.  Листы «История» и «Аналитика» и карточки итогов пересчитываются сами — их не трогаем.",
-    "4.  Сиреневые ячейки 🤖 — формулы, они защищены от случайного изменения (пароль: arenda).",
+    "4.  Сиреневые ячейки 🤖 — формулы. Защита без пароля: «Рецензирование → Снять защиту листа».",
 ]
 for i, t in enumerate(tips):
     put(ws, f"A{28+i}:E{28+i}", t, bg=LIL_BG if i % 2 == 0 else WHITE,
@@ -318,21 +323,25 @@ dv_day = DataValidation(type="whole", operator="between", formula1=1, formula2=2
                         errorTitle="День платежа", error="Укажите число от 1 до 28.",
                         promptTitle="День платежа", prompt="Число месяца, до которого вносится аренда (1–28).")
 dv_day.showInputMessage = True
+dv_day.errorStyle = "warning"
 ws.add_data_validation(dv_day); dv_day.add("B10")
 
 dv_date = DataValidation(type="date", operator="greaterThan", formula1="DATE(2000,1,1)",
                          allow_blank=True, showErrorMessage=True,
                          errorTitle="Дата", error="Введите корректную дату (ДД.ММ.ГГГГ).")
+dv_date.errorStyle = "warning"
 ws.add_data_validation(dv_date); dv_date.add("B7")
 
 dv_money = DataValidation(type="decimal", operator="greaterThanOrEqual", formula1=0,
                           allow_blank=True, showErrorMessage=True,
                           errorTitle="Сумма", error="Сумма не может быть отрицательной.")
+dv_money.errorStyle = "warning"
 ws.add_data_validation(dv_money); dv_money.add("B9"); dv_money.add("E9")
 
 dv_term = DataValidation(type="whole", operator="between", formula1=1, formula2=120,
                          allow_blank=True, showErrorMessage=True,
                          errorTitle="Срок", error="Срок договора: от 1 до 120 месяцев.")
+dv_term.errorStyle = "warning"
 ws.add_data_validation(dv_term); dv_term.add("E7")
 
 page(ws, "A1:E31")
@@ -342,13 +351,14 @@ ws.sheet_view.zoomScale = 100
 #  РЕГИСТРАЦИЯ
 # =====================================================================
 ws = reg
-widths = {"A": 5.5, "B": 12.5, "C": 17, "D": 14.5, "E": 13.5, "F": 15, "G": 24, "H": 15}
+widths = {"A": 5.5, "B": 12.5, "C": 17, "D": 14, "E": 13.5, "F": 15, "G": 21, "H": 14, "I": 14}
 for c, w in widths.items():
     ws.column_dimensions[c].width = w
-paint(ws, f"A1:H{JR_LAST+2}", bg=WHITE)
+paint(ws, f"A1:I{JR_LAST+2}", bg=WHITE)
 
-banner(ws, "A1:H1", "РЕГИСТРАЦИЯ ПЛАТЕЖЕЙ", "A2:H2",
-       "Одна строка — один платёж. С телефона достаточно заполнить: Дата · Категория · Месяц · Сумма",
+banner(ws, "A1:I1", "РЕГИСТРАЦИЯ ПЛАТЕЖЕЙ", "A2:I2",
+       "Одна строка — один платёж. Достаточно заполнить: Дата · Категория · Сумма — "
+       "месяц подставится сам из даты платежа",
        color=TRQ)
 ws.row_dimensions[3].height = 6
 
@@ -359,7 +369,7 @@ stats = [
     ("E4", '="Последняя запись:"', None),
     ("F4", '=IF(COUNT($B$%d:$B$%d)=0,"—",MAX($B$%d:$B$%d))'
            % (JR_FIRST, JR_LAST, JR_FIRST, JR_LAST), DATE_F),
-    ("G4:H4", '="Предупреждений: "&COUNTIF($H$%d:$H$%d,"⚠*")' % (JR_FIRST, JR_LAST), None),
+    ("G4:I4", '="Предупреждений: "&COUNTIF($H$%d:$H$%d,"⚠*")' % (JR_FIRST, JR_LAST), None),
 ]
 for rng, f_, fmt_ in stats:
     put(ws, rng, f_, bg=LIL_BG, font=Font(F, 10, bold=True, color=LIL_DEEP), align=A_C,
@@ -367,14 +377,15 @@ for rng, f_, fmt_ in stats:
     box(ws, rng, LIL_SOFT)
 ws.row_dimensions[5].height = 10
 
-heads = ["№", "Дата", "Категория", "Месяц (период)", "Сумма", "Способ", "Комментарий", "🤖 Контроль"]
+heads = ["№", "Дата", "Категория", "Месяц (необяз.)", "Сумма", "Способ", "Комментарий",
+         "🤖 Контроль", "🤖 Учтён за месяц"]
 for i, h in enumerate(heads):
     c = ws.cell(row=6, column=i + 1, value=h)
     c.fill = fill(LIL)
     c.font = Font(F, 10, bold=True, color=WHITE)
     c.alignment = A_C
 ws.row_dimensions[6].height = 32
-box(ws, "A6:H6", LIL_DEEP)
+box(ws, "A6:I6", LIL_DEEP)
 
 for r in range(JR_FIRST, JR_LAST + 1):
     ws.row_dimensions[r].height = 22
@@ -399,14 +410,20 @@ for r in range(JR_FIRST, JR_LAST + 1):
         f'=IF(COUNTA(B{r}:G{r})=0,"",'
         f'IF(B{r}="","⚠ нет даты",'
         f'IF(C{r}="","⚠ нет категории",'
-        f'IF(D{r}="","⚠ нет месяца",'
         f'IF(NOT(ISNUMBER(E{r})),"⚠ нет суммы",'
         f'IF(E{r}<=0,"⚠ сумма ≤ 0",'
         f'IF(AND(Главная!$B$7<>"",B{r}<Главная!$B$7),"⚠ дата до договора",'
-        f'IF(B{r}>TODAY(),"ⓘ будущая дата","✓ ОК"))))))))'))
+        f'IF(B{r}>TODAY(),"ⓘ будущая дата","✓ ОК")))))))'))
     ctl.font = Font(F, 9.5, color=GREEN)
     ctl.alignment = A_C
-    for col in range(1, 9):
+    # месяц, за который засчитан платёж: указанный вручную или месяц даты платежа
+    per = ws.cell(row=r, column=9, value=(
+        f'=IF(COUNTA(B{r}:G{r})=0,"",IF(D{r}<>"",D{r},'
+        f'IF(B{r}="","",DATE(YEAR(B{r}),MONTH(B{r}),1))))'))
+    per.number_format = MON
+    per.alignment = A_C
+    per.font = Font(F, 9.5, color=LIL)
+    for col in range(1, 10):
         ws.cell(row=r, column=col).border = Border(
             bottom=side("EDE9F5"),
             left=side("EDE9F5") if col == 1 else None,
@@ -418,47 +435,58 @@ put(ws, f"A{tr}:D{tr}", "ИТОГО ПО ЖУРНАЛУ", bg=LIL_BG2,
     font=Font(F, 11, bold=True, color=LIL_DEEP), align=A_R, h=26)
 put(ws, f"E{tr}", f"=SUM(E{JR_FIRST}:E{JR_LAST})", bg=LIL_BG2,
     font=Font(F, 12, bold=True, color=LIL_DEEP), align=A_R, fmt=RUB)
-put(ws, f"F{tr}:H{tr}", f'="записей: "&COUNT(E{JR_FIRST}:E{JR_LAST})', bg=LIL_BG2,
+put(ws, f"F{tr}:I{tr}", f'="записей: "&COUNT(E{JR_FIRST}:E{JR_LAST})', bg=LIL_BG2,
     font=Font(F, 10, color=MUTED), align=A_C)
-box(ws, f"A{tr}:H{tr}", LIL_SOFT)
+box(ws, f"A{tr}:I{tr}", LIL_SOFT)
 
-ws.auto_filter.ref = f"A6:H{JR_LAST}"
+ws.auto_filter.ref = f"A6:I{JR_LAST}"
 ws.freeze_panes = "B7"
 
 # --- выпадающие списки ---
-dv_cat = DataValidation(type="list", formula1="L_CAT", allow_blank=True,
-                        showErrorMessage=True, errorTitle="Категория",
-                        error="Выберите значение из списка (лист «Справочники»).",
-                        promptTitle="Категория платежа",
-                        prompt="Аренда · Налог · Коммунальные услуги · Залог · Прочее")
-dv_cat.showInputMessage = True
-ws.add_data_validation(dv_cat); dv_cat.add(f"C{JR_FIRST}:C{JR_LAST}")
+# errorStyle="warning" — если приложение не даёт выбрать пункт списка,
+# значение всегда можно вписать руками, книга его примет.
+def add_dv(dv, rng, prompt_title=None, prompt=None):
+    dv.errorStyle = "warning"
+    if prompt:
+        dv.promptTitle = prompt_title
+        dv.prompt = prompt
+        dv.showInputMessage = True
+    ws.add_data_validation(dv)
+    dv.add(rng)
+    return dv
 
-dv_per = DataValidation(type="list", formula1="L_PER", allow_blank=True,
-                        showErrorMessage=True, errorTitle="Месяц",
-                        error="Выберите месяц из списка (формируется из даты договора).",
-                        promptTitle="За какой месяц платёж",
-                        prompt="Выберите месяц из списка — по нему считается «История».")
-dv_per.showInputMessage = True
-ws.add_data_validation(dv_per); dv_per.add(f"D{JR_FIRST}:D{JR_LAST}")
+add_dv(DataValidation(type="list", formula1="L_CAT", allow_blank=True,
+                      showErrorMessage=True, errorTitle="Категория",
+                      error="Обычно выбирают из списка. Оставить введённое значение?"),
+       f"C{JR_FIRST}:C{JR_LAST}", "Категория платежа",
+       "Выберите из списка или впишите: Аренда · Налог · Коммунальные услуги · Залог · Прочее")
 
-dv_pay = DataValidation(type="list", formula1="L_PAY", allow_blank=True,
-                        showErrorMessage=True, errorTitle="Способ оплаты",
-                        error="Выберите способ из списка (лист «Справочники»).")
-ws.add_data_validation(dv_pay); dv_pay.add(f"F{JR_FIRST}:F{JR_LAST}")
+add_dv(DataValidation(type="list", formula1="L_PER", allow_blank=True,
+                      showErrorMessage=True, errorTitle="Месяц",
+                      error="Обычно выбирают месяц из списка. Оставить введённое значение?"),
+       f"D{JR_FIRST}:D{JR_LAST}", "Месяц — заполнять не обязательно",
+       "Оставьте пусто — платёж зачтётся за месяц своей даты. "
+       "Заполняйте только для аванса или погашения долга за другой месяц.")
 
-dv_sum = DataValidation(type="decimal", operator="greaterThan", formula1=0, allow_blank=True,
-                        showErrorMessage=True, errorTitle="Сумма",
-                        error="Сумма платежа должна быть больше нуля.")
-ws.add_data_validation(dv_sum); dv_sum.add(f"E{JR_FIRST}:E{JR_LAST}")
+add_dv(DataValidation(type="list", formula1="L_PAY", allow_blank=True,
+                      showErrorMessage=True, errorTitle="Способ оплаты",
+                      error="Обычно выбирают из списка. Оставить введённое значение?"),
+       f"F{JR_FIRST}:F{JR_LAST}", "Способ оплаты",
+       "Выберите из списка или впишите свой вариант.")
 
-dv_d2 = DataValidation(type="date", operator="greaterThan", formula1="DATE(2000,1,1)",
-                       allow_blank=True, showErrorMessage=True, errorTitle="Дата",
-                       error="Введите корректную дату платежа.")
-ws.add_data_validation(dv_d2); dv_d2.add(f"B{JR_FIRST}:B{JR_LAST}")
+add_dv(DataValidation(type="decimal", operator="greaterThan", formula1=0, allow_blank=True,
+                      showErrorMessage=True, errorTitle="Сумма",
+                      error="Ожидается число больше нуля. Оставить как есть?"),
+       f"E{JR_FIRST}:E{JR_LAST}")
+
+add_dv(DataValidation(type="date", operator="greaterThan", formula1="DATE(2000,1,1)",
+                      allow_blank=True, showErrorMessage=True, errorTitle="Дата",
+                      error="Ожидается дата в формате ДД.ММ.ГГГГ. Оставить как есть?"),
+       f"B{JR_FIRST}:B{JR_LAST}", "Дата платежа",
+       "Введите дату, когда деньги получены, например 05.09.2026.")
 
 # --- условное форматирование ---
-rng_all = f"A{JR_FIRST}:H{JR_LAST}"
+rng_all = f"A{JR_FIRST}:I{JR_LAST}"
 cat_colors = [("Аренда", LIL_BG2, LIL_DEEP), ("Налог", TRQ_BG, TRQ_DEEP),
               ("Коммунальные услуги", "EAF4FB", "1C5C87"), ("Залог", AMBER_BG, AMBER),
               ("Прочее", "F2F1F6", MUTED)]
@@ -478,7 +506,7 @@ ws.conditional_formatting.add(f"E{JR_FIRST}:E{JR_LAST}", DataBarRule(
     start_type="num", start_value=0, end_type="percentile", end_value=95,
     color=TRQ_SOFT, showValue=True))
 
-page(ws, f"A1:H{min(JR_FIRST+49, JR_LAST)}", titles="1:6")
+page(ws, f"A1:I{min(JR_FIRST+49, JR_LAST)}", titles="1:6")
 ws.sheet_view.zoomScale = 100
 
 # =====================================================================
@@ -816,9 +844,11 @@ for i, (k, v) in enumerate(example):
     put(ws, f"B{r}:C{r}", v, bg=LIL_BG, font=Font(F, 10.5, bold=True, color=LIL_DEEP), align=A_L)
     box(ws, f"B{r}:C{r}", LIL_SOFT)
 put(ws, "D26:E30",
-    "Это только образец на память — ничего копировать не нужно. "
-    "На листе «Регистрация» просто выберите значения из выпадающих списков. "
-    "Пароль защиты листов: arenda",
+    "Это только образец на память — копировать ничего не нужно. "
+    "Столбец «Месяц» можно не заполнять: платёж зачтётся за месяц своей даты, "
+    "а колонка «🤖 Учтён за месяц» покажет результат. "
+    "Значения можно выбирать из списка или вписывать вручную. "
+    "Листы защищены без пароля: «Рецензирование → Снять защиту листа».",
     bg=TRQ_BG, font=Font(F, 9.5, color=TRQ_DEEP),
     align=Alignment(horizontal="left", vertical="top", wrap_text=True))
 box(ws, "D26:E30", TRQ_SOFT)
@@ -844,7 +874,7 @@ names = {
     "L_PER":     f"История!$A${HS_FIRST}:$A${HS_LAST}",
     "J_DATE":    f"Регистрация!$B${JR_FIRST}:$B${JR_LAST}",
     "J_CAT":     f"Регистрация!$C${JR_FIRST}:$C${JR_LAST}",
-    "J_PER":     f"Регистрация!$D${JR_FIRST}:$D${JR_LAST}",
+    "J_PER":     f"Регистрация!$I${JR_FIRST}:$I${JR_LAST}",
     "J_SUM":     f"Регистрация!$E${JR_FIRST}:$E${JR_LAST}",
     "J_PAY":     f"Регистрация!$F${JR_FIRST}:$F${JR_LAST}",
 }
@@ -852,7 +882,7 @@ for n, t in names.items():
     wb.defined_names.add(DefinedName(n, attr_text=t))
 
 for ws_ in wb.worksheets:
-    protect(ws_)
+    protect(ws_, rows=(ws_ is reg))
 
 wb.calculation.fullCalcOnLoad = True   # Excel/мобильный Excel пересчитает всё при открытии
 wb.active = 0
