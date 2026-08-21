@@ -39,6 +39,11 @@ class Config:
     # утренние 20 числа не должны считаться опоздавшими.
     statement_day: int = int(os.getenv("STATEMENT_DAY", "20"))
     statement_hour: int = int(os.getenv("STATEMENT_HOUR", "14"))
+    # Объявление в чат дома о завершении сбора — отдельно от ведомости:
+    # ведомость уходит в 14:00, а жителям сообщаем вечером, когда чат читают
+    announce_day: int = int(os.getenv("ANNOUNCE_DAY",
+                                      os.getenv("STATEMENT_DAY", "20")))
+    announce_hour: int = int(os.getenv("ANNOUNCE_HOUR", "18"))
     reminder_days: tuple[int, ...] = field(
         default_factory=lambda: _parse_int_list(os.getenv("REMINDER_DAYS", "15,17,19")))
     # Когда автоматически формировать ведомость непередавших

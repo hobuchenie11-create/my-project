@@ -602,6 +602,18 @@ def faq_gaps(conn: sqlite3.Connection, limit: int = 20) -> list[sqlite3.Row]:
     ).fetchall()
 
 
+def claim_scheduled_task(conn: sqlite3.Connection, key: str) -> bool:
+    """Отмечает задачу планировщика выполненной. True — если это первый раз.
+
+    Ключ вида 'announce:2026-08-20' живёт в базе, а не в памяти процесса:
+    иначе каждый перезапуск бота в тот же день повторял бы рассылку.
+    """
+    cur = conn.execute("INSERT OR IGNORE INTO scheduler_log (key) VALUES (?)",
+                       (key,))
+    conn.commit()
+    return cur.rowcount > 0
+
+
 def log_event(conn: sqlite3.Connection, tg_id: int | None, action: str, details: str = "") -> None:
     conn.execute(
         "INSERT INTO events (tg_id, action, details) VALUES (?, ?, ?)",

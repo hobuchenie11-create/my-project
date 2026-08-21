@@ -5,8 +5,14 @@
   • ведомость непередавших — в DEBTORS_DAY в DEBTORS_HOUR часов
     (по умолчанию 20 числа в 09:00) отправляется председателю;
   • итоговая ведомость — в STATEMENT_DAY в STATEMENT_HOUR (20 числа в 14:00),
-    сразу за ней в чат дома уходит сообщение, что сбор завершён, но показания
-    всё ещё принимаются — и будут учтены в следующем периоде.
+    уходит председателю;
+  • объявление в чат дома, что сбор завершён (показания всё ещё принимаются,
+    но будут учтены в следующем периоде) — в ANNOUNCE_DAY в ANNOUNCE_HOUR
+    (20 числа в 18:00), когда чат читают.
+
+Каждая задача выполняется не более одного раза в сутки, и отметка об этом
+лежит в базе: бота перезапускают среди дня, а рассылка от этого повторяться
+не должна.
 """
 import asyncio
 import logging
@@ -29,43 +35,51 @@ CHECK_INTERVAL_SECONDS = 600  # проверяем календарь кажды
 
 async def run_scheduler(bot: Bot) -> None:
     """Бесконечный цикл: выполняет задачи дня не более одного раза за сутки."""
-    done: set[str] = set()  # ключи вида 'reminders:2026-07-17'
     while True:
         try:
-            await _tick(bot, datetime.now(), done)
+            await _tick(bot, datetime.now())
         except Exception:  # noqa: BLE001 - планировщик не должен падать
             logger.exception("Ошибка в планировщике")
         await asyncio.sleep(CHECK_INTERVAL_SECONDS)
 
 
-async def _tick(bot: Bot, now: datetime, done: set[str]) -> None:
+def _claim(key: str) -> bool:
+    """Занять задачу дня. False — её уже выполнили (в том числе до перезапуска).
+
+    Отметка лежит в базе: бота перезапускают по нескольку раз в день, и
+    отметка «в памяти процесса» после каждого перезапуска обнулялась —
+    объявление о завершении сбора уходило в чат заново.
+    """
+    conn = repository.connect()
+    try:
+        return repository.claim_scheduled_task(conn, key)
+    finally:
+        conn.close()
+
+
+async def _tick(bot: Bot, now: datetime) -> None:
     today = now.date().isoformat()
 
-    if now.day in config.reminder_days:
-        key = f"reminders:{today}"
-        if key not in done:
-            sent = await send_reminders(bot)
-            done.add(key)
-            logger.info("Напоминания отправлены: %s жителям", sent)
+    if now.day in config.reminder_days and _claim(f"reminders:{today}"):
+        sent = await send_reminders(bot)
+        logger.info("Напоминания отправлены: %s жителям", sent)
 
-    if now.day == config.debtors_day and now.hour >= config.debtors_hour:
-        key = f"debtors:{today}"
-        if key not in done:
-            await send_debtors_statement(bot)
-            done.add(key)
+    if (now.day == config.debtors_day and now.hour >= config.debtors_hour
+            and _claim(f"debtors:{today}")):
+        await send_debtors_statement(bot)
 
-    if now.day == config.statement_day and now.hour >= config.statement_hour:
-        key = f"statement:{today}"
-        if key not in done:
-            await send_monthly_statement(bot)
-            done.add(key)
+    if (now.day == config.statement_day and now.hour >= config.statement_hour
+            and _claim(f"statement:{today}")):
+        await send_monthly_statement(bot)
+
+    # Объявление жителям — отдельно от ведомости и позже неё
+    if (now.day == config.announce_day and now.hour >= config.announce_hour
+            and _claim(f"announce:{today}")):
+        await announce_collection_closed(bot)
 
     # Задачи председателя: напоминания раз в день
-    if now.hour >= config.tasks_reminder_hour:
-        key = f"tasks:{today}"
-        if key not in done:
-            await send_task_reminders(bot)
-            done.add(key)
+    if now.hour >= config.tasks_reminder_hour and _claim(f"tasks:{today}"):
+        await send_task_reminders(bot)
 
 
 async def send_reminders(bot: Bot) -> int:
@@ -129,8 +143,6 @@ async def send_monthly_statement(bot: Bot) -> None:
         except TelegramAPIError as exc:
             logger.warning("Не удалось отправить ведомость админу %s: %s", admin_id, exc)
     logger.info("Ведомость сформирована: %s (собрано %s из %s)", path, submitted, total)
-
-    await announce_collection_closed(bot)
 
 
 async def announce_collection_closed(bot: Bot) -> bool:

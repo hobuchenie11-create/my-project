@@ -398,6 +398,14 @@ CREATE TABLE IF NOT EXISTS faq_gaps (
     created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
+-- Что планировщик уже сделал за сутки. Раньше это помнилось только в памяти
+-- процесса, и после перезапуска бота 20 числа объявление о завершении сбора
+-- уходило в чат заново — жители получали его по три раза.
+CREATE TABLE IF NOT EXISTS scheduler_log (
+    key        TEXT PRIMARY KEY,        -- 'announce:2026-08-20'
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
 -- Журнал изменений по задачам
 CREATE TABLE IF NOT EXISTS task_events (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
