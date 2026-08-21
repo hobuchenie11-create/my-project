@@ -8,6 +8,7 @@ from excel.oek_registry import (OekFormatError, apartment_key, data_rows,
                                 open_grids, sheet_role, template_period)
 
 from datetime import date
+from pathlib import Path
 
 # Шапка листа ОЭК: реквизиты договора, затем строка заголовков таблицы
 HEADERS = ["Округ", "Квартира", "Наличие ПУ", "Номер ПУ",
@@ -235,6 +236,53 @@ def test_fill_xlsx_template(tmp_path):
     sheet = book["ЭЛЕКТРОЭНЕРГИЯ"]
     assert sheet.cell(row=FIRST_DATA_ROW + 2, column=READING_COL + 1).value == 555
     assert sheet.cell(row=FIRST_DATA_ROW + 1, column=READING_COL + 1).value in (None, "")
+
+
+def test_locked_output_file_does_not_stop_the_registry(tmp_path, monkeypatch):
+    """Прошлый реестр открыт в Excel — новый должен лечь рядом, а не пропасть.
+
+    Windows не даёт перезаписать открытый файл, а держать реестр открытым —
+    обычное дело: 20 числа в 14:30 выгрузка из-за этого срывалась целиком.
+    """
+    from dataclasses import replace
+
+    from bot.config import config
+    from database import repository
+    from database.init_db import init_db
+    from reports import oek_registry as reports_oek
+
+    db = tmp_path / "oek.db"
+    init_db(db, apartments_count=2, nonresidential_count=0)
+    real_connect = repository.connect
+    monkeypatch.setattr(repository, "connect",
+                        lambda db_path=None: real_connect(db_path or db))
+
+    templates = tmp_path / "tpl"
+    templates.mkdir()
+    make_xls(templates / "oek.xls", flats=("1", "2"))
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    monkeypatch.setattr(reports_oek, "config",
+                        replace(config, reports_dir=out_dir, oek_dir=templates))
+
+    # Занятое имя: обращение к нему падает так же, как у Windows
+    taken = out_dir / "reestr_oek_2026-08.xls"
+    taken.write_bytes(b"open in Excel")
+    real_fill = reports_oek.fill_registry
+
+    def fill(template, readings, path, **kwargs):
+        if Path(path) == taken:
+            raise PermissionError(13, "Permission denied")
+        return real_fill(template, readings, path, **kwargs)
+
+    monkeypatch.setattr(reports_oek, "fill_registry", fill)
+
+    result = reports_oek.generate_oek_registry("2026-08")
+
+    assert result.path != taken
+    assert result.path.exists()
+    assert result.path.name.startswith("reestr_oek_2026-08_")
+    assert taken.read_bytes() == b"open in Excel"   # открытый файл не тронут
 
 
 # Когда реестр уходит — в tests/test_scheduler.py, рядом с остальным календарём

@@ -9,7 +9,7 @@
 """
 import sqlite3
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from bot.config import config
@@ -94,11 +94,21 @@ def generate_oek_registry(period: str | None = None,
     finally:
         conn.close()
 
-    out_path = (config.reports_dir
-                / f"{OUT_PREFIX}{period}{template.suffix.lower()}")
-    result = fill_registry(template, readings, out_path,
-                           taken_on=taken_on or _taken_on(period),
-                           known_apartments=known)
+    suffix = template.suffix.lower()
+    out_path = config.reports_dir / f"{OUT_PREFIX}{period}{suffix}"
+    try:
+        result = fill_registry(template, readings, out_path,
+                               taken_on=taken_on or _taken_on(period),
+                               known_apartments=known)
+    except PermissionError:
+        # Прошлый реестр открыт в Excel — Windows не даёт перезаписать файл.
+        # Отказываться из-за этого нельзя: 20 числа в 14:30 реестр нужен
+        # председателю, а открытая книга — обычное дело. Сохраняем рядом.
+        out_path = (config.reports_dir
+                    / f"{OUT_PREFIX}{period}_{datetime.now():%d%m_%H%M}{suffix}")
+        result = fill_registry(template, readings, out_path,
+                               taken_on=taken_on or _taken_on(period),
+                               known_apartments=known)
 
     conn = repository.connect()
     try:
