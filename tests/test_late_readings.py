@@ -108,6 +108,7 @@ def test_morning_of_the_statement_day_is_not_marked_late(conn):
 
 def test_closing_message_invites_to_keep_sending():
     """Сообщение в чат: сбор закрыт, но показания принимаются дальше."""
+    from bot.config import config
     from bot.texts import collection_closed_text
 
     text = collection_closed_text(date(2026, 8, 20))
@@ -115,4 +116,6 @@ def test_closing_message_invites_to_keep_sending():
     assert "Передать показания можно и сейчас" in text
     assert "следующем расчётном периоде" in text
     assert "до 25 числа" in text                  # ресурсники ждут до 25-го
-    assert "с 15 по 19 число" in text             # когда следующий сбор
+    # Когда следующий сбор — срок берётся из .env, а не вписан в тест числом
+    assert (f"с {config.readings_day_start} по {config.readings_day_end} число"
+            in text)

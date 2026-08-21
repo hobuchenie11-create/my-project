@@ -132,21 +132,30 @@ def test_readings_are_not_collected_in_the_council_chat():
 
 
 def test_chat_reminder_names_the_deadline():
-    """Напоминание в чат: срок берётся из настроек и текущего месяца."""
+    """Напоминание в чат: срок берётся из настроек и текущего месяца.
+
+    Срок сбора задаётся в .env (READINGS_DAY_END) и время от времени меняется,
+    поэтому даты в тесте считаются от настройки, а не вписаны числом.
+    """
+    from bot.config import config
     from bot.texts import collection_reminder_text
 
-    text = collection_reminder_text(date(2026, 8, 16))
-    assert "<b>до 19 августа</b>" in text
+    last = config.readings_day_end
+    text = collection_reminder_text(date(2026, 8, last - 3))
+    assert f"<b>до {last} августа</b>" in text
     assert "Остаётся 3 дня" in text
     assert "Домовед" in text
     assert "Хвс кухня" in text              # шаблон для 3-комнатных
     assert "15230" not in text              # в шаблонах без чисел-примеров
     assert "обходить квартиры" not in text
 
-    assert "Сегодня последний день" in collection_reminder_text(date(2026, 8, 19))
-    assert "Срок сбора завершён" in collection_reminder_text(date(2026, 8, 21))
-    assert "1 день" in collection_reminder_text(date(2026, 8, 18))
-    assert "<b>до 19 сентября</b>" in collection_reminder_text(date(2026, 9, 15))
+    assert "Сегодня последний день" in collection_reminder_text(
+        date(2026, 8, last))
+    assert "Срок сбора завершён" in collection_reminder_text(
+        date(2026, 8, last + 1))
+    assert "1 день" in collection_reminder_text(date(2026, 8, last - 1))
+    assert f"<b>до {last} сентября</b>" in collection_reminder_text(
+        date(2026, 9, last - 4))
 
 
 def test_invite_and_reminder_speak_the_same_way():
