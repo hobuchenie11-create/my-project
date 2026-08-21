@@ -45,7 +45,8 @@ def bot(monkeypatch):
         return 0
 
     for name in ("send_reminders", "send_debtors_statement",
-                 "send_monthly_statement", "send_task_reminders"):
+                 "send_monthly_statement", "send_oek_registry",
+                 "send_task_reminders"):
         monkeypatch.setattr(scheduler, name, noop)
     # Config заморожен — подменяем целиком, а не отдельное поле
     monkeypatch.setattr(scheduler, "config",
@@ -82,6 +83,43 @@ def test_next_month_announcement_goes_out_again(db, bot):
     _tick(bot, datetime(2026, 9, config.announce_day, config.announce_hour))
 
     assert len(bot.sent) == 2
+
+
+def test_oek_registry_waits_half_an_hour_after_the_statement(db, bot, monkeypatch):
+    """Реестр ОЭК уходит 20 числа в 14:30 — минутой раньше ещё рано.
+
+    Из-за минут задача и заставила проверять календарь чаще, чем раз в
+    десять минут: при прежнем шаге реестр мог уйти почти в 14:40.
+    """
+    built = []
+
+    async def fake_registry(_bot):
+        built.append(True)
+
+    monkeypatch.setattr(scheduler, "send_oek_registry", fake_registry)
+    _tick(bot, datetime(2026, 8, config.oek_day, config.oek_hour,
+                        config.oek_minute - 1))
+    assert built == []
+
+    _tick(bot, datetime(2026, 8, config.oek_day, config.oek_hour,
+                        config.oek_minute))
+    assert built == [True]
+
+    # Перезапуск в тот же день второй реестр не порождает
+    _tick(bot, datetime(2026, 8, config.oek_day, config.oek_hour + 2))
+    assert built == [True]
+
+
+def test_oek_registry_is_not_built_on_other_days(db, bot, monkeypatch):
+    built = []
+
+    async def fake_registry(_bot):
+        built.append(True)
+
+    monkeypatch.setattr(scheduler, "send_oek_registry", fake_registry)
+    _tick(bot, datetime(2026, 8, config.oek_day + 1, config.oek_hour + 1))
+
+    assert built == []
 
 
 def test_statement_does_not_announce_by_itself(db, bot, monkeypatch):

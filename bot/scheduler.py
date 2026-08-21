@@ -6,6 +6,8 @@
     (по умолчанию 20 числа в 09:00) отправляется председателю;
   • итоговая ведомость — в STATEMENT_DAY в STATEMENT_HOUR (20 числа в 14:00),
     уходит председателю;
+  • реестр ОЭК — в OEK_DAY в OEK_HOUR:OEK_MINUTE (20 числа в 14:30): шаблон
+    ресурсника, заполненный теми же показаниями, что ушли в ведомости;
   • объявление в чат дома, что сбор завершён (показания всё ещё принимаются,
     но будут учтены в следующем периоде) — в ANNOUNCE_DAY в ANNOUNCE_HOUR
     (20 числа в 18:00), когда чат читают.
@@ -30,7 +32,12 @@ from database import repository
 
 logger = logging.getLogger(__name__)
 
-CHECK_INTERVAL_SECONDS = 600  # проверяем календарь каждые 10 минут
+# Проверяем календарь раз в минуту: реестр ОЭК уходит в 14:30, и при шаге
+# в 10 минут он мог опоздать почти на десять — тик стоит дёшево, задачи
+# всё равно выполняются не чаще раза в сутки.
+CHECK_INTERVAL_SECONDS = 60
+
+CAPTION_LIMIT = 1000  # у Telegram подпись к документу — до 1024 знаков
 
 
 async def run_scheduler(bot: Bot) -> None:
@@ -71,6 +78,12 @@ async def _tick(bot: Bot, now: datetime) -> None:
     if (now.day == config.statement_day and now.hour >= config.statement_hour
             and _claim(f"statement:{today}")):
         await send_monthly_statement(bot)
+
+    # Реестр ОЭК — через полчаса после ведомости, той же цифрой
+    if (now.day == config.oek_day
+            and (now.hour, now.minute) >= (config.oek_hour, config.oek_minute)
+            and _claim(f"oek:{today}")):
+        await send_oek_registry(bot)
 
     # Объявление жителям — отдельно от ведомости и позже неё
     if (now.day == config.announce_day and now.hour >= config.announce_hour
@@ -143,6 +156,56 @@ async def send_monthly_statement(bot: Bot) -> None:
         except TelegramAPIError as exc:
             logger.warning("Не удалось отправить ведомость админу %s: %s", admin_id, exc)
     logger.info("Ведомость сформирована: %s (собрано %s из %s)", path, submitted, total)
+
+
+async def send_oek_registry(bot: Bot) -> None:
+    """Заполнить шаблон ОЭК показаниями за период и отправить председателю.
+
+    Шаблон присылает ресурсник, форма у него меняется — поэтому ошибку разбора
+    не глотаем, а пишем председателю: без файла он узнал бы об этом только
+    когда реестр уже пора сдавать.
+    """
+    from excel.oek_registry import OekFormatError
+    from reports.oek_registry import NoTemplateError, generate_oek_registry
+
+    period = current_period()
+    try:
+        result = generate_oek_registry(period)
+    except (NoTemplateError, OekFormatError) as exc:
+        logger.warning("Реестр ОЭК не сформирован: %s", exc)
+        for admin_id in config.admin_ids:
+            try:
+                await bot.send_message(
+                    admin_id, f"📨 Реестр ОЭК не сформирован.\n\n{exc}")
+            except TelegramAPIError as api_exc:
+                logger.warning("Не удалось предупредить админа %s: %s",
+                               admin_id, api_exc)
+        return
+
+    for admin_id in config.admin_ids:
+        await deliver_oek_registry(bot, admin_id, result, period_title(period))
+    logger.info("Реестр ОЭК сформирован: %s (заполнено %s из %s)",
+                result.path, len(result.filled), result.rows_total)
+
+
+async def deliver_oek_registry(bot: Bot, chat_id: int, result,
+                               period_name: str) -> bool:
+    """Отправляет файл реестра с отчётом. Общая для планировщика и кнопки."""
+    summary = result.summary(period_name)
+    # Подпись к документу в Telegram — не длиннее 1024 знаков. Если список
+    # непередавших длинный, отправляем отчёт отдельным сообщением.
+    caption, tail = (summary, "") if len(summary) <= CAPTION_LIMIT else (
+        f"📨 <b>Реестр ОЭК</b> — {period_name}\n\n"
+        f"Заполнено показаний: {len(result.filled)} из {result.rows_total}",
+        summary)
+    try:
+        await bot.send_document(chat_id, FSInputFile(result.path), caption=caption)
+        if tail:
+            await bot.send_message(chat_id, tail)
+    except TelegramAPIError as exc:
+        logger.warning("Не удалось отправить реестр ОЭК в чат %s: %s", chat_id, exc)
+        return False
+    return True
 
 
 async def announce_collection_closed(bot: Bot) -> bool:

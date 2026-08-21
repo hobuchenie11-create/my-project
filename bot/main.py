@@ -8,7 +8,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
 from bot.config import config
-from bot.handlers import (admin, common, faq, group, manual, readings,
+from bot.handlers import (admin, common, faq, group, manual, oek, readings,
                           registration, reports, start, tasks)
 from bot.keepawake import keep_awake
 from bot.proxy import make_session
@@ -77,6 +77,9 @@ async def main() -> None:
 
     # Порядок важен: FSM-сценарии раньше общих обработчиков меню
     dp.include_router(common.router)
+    # Раньше tasks: тот забирает любой присланный документ как правки годового
+    # плана, а .xls от ресурсника — это шаблон реестра ОЭК
+    dp.include_router(oek.router)
     dp.include_router(tasks.router)
     dp.include_router(admin.router)
     dp.include_router(registration.router)

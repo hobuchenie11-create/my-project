@@ -46,6 +46,15 @@ class Config:
     announce_hour: int = int(os.getenv("ANNOUNCE_HOUR", "18"))
     reminder_days: tuple[int, ...] = field(
         default_factory=lambda: _parse_int_list(os.getenv("REMINDER_DAYS", "15,17,19")))
+    # Реестр ОЭК: заполняется сразу после ведомости — 20 числа в 14:30.
+    # Полчаса запаса на случай, если ведомость собиралась дольше обычного.
+    oek_day: int = int(os.getenv("OEK_DAY", os.getenv("STATEMENT_DAY", "20")))
+    oek_hour: int = int(os.getenv("OEK_HOUR", "14"))
+    oek_minute: int = int(os.getenv("OEK_MINUTE", "30"))
+    # Куда класть шаблон, который присылает ресурсник. Файл можно просто
+    # положить в папку или отправить боту в личку — он сохранит его сюда.
+    oek_dir: Path = Path(os.getenv("OEK_TEMPLATE_DIR")
+                         or BASE_DIR / "data" / "oek")
     # Когда автоматически формировать ведомость непередавших
     debtors_day: int = int(os.getenv("DEBTORS_DAY", "20"))
     debtors_hour: int = int(os.getenv("DEBTORS_HOUR", "9"))

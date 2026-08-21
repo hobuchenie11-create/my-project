@@ -2,4 +2,9 @@ aiogram>=3.13
 aiohttp-socks>=0.9
 python-dotenv>=1.0
 openpyxl>=3.1
+# Реестр ОЭК приходит в старом .xls: читаем xlrd, пишем xlwt через xlutils.
+# Версии закреплены — xlutils работает с приватным списком листов xlwt.
+xlrd>=2.0,<3
+xlwt>=1.3,<2
+xlutils>=2.0,<3
 pytest>=8.0

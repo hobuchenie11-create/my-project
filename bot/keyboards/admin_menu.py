@@ -6,6 +6,8 @@ from bot.keyboards.tasks import BTN_TASKS
 BTN_ADMIN = "🛠 Меню председателя"
 BTN_REGISTRY = "📋 Реестр квартир"
 BTN_STATEMENT = "📄 Ведомость передачи"
+BTN_OEK = "📨 Реестр ОЭК"
+BTN_OEK_TEMPLATE = "📥 Шаблон ОЭК"
 BTN_WORKBOOK = "📗 Книга Excel"
 BTN_STATS = "📈 Статистика"
 BTN_DEBTORS = "🔴 Должники"
@@ -31,6 +33,7 @@ def admin_menu() -> ReplyKeyboardMarkup:
             [KeyboardButton(text=BTN_REGISTRY), KeyboardButton(text=BTN_SPECIAL)],
             [KeyboardButton(text=BTN_STATEMENT),
              KeyboardButton(text=BTN_CORRECTION)],
+            [KeyboardButton(text=BTN_OEK), KeyboardButton(text=BTN_OEK_TEMPLATE)],
             [KeyboardButton(text=BTN_WORKBOOK), KeyboardButton(text=BTN_STATS)],
             [KeyboardButton(text=BTN_BLANKS)],
             [KeyboardButton(text=BTN_DEBTORS), KeyboardButton(text=BTN_DEBTORS_DOC)],

@@ -17,6 +17,8 @@ backups/*.db
 logs/*.log*
 reports/generated/
 data/registry_backup/
+# Шаблоны реестра ОЭК — присылает ресурсник, в репозитории им не место
+data/oek/*
 
 # Не игнорировать заглушки пустых папок
 !**/.gitkeep
