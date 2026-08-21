@@ -96,10 +96,12 @@ def generate_oek_registry(period: str | None = None,
 
     suffix = template.suffix.lower()
     out_path = config.reports_dir / f"{OUT_PREFIX}{period}{suffix}"
+    # Дата снятия показаний — день, когда реестр собран. По регламенту это
+    # 20 число: в 14:30 задание заполняет шаблон тем, что собралось к сроку.
+    taken_on = taken_on or date.today()
     try:
         result = fill_registry(template, readings, out_path,
-                               taken_on=taken_on or _taken_on(period),
-                               known_apartments=known)
+                               taken_on=taken_on, known_apartments=known)
     except PermissionError:
         # Прошлый реестр открыт в Excel — Windows не даёт перезаписать файл.
         # Отказываться из-за этого нельзя: 20 числа в 14:30 реестр нужен
@@ -107,8 +109,7 @@ def generate_oek_registry(period: str | None = None,
         out_path = (config.reports_dir
                     / f"{OUT_PREFIX}{period}_{datetime.now():%d%m_%H%M}{suffix}")
         result = fill_registry(template, readings, out_path,
-                               taken_on=taken_on or _taken_on(period),
-                               known_apartments=known)
+                               taken_on=taken_on, known_apartments=known)
 
     conn = repository.connect()
     try:
@@ -116,12 +117,6 @@ def generate_oek_registry(period: str | None = None,
     finally:
         conn.close()
     return result
-
-
-def _taken_on(period: str) -> date:
-    """Дата снятия показаний — день выгрузки ведомости в этом периоде."""
-    year, month = (int(part) for part in period.split("-"))
-    return date(year, month, config.statement_day)
 
 
 if __name__ == "__main__":

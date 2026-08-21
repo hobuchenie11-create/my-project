@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import shutil
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 # Ищем шапку в первых строках: выше неё только реквизиты договора
@@ -26,6 +26,11 @@ HEADER_SEARCH_ROWS = 40
 # Столько подряд пустых строк считаем концом таблицы (в реестре бывают
 # разрывы между округами)
 MAX_BLANK_ROWS = 15
+
+# «Дата снятия показания» — в привычном виде 20.08.2026. В шаблоне ОЭК стоит
+# американский формат m/d/yy (8/20/26), поэтому свой формат задаём явно.
+# Пишем именно дату, без времени: час передачи ресурснику не нужен.
+DATE_FORMAT = "DD.MM.YYYY"
 
 XLS_SUFFIXES = (".xls",)
 XLSX_SUFFIXES = (".xlsx", ".xlsm")
@@ -335,8 +340,9 @@ def fill_registry(template: Path, readings: dict[str, float], out_path: Path,
 def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
               taken_on: date | None, known: set[str] | None,
               drop_water: bool) -> OekResult:
+    import copy
+
     import xlrd
-    from xlrd.formatting import is_date_format_string
     from xlutils.filter import XLRDReader, XLWTWriter, process
 
     book = xlrd.open_workbook(template, formatting_info=True)
@@ -355,17 +361,16 @@ def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
     out_sheet = out_book.get_sheet(names.index(target.name))
     read_sheet = book.sheet_by_name(target.name)
 
-    def date_is_formatted(col: int) -> bool:
-        """У колонки дат в шаблоне уже стоит формат даты?"""
-        for row, _ in rows[:5]:
-            xf = book.xf_list[read_sheet.cell_xf_index(row, col)]
-            fmt = book.format_map[xf.format_key].format_str
-            if is_date_format_string(book, fmt):
-                return True
-        return False
-
-    date_ok = (taken_on is not None and layout.date_col is not None
-               and date_is_formatted(layout.date_col))
+    write_date = bool(taken_on is not None and layout.date_col is not None
+                      and rows)
+    if write_date:
+        # Оформление ячейки берём из шаблона, а формат числа задаём свой:
+        # у ОЭК в колонке стоит американское «m/d/yy» (8/20/26), читать реестр
+        # с такими датами неудобно. copy — поверхностная: шрифт и рамки те же
+        # объекты, меняем только формат, и стиль один на всю колонку.
+        date_style = copy.copy(
+            styles[read_sheet.cell_xf_index(rows[0][0], layout.date_col)])
+        date_style.num_format_str = DATE_FORMAT
 
     result = _build_result(template, out_path, target.name, dropped,
                            readings, rows, known)
@@ -376,10 +381,8 @@ def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
             continue
         style = styles[read_sheet.cell_xf_index(row, layout.reading_col)]
         out_sheet.write(row, layout.reading_col, _as_number(value), style)
-        if taken_on is not None and layout.date_col is not None:
-            style = styles[read_sheet.cell_xf_index(row, layout.date_col)]
-            written = taken_on if date_ok else taken_on.strftime("%d.%m.%Y")
-            out_sheet.write(row, layout.date_col, written, style)
+        if write_date:
+            out_sheet.write(row, layout.date_col, taken_on, date_style)
             result.date_written = True
 
     out_book.save(str(out_path))
@@ -411,9 +414,8 @@ def _fill_xlsx(template: Path, readings: dict[str, float], out_path: Path,
                    value=_as_number(value))
         if taken_on is not None and layout.date_col is not None:
             cell = sheet.cell(row=row + 1, column=layout.date_col + 1)
-            cell.value = datetime(taken_on.year, taken_on.month, taken_on.day)
-            if cell.number_format == "General":
-                cell.number_format = "DD.MM.YYYY"
+            cell.value = taken_on            # только дата, без времени
+            cell.number_format = DATE_FORMAT
             result.date_written = True
 
     for name in dropped:

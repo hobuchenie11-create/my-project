@@ -1,14 +1,17 @@
 """Реестр ОЭК: разбор шаблона ресурсника и заполнение колонки показаний."""
+from datetime import date
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 import xlrd
 import xlwt
 from openpyxl import Workbook, load_workbook
 
-from excel.oek_registry import (OekFormatError, apartment_key, data_rows,
-                                fill_registry, find_layout, inspect_template,
-                                open_grids, sheet_role, template_period)
-
-from datetime import date
-from pathlib import Path
+from excel.oek_registry import (DATE_FORMAT, OekFormatError, apartment_key,
+                                data_rows, fill_registry, find_layout,
+                                inspect_template, open_grids, sheet_role,
+                                template_period)
 
 # Шапка листа ОЭК: реквизиты договора, затем строка заголовков таблицы
 HEADERS = ["Округ", "Квартира", "Наличие ПУ", "Номер ПУ",
@@ -173,10 +176,16 @@ def test_fill_xls_writes_readings_and_drops_water(tmp_path):
     # ресурсник посчитает это показанием счётчика
     assert sheet.cell_value(FIRST_DATA_ROW + 1, READING_COL) == ""
     assert sheet.cell_value(FIRST_DATA_ROW + 2, READING_COL) == 12608
-    # Дата снятия — в своей колонке, как дата, а не как текст
+    # Дата снятия — настоящая дата, а не текст, и в привычном виде 20.08.2026:
+    # у ОЭК в шаблоне стоит американское m/d/yy, читать его неудобно
     assert (xlrd.xldate.xldate_as_datetime(
         sheet.cell_value(FIRST_DATA_ROW, DATE_COL), book.datemode).date()
         == date(2026, 8, 20))
+    formatted = xlrd.open_workbook(out, formatting_info=True)
+    fmt = formatted.format_map[
+        formatted.xf_list[formatted.sheet_by_index(0).cell_xf_index(
+            FIRST_DATA_ROW, DATE_COL)].format_key].format_str
+    assert fmt == DATE_FORMAT
     # Шаблон не тронут
     assert xlrd.open_workbook(template).sheet_by_index(0).cell_value(
         FIRST_DATA_ROW, READING_COL) == ""
@@ -236,23 +245,37 @@ def test_fill_xlsx_template(tmp_path):
     sheet = book["ЭЛЕКТРОЭНЕРГИЯ"]
     assert sheet.cell(row=FIRST_DATA_ROW + 2, column=READING_COL + 1).value == 555
     assert sheet.cell(row=FIRST_DATA_ROW + 1, column=READING_COL + 1).value in (None, "")
+    taken_cell = sheet.cell(row=FIRST_DATA_ROW + 2, column=DATE_COL + 1)
+    # openpyxl отдаёт дату как datetime — важно, что время нулевое
+    assert taken_cell.value.date() == date(2026, 8, 20)
+    assert (taken_cell.value.hour, taken_cell.value.minute) == (0, 0)
+    assert taken_cell.number_format == DATE_FORMAT
 
 
-def test_locked_output_file_does_not_stop_the_registry(tmp_path, monkeypatch):
-    """Прошлый реестр открыт в Excel — новый должен лечь рядом, а не пропасть.
+# ---------------------------------------------------------------------------
+# Сборка реестра целиком
+# ---------------------------------------------------------------------------
 
-    Windows не даёт перезаписать открытый файл, а держать реестр открытым —
-    обычное дело: 20 числа в 14:30 выгрузка из-за этого срывалась целиком.
-    """
+@pytest.fixture()
+def registry_env(tmp_path, monkeypatch):
+    """Реестр в песочнице: своя база, своя папка шаблонов, свой выход."""
     from dataclasses import replace
 
     from bot.config import config
+    from bot.services.reading_service import save_reading
     from database import repository
     from database.init_db import init_db
     from reports import oek_registry as reports_oek
 
     db = tmp_path / "oek.db"
     init_db(db, apartments_count=2, nonresidential_count=0)
+    conn = repository.connect(db)
+    try:
+        apt = repository.get_apartment_by_number(conn, "1")
+        save_reading(conn, apt["id"], "electricity", 31668, None,
+                     period="2026-08")
+    finally:
+        conn.close()
     real_connect = repository.connect
     monkeypatch.setattr(repository, "connect",
                         lambda db_path=None: real_connect(db_path or db))
@@ -264,6 +287,32 @@ def test_locked_output_file_does_not_stop_the_registry(tmp_path, monkeypatch):
     out_dir.mkdir()
     monkeypatch.setattr(reports_oek, "config",
                         replace(config, reports_dir=out_dir, oek_dir=templates))
+    return SimpleNamespace(module=reports_oek, out_dir=out_dir, db=db)
+
+
+def test_taken_on_is_the_day_the_registry_was_built(registry_env):
+    """«Дата снятия показания» — день обработки, в виде 20.08.2026."""
+    result = registry_env.module.generate_oek_registry("2026-08")
+
+    book = xlrd.open_workbook(result.path, formatting_info=True)
+    sheet = book.sheet_by_index(0)
+    written = xlrd.xldate.xldate_as_datetime(
+        sheet.cell_value(FIRST_DATA_ROW, DATE_COL), book.datemode)
+    assert written.date() == date.today()
+    assert (written.hour, written.minute) == (0, 0)      # время не пишем
+    fmt = book.format_map[
+        book.xf_list[sheet.cell_xf_index(FIRST_DATA_ROW, DATE_COL)].format_key]
+    assert fmt.format_str == DATE_FORMAT
+
+
+def test_locked_output_file_does_not_stop_the_registry(registry_env, monkeypatch):
+    """Прошлый реестр открыт в Excel — новый должен лечь рядом, а не пропасть.
+
+    Windows не даёт перезаписать открытый файл, а держать реестр открытым —
+    обычное дело: 20 числа в 14:30 выгрузка из-за этого срывалась целиком.
+    """
+    reports_oek = registry_env.module
+    out_dir = registry_env.out_dir
 
     # Занятое имя: обращение к нему падает так же, как у Windows
     taken = out_dir / "reestr_oek_2026-08.xls"
