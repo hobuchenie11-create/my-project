@@ -191,6 +191,41 @@ def test_fill_xls_writes_readings_and_drops_water(tmp_path):
         FIRST_DATA_ROW, READING_COL) == ""
 
 
+def test_flat_without_a_reading_gets_no_date(tmp_path):
+    """Нет показания — нет и даты снятия, даже если ресурсник её проставил.
+
+    Иначе при загрузке в систему ОЭК строка выглядит снятой, хотя показания
+    за квартиру никто не передавал.
+    """
+    template = make_xls(tmp_path / "oek.xls", flats=("1", "2"))
+    # В шаблоне дата стоит у всех строк — её и нужно вычистить
+    source = xlrd.open_workbook(template).sheet_by_index(0)
+    assert source.cell_value(FIRST_DATA_ROW + 1, DATE_COL) != ""
+
+    out = tmp_path / "out.xls"
+    fill_registry(template, {"1": 100.0}, out, taken_on=date(2026, 8, 20),
+                  known_apartments={"1", "2"})
+
+    sheet = xlrd.open_workbook(out).sheet_by_index(0)
+    assert sheet.cell_value(FIRST_DATA_ROW, DATE_COL) != ""       # кв. 1 сдала
+    assert sheet.cell_value(FIRST_DATA_ROW + 1, DATE_COL) == ""   # кв. 2 — нет
+    assert sheet.cell_value(FIRST_DATA_ROW + 1, READING_COL) == ""
+
+
+def test_the_whole_date_column_uses_one_format(tmp_path):
+    """Заполненные и пустые ячейки — в одном формате, колонка не пёстрая."""
+    template = make_xls(tmp_path / "oek.xls", flats=("1", "2"))
+    out = tmp_path / "out.xls"
+    fill_registry(template, {"1": 100.0}, out, taken_on=date(2026, 8, 20))
+
+    book = xlrd.open_workbook(out, formatting_info=True)
+    sheet = book.sheet_by_index(0)
+    formats = {book.format_map[
+        book.xf_list[sheet.cell_xf_index(row, DATE_COL)].format_key].format_str
+        for row in (FIRST_DATA_ROW, FIRST_DATA_ROW + 1)}
+    assert formats == {DATE_FORMAT}
+
+
 def test_fill_xls_keeps_template_formatting(tmp_path):
     """Оформление ресурсника трогать нельзя — реестр он читает глазами."""
     template = make_xls(tmp_path / "oek.xls")

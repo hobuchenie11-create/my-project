@@ -377,13 +377,17 @@ def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
     result.template_period = template_period(target)
     for row, key in rows:
         value = readings.get(key)
-        if value is None:
-            continue
-        style = styles[read_sheet.cell_xf_index(row, layout.reading_col)]
-        out_sheet.write(row, layout.reading_col, _as_number(value), style)
+        if value is not None:
+            style = styles[read_sheet.cell_xf_index(row, layout.reading_col)]
+            out_sheet.write(row, layout.reading_col, _as_number(value), style)
         if write_date:
-            out_sheet.write(row, layout.date_col, taken_on, date_style)
-            result.date_written = True
+            # Дату ставим только там, где есть показание. У непередавших
+            # колонку чистим, даже если ресурсник прислал её заполненной:
+            # иначе при загрузке в систему ОЭК строка выглядит снятой, а
+            # показания за квартиру никто не передавал.
+            out_sheet.write(row, layout.date_col,
+                            taken_on if value is not None else "", date_style)
+            result.date_written = result.date_written or value is not None
 
     out_book.save(str(out_path))
     return result
@@ -406,17 +410,18 @@ def _fill_xlsx(template: Path, readings: dict[str, float], out_path: Path,
     result = _build_result(template, out_path, target.name, dropped,
                            readings, rows, known)
     result.template_period = template_period(target)
+    write_date = taken_on is not None and layout.date_col is not None
     for row, key in rows:
         value = readings.get(key)
-        if value is None:
-            continue
-        sheet.cell(row=row + 1, column=layout.reading_col + 1,
-                   value=_as_number(value))
-        if taken_on is not None and layout.date_col is not None:
+        if value is not None:
+            sheet.cell(row=row + 1, column=layout.reading_col + 1,
+                       value=_as_number(value))
+        if write_date:
+            # См. _fill_xls: без показания дата снятия остаётся пустой
             cell = sheet.cell(row=row + 1, column=layout.date_col + 1)
-            cell.value = taken_on            # только дата, без времени
+            cell.value = taken_on if value is not None else None
             cell.number_format = DATE_FORMAT
-            result.date_written = True
+            result.date_written = result.date_written or value is not None
 
     for name in dropped:
         del book[name]
