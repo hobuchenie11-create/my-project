@@ -30,7 +30,7 @@ def _labels(ws) -> list[str]:
 
 def test_blank_per_flat_with_its_own_meters(conn, tmp_path):
     out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
-    labels = _labels(load_workbook(out).active)
+    labels = _labels(load_workbook(out)["Бланки"])
 
     # Номер квартиры напечатан заранее — перепутать его нельзя
     assert "Кв. 1" in labels and "Кв. 6" in labels
@@ -41,10 +41,25 @@ def test_blank_per_flat_with_its_own_meters(conn, tmp_path):
     assert any(str(v).startswith("Сумма ГВС") for v in labels)
 
 
+def test_cover_sheet_explains_the_new_form(conn, tmp_path):
+    """Памятка — отдельным листом: её печатают в нескольких экземплярах."""
+    out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
+    wb = load_workbook(out)
+
+    assert wb.sheetnames == ["Памятка", "Бланки"]
+    text = " ".join(str(v) for v in _labels(wb["Памятка"]))
+    assert "Домовед" in text                     # откуда взялся новый бланк
+    assert "председателем совета дома" in text   # и от кого он
+    assert "по одной в клетку" in text           # как заполнять
+    assert "16 по 18 число" in text              # куда и когда сдавать
+    # Памятка обязана уместиться на один лист
+    assert wb["Памятка"].page_setup.fitToHeight == 1
+
+
 def test_nonresidential_gets_no_blank(conn, tmp_path):
     """Нежилые и общедомовой прибор председатель передаёт сама."""
     out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
-    labels = _labels(load_workbook(out).active)
+    labels = _labels(load_workbook(out)["Бланки"])
 
     assert not any("Нежилое" in str(v) for v in labels)
     assert not any("Общедомовой" in str(v) for v in labels)
@@ -53,7 +68,7 @@ def test_nonresidential_gets_no_blank(conn, tmp_path):
 def test_only_requested_flats(conn, tmp_path):
     out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026",
                           numbers=["3", "5"])
-    labels = _labels(load_workbook(out).active)
+    labels = _labels(load_workbook(out)["Бланки"])
 
     assert [v for v in labels if str(v).startswith("Кв.")] == ["Кв. 3", "Кв. 5"]
 
@@ -61,7 +76,7 @@ def test_only_requested_flats(conn, tmp_path):
 def test_digit_cells_are_bordered(conn, tmp_path):
     """Клетка под цифру — та самая, ради которой всё затевалось."""
     out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
-    ws = load_workbook(out).active
+    ws = load_workbook(out)["Бланки"]
 
     row = next(r for r in range(1, ws.max_row + 1)
                if ws.cell(row=r, column=1).value == "Электроэнергия")
@@ -72,7 +87,7 @@ def test_digit_cells_are_bordered(conn, tmp_path):
 def test_blanks_are_not_split_between_pages(conn, tmp_path):
     """Разрыв листа только между бланками и не чаще, чем нужно."""
     out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
-    ws = load_workbook(out).active
+    ws = load_workbook(out)["Бланки"]
 
     heights = [_blank_height([m["kind"] for m
                               in repository.meters_for_apartment(conn, a["id"])])
