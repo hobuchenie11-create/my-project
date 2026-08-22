@@ -53,5 +53,11 @@ def test_resident_reply_says_when_to_expect_the_recalculation():
     assert "квитанции за ____" in RESIDENT_REPLY_BODY
 
 
+def test_resident_reply_promises_to_come_back():
+    """Житель не должен гадать, чем всё кончилось — председатель ответит сама."""
+    assert RESIDENT_REPLY_BODY.rstrip().endswith(
+        "О результате сообщу дополнительно.")
+
+
 def test_resident_reply_is_ready_to_copy():
     assert f"<code>{RESIDENT_REPLY_BODY}</code>" in resident_reply_text()
