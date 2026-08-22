@@ -20,6 +20,7 @@ BTN_SPECIAL = "🏢 Нежилые и ОДПУ"
 BTN_CORRECTION = "✏️ Исправить показание"
 BTN_BLANKS = "🖨 Бланки для печати"
 BTN_RSO_LETTER = "✉️ Письмо в Росводоканал"
+BTN_RESIDENT_REPLY = "💬 Ответ жителю"
 BTN_FAQ_GAPS = "❓ Вопросы без ответа"
 BTN_USERS = "👥 Пользователи"
 BTN_SETTINGS = "⚙ Настройки"
@@ -36,8 +37,9 @@ def admin_menu() -> ReplyKeyboardMarkup:
              KeyboardButton(text=BTN_CORRECTION)],
             [KeyboardButton(text=BTN_OEK), KeyboardButton(text=BTN_OEK_TEMPLATE)],
             [KeyboardButton(text=BTN_WORKBOOK), KeyboardButton(text=BTN_STATS)],
-            [KeyboardButton(text=BTN_BLANKS),
-             KeyboardButton(text=BTN_RSO_LETTER)],
+            [KeyboardButton(text=BTN_BLANKS)],
+            [KeyboardButton(text=BTN_RSO_LETTER),
+             KeyboardButton(text=BTN_RESIDENT_REPLY)],
             [KeyboardButton(text=BTN_DEBTORS), KeyboardButton(text=BTN_DEBTORS_DOC)],
             [KeyboardButton(text=BTN_REMIND), KeyboardButton(text=BTN_INVITE)],
             [KeyboardButton(text=BTN_CHAT_REMINDER),

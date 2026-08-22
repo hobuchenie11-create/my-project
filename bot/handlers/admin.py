@@ -9,7 +9,8 @@ from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTO
                                       BTN_CORRECTION, BTN_DEBTORS_DOC,
                                       BTN_FAQ_GAPS,
                                       BTN_INVITE, BTN_REGISTRY,
-                                      BTN_REMIND, BTN_RSO_LETTER, BTN_SETTINGS,
+                                      BTN_REMIND, BTN_RESIDENT_REPLY,
+                                      BTN_RSO_LETTER, BTN_SETTINGS,
                                       BTN_STATEMENT,
                                       BTN_SPECIAL, BTN_STATS, BTN_TEMPLATES,
                                       BTN_USERS,
@@ -21,8 +22,9 @@ from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
 from bot.texts import (collection_reminder_text, correction_text,
-                       rso_letter_text, special_readings_text,
-                       template_messages, welcome_residents_text)
+                       resident_reply_text, rso_letter_text,
+                       special_readings_text, template_messages,
+                       welcome_residents_text)
 from database import repository
 from database.backup import make_backup
 from reports.monthly_statement import generate_statement
@@ -86,6 +88,12 @@ async def send_blanks(message: Message) -> None:
 async def show_rso_letter(message: Message) -> None:
     """Готовое письмо в абонентский отдел — скопировать в электронную почту."""
     await message.answer(rso_letter_text())
+
+
+@router.message(F.text == BTN_RESIDENT_REPLY)
+async def show_resident_reply(message: Message) -> None:
+    """Что ответить жителю, пока корректировка у ресурсника в работе."""
+    await message.answer(resident_reply_text())
 
 
 @router.message(F.text == BTN_WORKBOOK)

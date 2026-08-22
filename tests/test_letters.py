@@ -1,7 +1,8 @@
 """Письма в ресурсоснабжающие организации: шаблон должен оставаться готовым
 к отправке — с прочерками под заполнение и без лишнего."""
-from bot.texts import (HOUSE_ADDRESS, HOUSE_SHORT, RSO_LETTER_BODY,
-                       RSO_LETTER_SUBJECT, rso_letter_text)
+from bot.texts import (HOUSE_ADDRESS, HOUSE_SHORT, RESIDENT_REPLY_BODY,
+                       RSO_LETTER_BODY, RSO_LETTER_SUBJECT,
+                       resident_reply_text, rso_letter_text)
 
 
 def test_letter_has_blanks_for_what_changes():
@@ -38,3 +39,19 @@ def test_bot_message_carries_subject_and_body_ready_to_copy():
     text = rso_letter_text()
     assert f"<code>{RSO_LETTER_SUBJECT}</code>" in text
     assert f"<code>{RSO_LETTER_BODY}</code>" in text
+
+
+def test_resident_reply_has_blanks_for_name_and_period():
+    assert RESIDENT_REPLY_BODY.count("____") == 2
+    assert RESIDENT_REPLY_BODY.startswith("Здравствуйте, ____")
+
+
+def test_resident_reply_says_when_to_expect_the_recalculation():
+    """Житель ждёт результата в квитанции — текст обязан назвать сроки."""
+    assert "после 25 числа" in RESIDENT_REPLY_BODY
+    assert "в следующем" in RESIDENT_REPLY_BODY
+    assert "квитанции за ____" in RESIDENT_REPLY_BODY
+
+
+def test_resident_reply_is_ready_to_copy():
+    assert f"<code>{RESIDENT_REPLY_BODY}</code>" in resident_reply_text()
