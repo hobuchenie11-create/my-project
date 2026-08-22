@@ -18,6 +18,11 @@ def test_letter_names_the_house_and_the_signature():
     assert RSO_LETTER_BODY.rstrip().endswith(f"Председатель МКД {HOUSE_SHORT}")
 
 
+def test_letter_asks_for_the_recalculation():
+    """Принять показания мало — по ним ещё должны пересчитать начисление."""
+    assert "перерасчёт по фактическому расходу" in RSO_LETTER_BODY
+
+
 def test_letter_goes_without_a_letterhead():
     """Письмо уходит лично сотруднику абонентского отдела — шапки нет."""
     for word in ("Кому:", "От кого:", "Исх. №", "Директору"):
