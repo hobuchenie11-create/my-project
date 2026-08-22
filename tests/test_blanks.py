@@ -29,7 +29,7 @@ def _labels(ws) -> list[str]:
 
 
 def test_blank_per_flat_with_its_own_meters(conn, tmp_path):
-    out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
+    out = generate_blanks(conn, tmp_path / "blanki.xlsx")
     labels = _labels(load_workbook(out)["Бланки"])
 
     # Номер квартиры напечатан заранее — перепутать его нельзя
@@ -43,7 +43,7 @@ def test_blank_per_flat_with_its_own_meters(conn, tmp_path):
 
 def test_cover_sheet_explains_the_new_form(conn, tmp_path):
     """Памятка — отдельным листом: её печатают в нескольких экземплярах."""
-    out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
+    out = generate_blanks(conn, tmp_path / "blanki.xlsx")
     wb = load_workbook(out)
 
     assert wb.sheetnames == ["Памятка", "Бланки"]
@@ -56,9 +56,20 @@ def test_cover_sheet_explains_the_new_form(conn, tmp_path):
     assert wb["Памятка"].page_setup.fitToHeight == 1
 
 
+def test_period_is_left_blank_for_the_resident(conn, tmp_path):
+    """Месяц не печатаем: бланки раздают вперёд, период вписывает житель."""
+    out = generate_blanks(conn, tmp_path / "blanki.xlsx")
+    ws = load_workbook(out)["Бланки"]
+
+    values = [ws.cell(row=r, column=c).value
+              for r in range(1, ws.max_row + 1) for c in (1, 4)]
+    assert any(str(v).startswith("Период:") for v in values if v)
+    assert not any("2026" in str(v) for v in values if v)
+
+
 def test_nonresidential_gets_no_blank(conn, tmp_path):
     """Нежилые и общедомовой прибор председатель передаёт сама."""
-    out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
+    out = generate_blanks(conn, tmp_path / "blanki.xlsx")
     labels = _labels(load_workbook(out)["Бланки"])
 
     assert not any("Нежилое" in str(v) for v in labels)
@@ -66,8 +77,7 @@ def test_nonresidential_gets_no_blank(conn, tmp_path):
 
 
 def test_only_requested_flats(conn, tmp_path):
-    out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026",
-                          numbers=["3", "5"])
+    out = generate_blanks(conn, tmp_path / "blanki.xlsx", numbers=["3", "5"])
     labels = _labels(load_workbook(out)["Бланки"])
 
     assert [v for v in labels if str(v).startswith("Кв.")] == ["Кв. 3", "Кв. 5"]
@@ -75,7 +85,7 @@ def test_only_requested_flats(conn, tmp_path):
 
 def test_digit_cells_are_bordered(conn, tmp_path):
     """Клетка под цифру — та самая, ради которой всё затевалось."""
-    out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
+    out = generate_blanks(conn, tmp_path / "blanki.xlsx")
     ws = load_workbook(out)["Бланки"]
 
     row = next(r for r in range(1, ws.max_row + 1)
@@ -86,7 +96,7 @@ def test_digit_cells_are_bordered(conn, tmp_path):
 
 def test_blanks_are_not_split_between_pages(conn, tmp_path):
     """Разрыв листа только между бланками и не чаще, чем нужно."""
-    out = generate_blanks(conn, tmp_path / "blanki.xlsx", "август 2026")
+    out = generate_blanks(conn, tmp_path / "blanki.xlsx")
     ws = load_workbook(out)["Бланки"]
 
     heights = [_blank_height([m["kind"] for m

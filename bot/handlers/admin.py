@@ -65,18 +65,19 @@ async def send_blanks(message: Message) -> None:
     """Бумажные бланки на печать — тем, кто передаёт показания на бумаге."""
     from reports.blank_forms import generate_blank_forms
 
-    period = current_period()
     await message.answer("Готовлю бланки…")
-    path = generate_blank_forms(period)
+    path = generate_blank_forms()
     await message.answer_document(
         FSInputFile(path),
-        caption=(f"🖨 Бланки для передачи показаний — {period_title(period)}\n\n"
+        caption=("🖨 Бланки для передачи показаний\n\n"
                  "Лист «Бланки» — по одному на квартиру, номер уже напечатан, "
                  "приборы из реестра. На странице два-три бланка, разрезать "
                  "по пунктиру.\n\n"
                  "Лист «Памятка» — что меняется и как заполнять; печатается "
                  "отдельно, по экземпляру на квартиру, и выдаётся вместе "
-                 "с бланком."),
+                 "с бланком.\n\n"
+                 "Месяц на бланке не напечатан — жители вписывают его сами "
+                 "в строке «Период», поэтому бланки можно раздать вперёд."),
     )
 
 

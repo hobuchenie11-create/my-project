@@ -9,7 +9,10 @@
 у 3-комнатных — кухня и санузел отдельно плюс строка «Сумма ГВС», которую
 ждёт ОЭК.
 
-Из кода:  generate_blanks(conn, out_path, period_name)
+Месяц на бланке не печатается — вместо него пустая строка «Период»: бланки
+раздают пачкой вперёд, а период житель вписывает сам при заполнении.
+
+Из кода:  generate_blanks(conn, out_path)
 """
 from pathlib import Path
 
@@ -57,6 +60,8 @@ COVER_LINES: tuple[tuple[str, int, bool], ...] = (
     ("читаются однозначно и не попадают в чужую квартиру.", 11, False),
     ("", 11, False),
     ("Как заполнять, чтобы цифры прочитались верно:", 12, True),
+    ("• вверху бланка, в строке «Период», впишите месяц, за который", 11, False),
+    ("  передаёте показания;", 11, False),
     ("• пишите ручкой — синей или чёрной, не карандашом;", 11, False),
     ("• цифры печатные и крупные, по одной в клетку: не выходите за", 11, False),
     ("  границы клетки и не соединяйте цифры между собой;", 11, False),
@@ -111,9 +116,13 @@ CELL_BORDER = Border(left=_thick, right=_thick, top=_thick, bottom=_thick)
 CUT_LINE = Border(bottom=Side(style="dashed"))
 
 
-def generate_blanks(conn, out_path: Path, period_name: str,
+def generate_blanks(conn, out_path: Path,
                     numbers: list[str] | None = None) -> Path:
-    """Книга с бланками: по одному на квартиру, два бланка на лист А4."""
+    """Книга с бланками: по одному на квартиру, два-три бланка на лист А4.
+
+    Месяц на бланке не печатается: бланки раздают пачкой вперёд, а период
+    житель вписывает сам, когда садится заполнять.
+    """
     from database import repository
 
     apartments = [a for a in repository.list_apartments(conn)
@@ -136,7 +145,7 @@ def generate_blanks(conn, out_path: Path, period_name: str,
         if used and used + height > PAGE_BUDGET_PT:
             ws.row_breaks.append(Break(id=row - 1))   # бланк не режем пополам
             used = 0.0
-        row = _draw_blank(ws, row, apartment["number"], meters, period_name)
+        row = _draw_blank(ws, row, apartment["number"], meters)
         used += height
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -209,8 +218,7 @@ def _setup_sheet(ws) -> None:
     ws.page_margins.footer = 0.0
 
 
-def _draw_blank(ws, row: int, number: str, meters: list[str],
-                period_name: str) -> int:
+def _draw_blank(ws, row: int, number: str, meters: list[str]) -> int:
     """Рисует один бланк с строки row. Возвращает строку, с которой начать следующий."""
     last_col = 1 + DIGIT_CELLS + 1
 
@@ -222,7 +230,7 @@ def _draw_blank(ws, row: int, number: str, meters: list[str],
     flat.font = Font(bold=True, size=22)
     flat.alignment = Alignment(horizontal="left", vertical="center")
     ws.merge_cells(start_row=row, start_column=4, end_row=row, end_column=last_col)
-    period = ws.cell(row=row, column=4, value=f"за {period_name}")
+    period = ws.cell(row=row, column=4, value="Период: __________________")
     period.font = Font(size=12)
     period.alignment = Alignment(horizontal="right", vertical="center")
     ws.row_dimensions[row].height = NUMBER_ROW_HEIGHT

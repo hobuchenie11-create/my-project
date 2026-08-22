@@ -15,12 +15,14 @@
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Install
     powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Status
+    powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Restart
     powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Remove
 #>
 [CmdletBinding(DefaultParameterSetName = 'Status')]
 param(
     [Parameter(ParameterSetName = 'Install')][switch]$Install,
     [Parameter(ParameterSetName = 'Remove')][switch]$Remove,
+    [Parameter(ParameterSetName = 'Restart')][switch]$Restart,
     [Parameter(ParameterSetName = 'Status')][switch]$Status
 )
 
@@ -89,6 +91,41 @@ function Remove-Autostart {
     }
 }
 
+function Get-BotProcess {
+    Get-CimInstance Win32_Process -Filter "Name like 'python%'" |
+        Where-Object { $_.CommandLine -like '*run.py*' }
+}
+
+function Restart-Bot {
+    <#
+        После обновления кода (git pull) бот продолжает крутиться со старой
+        версией: задание запускает его при входе в систему, а само по себе
+        оно процесс не перезапускает. Останавливаем текущий и просим задание
+        поднять новый — ждать очередного пятиминутного повтора не нужно.
+    #>
+    $running = Get-BotProcess
+    foreach ($p in $running) {
+        Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue
+        Write-Host "Остановлен процесс PID $($p.ProcessId)."
+    }
+    if (-not $running) { Write-Host 'Бот не был запущен.' }
+
+    if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
+        Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+        # Мьютекс освобождается вместе с процессом, но не мгновенно:
+        # запуск впритык упрётся в «Домовед уже запущен»
+        Start-Sleep -Seconds 3
+        Start-ScheduledTask -TaskName $TaskName
+        Write-Host 'Задание запущено заново.'
+        Start-Sleep -Seconds 5
+    } else {
+        Write-Host "Автозапуск не настроен (задания «$TaskName» нет)."
+        Write-Host 'Запустите бота вручную: python run.py'
+        return
+    }
+    Show-Status
+}
+
 function Show-Status {
     $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     if (-not $task) {
@@ -100,8 +137,7 @@ function Show-Status {
         Write-Host "Последний запуск: $($info.LastRunTime) (код $($info.LastTaskResult))"
         Write-Host "Следующий:        $($info.NextRunTime)"
     }
-    $running = Get-CimInstance Win32_Process -Filter "Name like 'python%'" |
-        Where-Object { $_.CommandLine -like '*run.py*' }
+    $running = Get-BotProcess
     if ($running) {
         foreach ($p in $running) {
             Write-Host "Процесс бота:     PID $($p.ProcessId)"
@@ -114,5 +150,6 @@ function Show-Status {
 switch ($PSCmdlet.ParameterSetName) {
     'Install' { Install-Autostart }
     'Remove'  { Remove-Autostart }
+    'Restart' { Restart-Bot }
     default   { Show-Status }
 }

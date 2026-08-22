@@ -181,6 +181,15 @@ powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Install
 powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Status
 ```
 
+После обновления кода (`git pull`) бот продолжает работать со старой версией:
+задание поднимает его при входе в систему, но само процесс не перезапускает.
+Перезапуск одной командой — старый процесс останавливается, задание тут же
+поднимает новый:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Restart
+```
+
 ```bash
 powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Remove
 ```
