@@ -32,6 +32,33 @@ def ensure_templates(conn: sqlite3.Connection) -> None:
             priority=tpl.get("priority", "normal"))
     # уточнения регламента подхватывают и уже созданные задачи
     repository.sync_tasks_with_templates(conn)
+    _sync_open_task_dates(conn)
+
+
+def _sync_open_task_dates(conn: sqlite3.Connection) -> int:
+    """Переносит сроки незакрытых задач вслед за изменённым шаблоном.
+
+    Регламент уточняется по ходу дела: аренда, например, приходит не до 10
+    числа, а с 25 по 30. Уже созданные задачи иначе остались бы со старым
+    сроком и висели бы «просроченными».
+
+    Выполненные задачи не трогаем: их срок — часть записи о том, как всё
+    было на самом деле.
+    """
+    templates = {tpl["id"]: tpl for tpl in repository.active_task_templates(conn)}
+    changed = 0
+    for task in repository.open_tasks(conn):
+        tpl = templates.get(task["template_id"])
+        if tpl is None or not task["period"]:
+            continue
+        year, month = int(task["period"][:4]), int(task["period"][5:7])
+        start = _clamp_day(year, month, tpl["day_start"]).isoformat()
+        due = _clamp_day(year, month, tpl["day_end"]).isoformat()
+        if (task["start_date"], task["due_date"]) != (start, due):
+            repository.update_task(conn, task["id"],
+                                   start_date=start, due_date=due)
+            changed += 1
+    return changed
 
 
 def _month_period(d: date) -> str:

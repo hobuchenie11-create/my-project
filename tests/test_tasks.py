@@ -42,7 +42,8 @@ def test_generate_creates_tasks_with_windows(conn):
     assert (invoices["start_date"], invoices["due_date"]) == ("2026-09-05", "2026-09-10")
 
     rent = _by_title(conn, "2026-09", "аренда за нежилое")
-    assert rent["due_date"] == "2026-09-10"       # аренда — до 10 числа
+    # Аренда приходит в конце месяца — проверяем поступление с 25 по 30
+    assert (rent["start_date"], rent["due_date"]) == ("2026-09-25", "2026-09-30")
 
     utilities = _by_title(conn, "2026-09", "коммунальных услуг")
     assert utilities["due_date"] == "2026-09-18"  # коммуналка — до 18 числа
@@ -85,8 +86,38 @@ def test_month_tasks_are_in_chronological_order(conn):
     task_service.generate_tasks(conn, date(2026, 9, 1), months_ahead=0)
     due = [r["due_date"] for r in repository.tasks_for_period(conn, "2026-09")]
     assert due == sorted(due)
-    assert due == ["2026-09-05", "2026-09-07", "2026-09-10", "2026-09-10",
-                   "2026-09-18", "2026-09-25", "2026-09-30"]
+    assert due == ["2026-09-05", "2026-09-07", "2026-09-10", "2026-09-18",
+                   "2026-09-25", "2026-09-30", "2026-09-30"]
+
+
+def test_changed_window_moves_open_tasks(conn):
+    """Регламент уточнили — незакрытые задачи переезжают на новый срок.
+
+    Иначе уже созданная задача осталась бы со старым сроком и висела бы
+    просроченной, хотя платёж приходит вовремя.
+    """
+    task_service.generate_tasks(conn, date(2026, 9, 1), months_ahead=0)
+    rent = _by_title(conn, "2026-09", "аренда за нежилое")
+    repository.update_task(conn, rent["id"],
+                           start_date="2026-09-01", due_date="2026-09-10")
+
+    task_service.ensure_templates(conn)
+
+    moved = _by_title(conn, "2026-09", "аренда за нежилое")
+    assert (moved["start_date"], moved["due_date"]) == ("2026-09-25", "2026-09-30")
+
+
+def test_completed_tasks_keep_their_dates(conn):
+    """Выполненную задачу не переписываем: её срок — часть записи о том, как было."""
+    task_service.generate_tasks(conn, date(2026, 9, 1), months_ahead=0)
+    rent = _by_title(conn, "2026-09", "аренда за нежилое")
+    repository.update_task(conn, rent["id"], status="done",
+                           start_date="2026-09-01", due_date="2026-09-10")
+
+    task_service.ensure_templates(conn)
+
+    kept = _by_title(conn, "2026-09", "аренда за нежилое")
+    assert kept["due_date"] == "2026-09-10"
 
 
 def test_generation_is_idempotent(conn):

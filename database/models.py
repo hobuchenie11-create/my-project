@@ -181,17 +181,6 @@ DEFAULT_TASK_TEMPLATES = [
                        "числа. Напоминания начинаются с 5 числа.",
     },
     {
-        "code": "nonresidential_payment",
-        "title": "Аренда за нежилое помещение — поступление",
-        "category": "nonresidential",
-        "day_start": 1, "day_end": 10,
-        "needs_amount": 1,          # сумма аренды и дата поступления
-        "amount_field": "amount",
-        "priority": "normal",
-        "description": "Проконтролировать, что арендатор внёс арендную плату "
-                       "(срок — до 10 числа). Указать сумму и дату.",
-    },
-    {
         "code": "posting_invoices",
         "title": "Разноска платежей и печать квитанций",
         "category": "finance",
@@ -220,6 +209,19 @@ DEFAULT_TASK_TEMPLATES = [
         "needs_amount": 0,
         "amount_field": "", "priority": "normal",
         "description": "Передать собранные показания в Росводоканал и ОЭК.",
+    },
+    {
+        "code": "nonresidential_payment",
+        "title": "Аренда за нежилое помещение — поступление",
+        "category": "nonresidential",
+        "day_start": 25, "day_end": 30,
+        "needs_amount": 1,          # сумма аренды и дата поступления
+        "amount_field": "amount",
+        "priority": "normal",
+        "description": "Проверить поступление арендной платы за нежилое "
+                       "помещение — платёж приходит с 25 по 30 число "
+                       "(в феврале — по последний день месяца). "
+                       "Указать сумму и дату поступления.",
     },
     {
         "code": "oks_fee",
