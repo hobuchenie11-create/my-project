@@ -6,7 +6,8 @@ import pytest
 from bot.services import verification_service as vs
 from database import repository
 from database.init_db import init_db
-from database.models import VERIFICATION_LEAD_DAYS
+from database.models import (KIND_VERIFICATION, KIND_WARRANTY,
+                             VERIFICATION_LEAD_DAYS, WARRANTY_LEAD_DAYS)
 
 
 @pytest.fixture()
@@ -29,7 +30,10 @@ def test_default_house_meters(conn):
     assert any("Тепловая" in n for n in names)
     assert any("ГВС" in n for n in names)
     assert any("ХВС" in n for n in names)
-    assert all(m["interval_years"] == 4 for m in repository.house_meters(conn))
+    # Межповерочный интервал приборов учёта — 4 года; у оборудования с
+    # гарантией (лифт) свой срок, он проверяется отдельно
+    assert all(m["interval_years"] == 4 for m in repository.house_meters(conn)
+               if m["kind"] == KIND_VERIFICATION)
 
 
 def test_no_due_date_until_last_verification_entered(conn):
@@ -128,8 +132,72 @@ def test_verification_sheet_in_year_plan(conn, tmp_path):
     assert "Поверка приборов" in wb.sheetnames
     ws = wb["Поверка приборов"]
     assert ws.cell(2, 1).value == "Прибор учёта"
-    names = [ws.cell(r, 1).value for r in range(3, 7)]
+    headers = {ws.cell(2, c).value: c for c in range(1, ws.max_column + 1)}
+    names = [ws.cell(r, 1).value for r in range(3, 8)]
     assert any(n and "Тепловая" in n for n in names)
-    row = next(r for r in range(3, 7) if "Тепловая" in (ws.cell(r, 1).value or ""))
-    assert ws.cell(row, 3).value == "15.03.2026"     # последняя поверка
-    assert ws.cell(row, 5).value == "15.03.2030"     # следующая — посчитана
+    row = next(r for r in range(3, 8) if "Тепловая" in (ws.cell(r, 1).value or ""))
+    assert ws.cell(row, headers["Последняя поверка"]).value == "15.03.2026"
+    assert ws.cell(row, headers["Следующая поверка"]).value == "15.03.2030"
+    assert ws.cell(row, headers["Вид"]).value == "Поверка"
+
+    lift = next(r for r in range(3, 8) if "Лифт" in (ws.cell(r, 1).value or ""))
+    assert ws.cell(lift, headers["Вид"]).value == "Гарантия"
+
+
+# ---------------------------------------------------------------------------
+# Оборудование с гарантией: лифт в первом подъезде
+# ---------------------------------------------------------------------------
+
+def test_lift_is_registered_with_its_passport_data(conn):
+    """Паспортные данные лифта известны — вносить их руками не нужно."""
+    lift = _meter(conn, "лифт")
+    assert lift["kind"] == KIND_WARRANTY
+    assert lift["serial"] == "348578"
+    assert lift["interval_years"] == 5
+    assert lift["last_verified"] == "2026-07-10"     # ввод в эксплуатацию
+    assert "Могилевлифтмаш" in lift["note"]
+    assert "март 2026" in lift["note"]               # дата изготовления
+
+
+def test_warranty_runs_five_years_from_commissioning(conn):
+    lift = _meter(conn, "лифт")
+    v = vs.view(lift, date(2026, 8, 22))
+    assert v.next_due == date(2031, 7, 10)
+    assert v.mark == "✅"
+
+
+def test_warranty_reminder_starts_three_months_before(conn):
+    """Три месяца — чтобы успеть осмотреть лифт и предъявить претензии."""
+    lift = _meter(conn, "лифт")
+    v = vs.view(lift, date(2031, 7, 10) - timedelta(days=WARRANTY_LEAD_DAYS))
+    assert v.lead_days == WARRANTY_LEAD_DAYS
+    assert v.is_due_soon is True
+
+    # За день до этого срока напоминать ещё рано
+    earlier = vs.view(lift, date(2031, 7, 10)
+                      - timedelta(days=WARRANTY_LEAD_DAYS + 1))
+    assert earlier.is_due_soon is False
+
+
+def test_warranty_task_appears_in_time_and_reads_as_a_warranty(conn):
+    day = date(2031, 7, 10) - timedelta(days=WARRANTY_LEAD_DAYS)
+    assert vs.sync_verification_tasks(conn, day - timedelta(days=1)) == 0
+
+    vs.sync_verification_tasks(conn, day)
+    task = next(t for t in repository.open_tasks(conn) if "Лифт" in t["title"])
+    assert task["title"].startswith("Гарантия заканчивается")
+    assert task["due_date"] == "2031-07-10"
+    assert task["start_date"] == day.isoformat()
+    assert "предъявить" in task["description"]
+    # Повторный запуск второй такой задачи не создаёт
+    assert vs.sync_verification_tasks(conn, day) == 0
+
+
+def test_meters_text_shows_warranty_wording(conn):
+    text = vs.meters_text(conn, date(2026, 8, 22))
+    assert "Лифт, подъезд 1" in text
+    assert "введён в эксплуатацию: 10.07.2026" in text
+    assert "гарантия до: 10.07.2031" in text
+    assert "Могилевлифтмаш" in text
+    # У приборов учёта формулировка прежняя
+    assert "поверен:" in text

@@ -125,6 +125,12 @@ def test_new_row_on_my_tasks_becomes_a_task(conn, tmp_path):
     assert len(repository.one_off_tasks(conn)) == 1
 
 
+def _col(ws, title: str) -> int:
+    """Номер столбца по заголовку — чтобы тесты не ломались от перестановки."""
+    return next(c for c in range(1, ws.max_column + 1)
+                if ws.cell(row=2, column=c).value == title)
+
+
 def test_verification_dates_can_be_entered_in_excel(conn, tmp_path):
     """Даты поверки председатель вносит списком — сроки считаются сами."""
     path = export_year_plan(conn, YEAR, tmp_path / "plan.xlsx")
@@ -133,9 +139,10 @@ def test_verification_dates_can_be_entered_in_excel(conn, tmp_path):
     wb = load_workbook(path)
     ws = wb[SHEET_VERIFICATION]
     row = _find_row(ws, len(VERIFICATION_COLUMNS), meter["id"])
-    ws.cell(row=row, column=2, value="№ 12345")
-    ws.cell(row=row, column=3, value="15.03.2024")
-    ws.cell(row=row, column=4, value=6)
+    # Столбцы ищем по заголовку: их порядок со временем меняется
+    ws.cell(row=row, column=_col(ws, "Заводской №"), value="№ 12345")
+    ws.cell(row=row, column=_col(ws, "Последняя поверка"), value="15.03.2024")
+    ws.cell(row=row, column=_col(ws, "Интервал, лет"), value=6)
     wb.save(path)
 
     result = import_year_plan(conn, path)
@@ -222,7 +229,7 @@ def test_old_file_still_carries_verification_dates(conn, tmp_path):
     wb = load_workbook(path)
     ws = wb[SHEET_VERIFICATION]
     row = _find_row(ws, len(VERIFICATION_COLUMNS), meter["id"])
-    ws.cell(row=row, column=3, value="15.03.2024")
+    ws.cell(row=row, column=_col(ws, "Последняя поверка"), value="15.03.2024")
     ws.delete_cols(len(VERIFICATION_COLUMNS))
     wb.save(path)
 

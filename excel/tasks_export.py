@@ -34,10 +34,15 @@ COL_ID_TITLE = "ID"
 # Пометка строк-подсказок: при обратной загрузке они пропускаются
 HINT_MARK = "ℹ️"
 
-VERIFICATION_COLUMNS = ["Прибор учёта", "Заводской №", "Последняя поверка",
-                        "Интервал, лет", "Следующая поверка", "Осталось",
+# «Вид» — только для чтения: во вкладке рядом с приборами учёта живёт
+# оборудование с гарантией (лифт), и без этого столбца его строка читалась
+# бы как поверка. Названия остальных столбцов менять нельзя — по ним
+# обратная загрузка находит данные в уже выгруженных файлах.
+VERIFICATION_COLUMNS = ["Прибор учёта", "Вид", "Заводской №",
+                        "Последняя поверка", "Интервал, лет",
+                        "Следующая поверка", "Осталось",
                         "Примечание", COL_ID_TITLE]
-VERIFICATION_WIDTHS = [38, 18, 18, 14, 20, 22, 30, 6]
+VERIFICATION_WIDTHS = [38, 14, 18, 18, 14, 20, 22, 30, 6]
 
 # Лист «Мои задачи» — разовые дела председателя, вне регулярного цикла
 ONE_OFF_COLUMNS = ["Задача", "Категория", "Срок", "Осталось", "Статус",
@@ -280,7 +285,8 @@ def _sheet_verification(ws, conn: sqlite3.Connection) -> None:
     ncols = len(VERIFICATION_COLUMNS)
 
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ncols)
-    title = ws.cell(row=1, column=1, value="Поверка общедомовых приборов учёта")
+    title = ws.cell(row=1, column=1,
+                    value="Приборы учёта и оборудование дома")
     title.font = style.FONT_TITLE
     title.fill = style.FILL_TITLE
     title.alignment = style.CENTER
@@ -297,6 +303,7 @@ def _sheet_verification(ws, conn: sqlite3.Connection) -> None:
         v = verification_service.view(row, today)
         cells = [
             row["name"],
+            "Гарантия" if v.is_warranty else "Поверка",
             row["serial"],
             _fmt(row["last_verified"]),
             row["interval_years"],
@@ -312,14 +319,16 @@ def _sheet_verification(ws, conn: sqlite3.Connection) -> None:
         for col, value in enumerate(cells, start=1):
             cell = ws.cell(row=r, column=col, value=value)
             cell.border = style.BORDER
-            cell.alignment = (style.LEFT if col in (1, 7) else style.CENTER)
-            if fill and col in (5, 6):
+            cell.alignment = (style.LEFT if col in (1, 8) else style.CENTER)
+            if fill and col in (6, 7):
                 cell.fill = fill
         r += 1
 
     note = ws.cell(row=r + 1, column=1,
-                   value="Следующая поверка = дата последней поверки + интервал. "
-                         "Задача появляется за полгода до срока.")
+                   value="Поверка: следующая = последняя + интервал, задача "
+                         "появляется за полгода до срока. Гарантия: считается "
+                         "от даты ввода в эксплуатацию, напоминание — "
+                         "за 3 месяца.")
     note.font = Font(italic=True)
     hint = ws.cell(row=r + 2, column=1,
                    value="Даты последней поверки и интервал можно вписать прямо "

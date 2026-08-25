@@ -473,12 +473,20 @@ def task_history(conn: sqlite3.Connection, task_id: int) -> list[sqlite3.Row]:
 # ---------- общедомовые приборы и поверка ----------
 
 def ensure_house_meter(conn: sqlite3.Connection, code: str, name: str,
-                       sort_order: int, interval_years: int) -> int:
+                       sort_order: int, interval_years: int, **fields) -> int:
+    """Заводит прибор или оборудование, если его ещё нет.
+
+    Существующую запись не трогает: даты и примечания председатель правит
+    сама, и повторный запуск бота не должен их перезаписывать.
+    """
+    columns = ["code", "name", "sort_order", "interval_years", *fields]
+    values = [code, name, sort_order, interval_years, *fields.values()]
+    placeholders = ", ".join("?" * len(columns))
     conn.execute(
-        """INSERT INTO house_meters (code, name, sort_order, interval_years)
-           VALUES (?, ?, ?, ?)
-           ON CONFLICT(code) DO NOTHING""",
-        (code, name, sort_order, interval_years),
+        f"""INSERT INTO house_meters ({', '.join(columns)})
+            VALUES ({placeholders})
+            ON CONFLICT(code) DO NOTHING""",
+        values,
     )
     conn.commit()
     return conn.execute("SELECT id FROM house_meters WHERE code = ?",
