@@ -159,6 +159,35 @@ def test_lift_is_registered_with_its_passport_data(conn):
     assert "март 2026" in lift["note"]               # дата изготовления
 
 
+def test_second_lift_waits_empty_until_it_is_replaced(conn):
+    """Строка готова заранее: срок не считается, пока нет даты ввода."""
+    lift = _meter(conn, "подъезд 2")
+    assert lift["kind"] == KIND_WARRANTY
+    assert lift["interval_years"] == 5
+    assert lift["serial"] == ""
+    assert lift["last_verified"] == ""
+
+    v = vs.view(lift, date(2026, 8, 23))
+    assert v.next_due is None
+    assert v.mark == "⚪"
+    assert "ввода в эксплуатацию" in v.status_text
+    # Пустая строка задач не порождает
+    assert not any("подъезд 2" in t["title"]
+                   for t in repository.open_tasks(conn))
+
+
+def test_second_lift_starts_counting_once_the_date_is_entered(conn):
+    """Дату вносят так же, как поверку, — и гарантия начинает считаться."""
+    lift = _meter(conn, "подъезд 2")
+    repository.update_house_meter(conn, lift["id"],
+                                  last_verified="2027-05-20",
+                                  serial="512900")
+
+    v = vs.view(repository.get_house_meter(conn, lift["id"]), date(2027, 6, 1))
+    assert v.next_due == date(2032, 5, 20)
+    assert v.mark == "✅"
+
+
 def test_warranty_runs_five_years_from_commissioning(conn):
     lift = _meter(conn, "лифт")
     v = vs.view(lift, date(2026, 8, 22))
