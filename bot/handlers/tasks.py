@@ -56,12 +56,36 @@ async def back_to_admin(message: Message) -> None:
 
 @router.message(F.text == BTN_MONTH_PLAN)
 async def show_month_plan(message: Message) -> None:
+    """План месяца — каждой задачей отдельно, с кнопками управления.
+
+    Одним сообщением план читался, но не работал: отметить выполнение и
+    вписать сумму можно только у задачи со своими кнопками, а в «Срочных»
+    задача появляется лишь когда открылось её окно.
+    """
+    period = _period_now()
     conn = repository.connect()
     try:
         task_service.generate_tasks(conn)
-        await message.answer(task_service.month_plan_text(conn, _period_now()))
+        rows = repository.tasks_for_period(conn, period)
     finally:
         conn.close()
+
+    if not rows:
+        await message.answer(f"На {task_service.period_title(period)} задач нет.")
+        return
+
+    done = sum(1 for row in rows if row["status"] == "done")
+    await message.answer(
+        f"📅 <b>План на {task_service.period_title(period)}</b>\n"
+        f"Выполнено: {done} из {len(rows)}")
+
+    today = date.today()
+    for row in rows:
+        await message.answer(
+            f"{task_service.task_line(row, today)}\n"
+            f"<i>{task_service.category_label(row['category'])}</i>"
+            + (f"\n{row['description']}" if row["description"] else ""),
+            reply_markup=task_actions(row["id"], row["status"]))
 
 
 @router.message(F.text == BTN_URGENT)
