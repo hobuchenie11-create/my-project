@@ -1024,6 +1024,21 @@ function cloudView(){
 
   <div class="sec-title">Доступ</div>
   <div class="card card-pad">
+    <!-- Пароль и так лежит на этом устройстве в открытом виде: тот, у кого
+         разблокирован телефон, уже вошёл. Зато забытый пароль иначе не вернуть —
+         в базе только необратимый отпечаток. -->
+    <div class="field">
+      <label>Ваш пароль администратора</label>
+      <div class="pw">
+        <input id="ac-mine" type="password" readonly value="${esc(D.cloud.secret || '')}">
+        <button type="button" class="eye" data-act="eye" data-for="ac-mine">Показать</button>
+      </div>
+      <div class="hint">Напоминание для этого устройства — если пароль забылся.
+        Из базы его не восстановить, там хранится только отпечаток.
+        Выйдете из класса на этом телефоне — напоминание пропадёт, поэтому запишите пароль отдельно.</div>
+    </div>
+    <button class="btn wide" style="width:100%;margin-bottom:18px" data-act="copysecret">${svg(I.copy,15)} Скопировать пароль</button>
+
     <div class="field">
       <label>Новый код класса — для родителей, только просмотр</label>
       <input id="ac-code" autocomplete="off" placeholder="не короче 6 символов">
@@ -2440,6 +2455,9 @@ document.addEventListener('click', e => {
 
     case 'copylink':
       copyText(shareLink(), 'Ссылка скопирована'); break;
+
+    case 'copysecret':
+      copyText(D.cloud.secret || '', 'Пароль скопирован — вставьте его в заметки'); break;
 
     case 'pullnow':
       Cloud.tick().then(() => toast('Обновлено')); break;
