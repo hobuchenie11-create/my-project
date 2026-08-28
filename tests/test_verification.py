@@ -215,6 +215,8 @@ def test_warranty_task_appears_in_time_and_reads_as_a_warranty(conn):
     vs.sync_verification_tasks(conn, day)
     task = next(t for t in repository.open_tasks(conn) if "Лифт" in t["title"])
     assert task["title"].startswith("Гарантия заканчивается")
+    # Гарантия лифта — не поверка прибора учёта
+    assert task["category"] == "equipment"
     assert task["due_date"] == "2031-07-10"
     assert task["start_date"] == day.isoformat()
     assert "предъявить" in task["description"]

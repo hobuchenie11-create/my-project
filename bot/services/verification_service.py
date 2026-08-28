@@ -181,6 +181,9 @@ def sync_verification_tasks(conn: sqlite3.Connection,
         if repository.verification_task(conn, row["id"], due.isoformat()):
             continue                       # задача уже есть
         if v.is_warranty:
+            # Гарантия — не поверка: задача должна попадать в свою категорию,
+            # иначе лифт числится прибором учёта
+            category = "equipment"
             title = f"Гарантия заканчивается: {row['name']}"
             description = (
                 f"Гарантийный срок истекает {_fmt(due)} "
@@ -188,6 +191,7 @@ def sync_verification_tasks(conn: sqlite3.Connection,
                 "Осмотреть оборудование и, если есть недостатки, предъявить "
                 "их изготовителю письменно, пока гарантия действует.")
         else:
+            category = "verification"
             title = f"Поверка: {row['name']}"
             description = (f"Организовать поверку общедомового прибора. "
                            f"Срок — до {_fmt(due)}. Интервал "
@@ -195,7 +199,7 @@ def sync_verification_tasks(conn: sqlite3.Connection,
         repository.create_task(
             conn, title,
             house_meter_id=row["id"], description=description,
-            category="verification", priority="high", status="new",
+            category=category, priority="high", status="new",
             start_date=start.isoformat(), due_date=due.isoformat(),
             period=due.strftime("%Y-%m"), source="verification")
         created += 1
