@@ -205,7 +205,7 @@ table.tot tr.sum td{border-bottom:0; border-top:2px solid var(--ink); font-weigh
       <button class="view" data-cam="1" aria-pressed="false">С полянки на сцену</button>
       <button class="view" data-cam="2" aria-pressed="false">Детская площадка</button>
       <button class="view" data-cam="3" aria-pressed="false">Общий вид</button>
-      <button class="view" data-cam="4" aria-pressed="false">Вход в клуб</button>
+      <button class="view" data-cam="4" aria-pressed="false">Вход и таблички</button>
       <span class="grow"></span>
       <button class="view" id="togglePins" aria-pressed="true">Выноски</button>
       <span class="hint">Модель в масштабе 1:1, м</span>
@@ -329,7 +329,7 @@ const OBJECTS = [
  { n:8, name:'Навес над входом и информационные таблички', kind:'new', fill:'#8FA3AD',
    shape:{t:'rect', x:12.4, y:27.2, w:2.2, h:3.6}, dims:'навес 2,2 × 3,6 м, h = 3,0 м', area:8, h:3.0,
    surf:'Металлический каркас, кровля — поликарбонат; таблички — латунь «под золото» с гравировкой', pin:[13.5,29,3.4],
-   desc:'Козырёк на металлическом каркасе из профильной трубы на двух стойках, вынос 2,2 м, высота 3,0 м. Левее входа, ближе к южному углу здания, — две таблички: «Любино-Малоросский Старожильский клуб» (2,0 × 0,62 м, отм. 2,50 м) и «Библиотека» (1,15 × 0,40 м, отм. 1,72 м). Обе — с эффектом позолоты: полированная латунь с гравированными литерами.' },
+   desc:'Козырёк на металлическом каркасе из профильной трубы на двух стойках, вынос 2,2 м, высота 3,0 м. На южном фасаде, в глухом простенке у юго-западного угла — справа от тротуарной дорожки — две таблички в один ряд на общей отметке 2,35 м: «Любино-Малоросский Старожильский клуб» (2,0 × 0,62 м) и следом «Библиотека» (1,15 × 0,40 м). Обе — с эффектом позолоты: полированная латунь с гравированными литерами. Окна первого простенка смещены восточнее, чтобы угловое поле осталось под таблички.' },
 
  { n:9, name:'Парковка на асфальтовой крошке и заезд', kind:'new', fill:'#7E7A74',
    shape:{t:'rect', x:15.8, y:-2.6, w:7.5, h:5},
@@ -339,9 +339,9 @@ const OBJECTS = [
    desc:'Вынесена за ограждение, в полосу между проезжей частью и забором: шесть машиномест 2,5 × 5,0 м двумя карманами по сторонам от заезда. Отсыпка асфальтовой крошкой с уплотнением — дёшево, ремонтопригодно силами села и не требует ливнёвки. Внутрь двора машины не заезжают: за воротами остаётся только пешеходная и пожарная тропа.' },
 
  { n:10, name:'Озеленение вдоль клуба: две берёзы и тополь', kind:'new', fill:'#5F8E46',
-   shape:{t:'circ', cx:22, cy:23.4, r:1.7}, dims:'3 дерева, шаг 4,3 м', area:null, h:11,
-   surf:'Саженцы с комом: берёза повислая h = 3–4 м, тополь пирамидальный h = 3–4 м', pin:[22,23.4,7.5],
-   desc:'Ряд вдоль южного фасада клуба, в разрыве между зданием и детской площадкой: две берёзы по краям и пирамидальный тополь в середине. Ряд притеняет площадку в полуденные часы и зрительно связывает клуб с детской зоной, не перекрывая проход.' },
+   shape:{t:'circ', cx:23, cy:23.4, r:1.7}, dims:'3 дерева, шаг 3,3 м', area:null, h:11,
+   surf:'Саженцы с комом: берёза повислая h = 3–4 м, тополь пирамидальный h = 3–4 м', pin:[23,23.4,7.5],
+   desc:'Ряд вдоль южного фасада клуба, в разрыве между зданием и детской площадкой: две берёзы по краям и пирамидальный тополь в середине. Ряд начинается восточнее табличек, чтобы кроны их не перекрывали. Ряд притеняет площадку в полуденные часы и зрительно связывает клуб с детской зоной, не перекрывая проход.' },
 
  { n:11, name:'Здание клуба', kind:'exist', fill:'#8C9AA0',
    shape:{t:'rect', x:14.6, y:25, w:13, h:16}, dims:'13,0 × 16,0 м', area:null, h:6.2,
@@ -444,20 +444,20 @@ const BALANCE = [
   s+=`<path d="M ${PX(12.8)} ${PY(29)} L ${PX(14.3)} ${PY(29)} M ${PX(13.6)} ${PY(29.7)} L ${PX(14.5)} ${PY(29)} L ${PX(13.6)} ${PY(28.3)}" fill="none" stroke="var(--accent)" stroke-width="1.6"/>`;
   s+=`<text x="${PX(11.9)}" y="${PY(28.6)}" text-anchor="end" class="planmini" fill="var(--accent)">вход</text>`;
   /* таблички у южного угла западного фасада */
-  s+=`<line x1="${PX(14.6)}" y1="${PY(25.6)}" x2="${PX(14.6)}" y2="${PY(27.1)}" stroke="var(--accent)" stroke-width="2.6"/>`;
-  s+=`<text x="${PX(15.2)}" y="${PY(26.1)}" class="planmini" fill="var(--accent)">таблички</text>`;
+  s+=`<line x1="${PX(14.85)}" y1="${PY(25)}" x2="${PX(18.1)}" y2="${PY(25)}" stroke="var(--accent)" stroke-width="2.8"/>`;
+  s+=`<text x="${PX(16.5)}" y="${PY(25)-6}" text-anchor="middle" class="planmini" fill="var(--accent)">таблички</text>`;
   /* лавочки */
   s+=`<rect x="${PX(11.1)}" y="${PY(30.4)}" width="${(0.4*S)}" height="${(1.8*S)}" fill="#B98A52" stroke="var(--ink)" stroke-width=".7"/>`;
-  s+=`<text x="${PX(10.8)}" y="${PY(29.3)}" text-anchor="end" class="planmini">лавочка</text>`;
+  s+=`<text x="${PX(11.0)}" y="${PY(31.2)}" text-anchor="end" class="planmini">лавочка</text>`;
   s+=`<rect x="${PX(21.1)}" y="${PY(10.8)}" width="${(1.4*S)}" height="${(0.4*S)}" fill="#B98A52" stroke="var(--ink)" stroke-width=".7"/>`;
   s+=`<text x="${PX(21.8)}" y="${PY(9.6)}" text-anchor="middle" class="planmini">лавочка</text>`;
   /* деревья: существующее — сплошным контуром, проектируемые — штриховым */
-  [[7.0,21,2.7,1,'существующее дерево'],[17.5,23.4,1.3,0,'берёза'],[22,23.4,1.15,0,'тополь'],[26.2,23.4,1.3,0,'берёза']].forEach(t=>{
+  [[7.0,21,2.7,1,'существующее дерево'],[19.5,23.4,1.3,0,'берёза'],[23,23.4,1.15,0,'тополь'],[26.2,23.4,1.3,0,'берёза']].forEach(t=>{
     s+=`<circle cx="${PX(t[0])}" cy="${PY(t[1])}" r="${(t[2]*S).toFixed(1)}" fill="#5F8E46" fill-opacity=".30" stroke="#3F6B2E" stroke-width="${t[3]?1.4:1}"${t[3]?'':' stroke-dasharray="3.5 2.5"'}/>`;
     s+=`<circle cx="${PX(t[0])}" cy="${PY(t[1])}" r="1.9" fill="#3F6B2E"/>`;
   });
   s+=`<text x="${PX(7.0)}" y="${PY(17.6)}" text-anchor="middle" class="planmini">существующее дерево</text>`;
-  s+=`<text x="${PX(21.8)}" y="${PY(21.2)}" text-anchor="middle" class="planmini">2 берёзы и тополь</text>`;
+  s+=`<text x="${PX(23)}" y="${PY(21.2)}" text-anchor="middle" class="planmini">2 берёзы и тополь</text>`;
   s+=`<rect x="${PX(9.6)}" y="${PY(3)}" width="${(5*S)}" height="${(6*S)}" fill="#4A4E50" fill-opacity=".5"/>`;
   for(let i=0;i<3;i++){
     s+=`<line x1="${PX(3.1+i*2.5)}" y1="${PY(-2.6)}" x2="${PX(3.1+i*2.5)}" y2="${PY(2.4)}" stroke="var(--ink)" stroke-width=".7" stroke-opacity=".45"/>`;
@@ -640,7 +640,7 @@ function bench(sx,sy,len,ang,sc){                              // лавочка
   [-len/2+.22,len/2-.22].forEach(d=>mk(.08,h,.36*sc,mt,d,h/2,0));
   g.position.set(TX(sx),0,TZ(sy)); g.rotation.y=ang; scene.add(g);
 }
-function plaque(lines,w,h,sy,ht){                              // табличка «под золото» на западном фасаде
+function plaque(lines,w,h,sx,ht){                              // табличка «под золото» на южном фасаде
   const c=document.createElement('canvas'); c.width=640; c.height=Math.round(640*h/w);
   const g=c.getContext('2d');
   const grd=g.createLinearGradient(0,0,0,c.height);               // полированная латунь
@@ -659,13 +659,13 @@ function plaque(lines,w,h,sy,ht){                              // табличк
     g.fillStyle='#4A3608'; g.fillText(t,c.width/2,y); });
   const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshPhongMaterial({
     map:new T.CanvasTexture(c), shininess:120, specular:0xA98A38, emissive:0x3A2C0A}));
-  m.rotation.y=-Math.PI/2; m.position.set(TX(14.6)-.05,ht,TZ(sy)); scene.add(m);
+  m.position.set(TX(sx),ht,TZ(25)+.05); scene.add(m);
 }
 
 [[-1.6,10],[-1.6,20],[-1.6,30],[38.6,8],[39,20],[39.4,30]].forEach(p=>tree(TX(p[0]),TZ(p[1]),1));
 tree(TX(7.0),TZ(21),1.9);                                      // существующее дерево на полянке — сохраняется
-tree(TX(17.5),TZ(23.4),.95); tree(TX(26.2),TZ(23.4),.95);      // две берёзы вдоль клуба
-poplar(TX(22),TZ(23.4),1);                                     // тополь между ними
+tree(TX(19.5),TZ(23.4),.95); tree(TX(26.2),TZ(23.4),.95);      // две берёзы вдоль клуба
+poplar(TX(23),TZ(23.4),1);                                     // тополь между ними
 for(let i=0;i<24;i++) tree(-165+i*14+((i*37)%9),TZ(44)-140-((i*53)%30),1.7+((i*31)%9)/9);
 
 /* ── соседнее нежилое здание западнее участка (на ремонте, по кадастровой карте) ── */
@@ -741,11 +741,11 @@ box(1.8,.4,3.2,M(0xcfc7b4),TX(13.7),0,TZ(29));                 // крыльцо
     new T.MeshPhongMaterial({color:0xE0651A,emissive:0x7A3305,transparent:true,opacity:.62,side:T.DoubleSide,shininess:80}));
   cn.position.set(TX(13.5),3.06,TZ(29)); scene.add(cn);
 })();
-plaque(['ЛЮБИНО-МАЛОРОССКИЙ','СТАРОЖИЛЬСКИЙ КЛУБ'],2.0,.62,26.6,2.5);
-plaque(['БИБЛИОТЕКА'],1.15,.4,26.6,1.72);
+plaque(['ЛЮБИНО-МАЛОРОССКИЙ','СТАРОЖИЛЬСКИЙ КЛУБ'],2.0,.62,15.85,2.35);
+plaque(['БИБЛИОТЕКА'],1.15,.4,17.5,2.35);
 bench(11.3,29.5,1.8,Math.PI/2,1);                              // лавочка напротив входа и цветника
 bench(21.8,10.6,1.4,Math.PI,.8);                               // детская лавочка
-[16.8,19.4,22.8,25.4].forEach(x=>box(1.1,1.5,.12,trim,TX(x),1.7,TZ(25)+.06));
+[19.0,21.4,23.8,26.2].forEach(x=>box(1.1,1.5,.12,trim,TX(x),1.7,TZ(25)+.06));
 [33,36,39].forEach(z=>box(.12,1.5,1.1,trim,TX(14.6)-.06,1.7,TZ(z)));
 [27,30,36,39].forEach(z=>box(.12,1.5,1.1,trim,TX(27.6)+.06,1.7,TZ(z)));
 box(13.2,.35,16.2,M(0xb9b0a0),TX(21.1),0,TZ(33));              // цоколь
@@ -861,7 +861,7 @@ const VIEWS=[
   [new T.Vector3(-13.8,1.7,2),  new T.Vector3(-13.5,3.0,-19)],
   [new T.Vector3(14,4.5,20),    new T.Vector3(8.5,1.2,6.5)],
   [new T.Vector3(30,36,44),     new T.Vector3(-1,0,0)],
-  [new T.Vector3(-14.5,2.8,-3.0), new T.Vector3(-4.6,2.1,-7.6)],
+  [new T.Vector3(-9.2,2.7,5.2), new T.Vector3(-3.2,2.2,-4.2)],
 ];
 setView(VIEWS[0][0],VIEWS[0][1]);
 
