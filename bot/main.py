@@ -21,6 +21,37 @@ from database.init_db import init_db
 logger = logging.getLogger(__name__)
 
 
+async def _check_connection(bot: Bot, session) -> None:
+    """Первый запрос к Telegram — чтобы поймать обрыв связи до запуска.
+
+    Самая частая причина — выключенный клиент VPN/прокси: без него порт,
+    указанный в PROXY_URL, никто не слушает. Раньше это выглядело как
+    стек ошибок из недр aiohttp, по которому непонятно, что делать.
+    """
+    try:
+        me = await bot.get_me()
+    except Exception as exc:                      # noqa: BLE001 — причина в тексте
+        await session.close()
+        raise SystemExit(_connection_hint(exc)) from None
+    logger.info("Подключение к Telegram есть: @%s", me.username)
+
+
+def _connection_hint(exc: Exception) -> str:
+    text = f"{type(exc).__name__}: {exc}"
+    if config.proxy_url and ("roxy" in text or "onnect" in text):
+        return ("Не удалось подключиться к прокси "
+                f"{config.proxy_url} — порт закрыт.\n"
+                "Скорее всего не запущен клиент VPN (Nekobox, Hiddify): "
+                "бот ходит в Telegram только через него.\n"
+                "Запустите клиент, убедитесь, что его локальный порт совпадает "
+                "с PROXY_URL в файле .env, и запустите бота заново.\n"
+                f"Подробности: {text}")
+    return ("Не удалось подключиться к Telegram.\n"
+            "Проверьте интернет и, если он у вас через VPN, — запущен ли "
+            "клиент VPN.\n"
+            f"Подробности: {text}")
+
+
 def _apply_registry_if_present() -> None:
     """Если есть заполненный справочник квартир — применяем его к реестру."""
     from excel.import_registry import REGISTRY_PATH, import_registry
@@ -103,6 +134,8 @@ async def main() -> None:
     # Последним: ручной ввод показаний председателем в личке —
     # сюда попадает только текст, который не разобрали остальные
     dp.include_router(manual.router)
+
+    await _check_connection(bot, session)
 
     # Сбрасываем возможный вебхук — иначе getUpdates выдает Conflict.
     # Накопившиеся сообщения НЕ отбрасываем: пока бот был выключен, жители
