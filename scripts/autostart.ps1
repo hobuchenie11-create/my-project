@@ -12,6 +12,10 @@
     что прокси ещё не стартовал), следующая попытка вернёт его в строй.
     Прав администратора не требует — задание пользовательское.
 
+    Триггеров два: вход в систему и выход из спящего режима. После сна
+    ноутбук в систему заново не входит, поэтому без второго триггера
+    задание не срабатывало бы, а связь с Telegram за время сна рвётся.
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Install
     powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Status
@@ -47,6 +51,39 @@ function Get-PythonwPath {
     return $pythonw
 }
 
+function New-WakeTrigger {
+    <#
+        Триггер на выход из спящего режима. Отдельный от входа в систему:
+        ноутбук после сна не «входит в систему» заново, и задание не срабатывает,
+        а соединение с Telegram за время сна успевает оборваться.
+
+        Пробуждение в Планировщике — это событие журнала «Система»:
+        источник Power-Troubleshooter, код 1. Командлета для событийных
+        триггеров нет, поэтому собираем его через CIM.
+
+        Задержка минута: клиенту VPN нужно время подняться после сна, иначе
+        бот стартует раньше сети. Если создать триггер не вышло (старая
+        Windows, ограничения политики) — возвращаем $null, и задание
+        регистрируется как раньше, только со входом в систему.
+    #>
+    try {
+        $class = Get-CimClass -ClassName MSFT_TaskEventTrigger `
+            -Namespace Root/Microsoft/Windows/TaskScheduler -ErrorAction Stop
+        $wake = New-CimInstance -CimClass $class -ClientOnly
+        $wake.Subscription =
+            '<QueryList><Query Id="0" Path="System"><Select Path="System">' +
+            "*[System[Provider[@Name='Microsoft-Windows-Power-Troubleshooter']" +
+            ' and EventID=1]]</Select></Query></QueryList>'
+        $wake.Delay = 'PT1M'
+        $wake.Enabled = $true
+        return $wake
+    } catch {
+        Write-Host "Триггер пробуждения создать не удалось: $($_.Exception.Message)"
+        return $null
+    }
+}
+
+
 function Install-Autostart {
     $pythonw = Get-PythonwPath
     if (-not (Test-Path $Entry)) { throw "Не найден $Entry" }
@@ -62,6 +99,10 @@ function Install-Autostart {
     $trigger.Repetition = (New-ScheduledTaskTrigger -Once -At (Get-Date) `
         -RepetitionInterval (New-TimeSpan -Minutes 5)).Repetition
 
+    $triggers = @($trigger)
+    $wake = New-WakeTrigger
+    if ($wake) { $triggers += $wake }
+
     $settings = New-ScheduledTaskSettingsSet `
         -MultipleInstances IgnoreNew `
         -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
@@ -71,7 +112,7 @@ function Install-Autostart {
     $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" `
         -LogonType Interactive -RunLevel Limited
 
-    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
+    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $triggers `
         -Settings $settings -Principal $principal -Force `
         -Description 'Домовед: приём показаний счётчиков, ведомость и реестр ОЭК.' | Out-Null
 
@@ -79,6 +120,11 @@ function Install-Autostart {
     Write-Host "  запуск:  $pythonw run.py"
     Write-Host "  папка:   $ProjectDir"
     Write-Host "  журнал:  $(Join-Path $ProjectDir 'logs\dhos.log')"
+    if ($wake) {
+        Write-Host '  запуск: при входе в систему и при выходе из спящего режима'
+    } else {
+        Write-Host '  запуск: при входе в систему (триггер пробуждения недоступен)'
+    }
 }
 
 function Remove-Autostart {
@@ -136,6 +182,14 @@ function Show-Status {
         Write-Host "Состояние:        $($task.State)"
         Write-Host "Последний запуск: $($info.LastRunTime) (код $($info.LastTaskResult))"
         Write-Host "Следующий:        $($info.NextRunTime)"
+        $kinds = @($task.Triggers | ForEach-Object {
+            switch ($_.CimClass.CimClassName) {
+                'MSFT_TaskLogonTrigger' { 'вход в систему' }
+                'MSFT_TaskEventTrigger' { 'выход из спящего режима' }
+                default { $_.CimClass.CimClassName }
+            }
+        })
+        Write-Host "Запускается:      $($kinds -join ', ')"
     }
     $running = Get-BotProcess
     if ($running) {
