@@ -31,9 +31,34 @@ async def _check_connection(bot: Bot, session) -> None:
     try:
         me = await bot.get_me()
     except Exception as exc:                      # noqa: BLE001 — причина в тексте
-        await session.close()
-        raise SystemExit(_connection_hint(exc)) from None
+        me = await _try_direct(bot, session, exc)
     logger.info("Подключение к Telegram есть: @%s", me.username)
+
+
+async def _try_direct(bot: Bot, session, proxy_exc: Exception):
+    """Прокси не отозвался — пробуем подключиться напрямую.
+
+    Клиент VPN у председателя меняется, и у нового порт другой или его нет
+    вовсе (системный режим). Раз прямой путь работает, глупо не запуститься
+    из-за устаревшей строки в .env: пишем об этом в лог и работаем дальше.
+    """
+    await session.close()
+    if not config.proxy_url:
+        raise SystemExit(_connection_hint(proxy_exc)) from None
+
+    logger.warning("Прокси %s не отвечает — пробую подключиться напрямую",
+                   config.proxy_url)
+    bot.session = make_session(None)
+    try:
+        me = await bot.get_me()
+    except Exception:                             # noqa: BLE001 — важна первая причина
+        await bot.session.close()
+        raise SystemExit(_connection_hint(proxy_exc)) from None
+
+    logger.warning("Прокси не понадобился: Telegram доступен напрямую. "
+                   "Если VPN работает в системном режиме, очистите PROXY_URL "
+                   "в файле .env — тогда бот не будет ждать прокси при старте")
+    return me
 
 
 def _connection_hint(exc: Exception) -> str:
