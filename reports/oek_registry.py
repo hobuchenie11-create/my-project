@@ -71,6 +71,30 @@ def electricity_readings(conn: sqlite3.Connection, period: str) -> dict[str, flo
             if row["kind"] == "electricity"}
 
 
+def hot_water_readings(conn: sqlite3.Connection, period: str) -> dict[str, float]:
+    """Показания ГВС за период: {номер помещения: м³}.
+
+    ОЭК ждёт по горячей воде одну цифру на квартиру. Там, где счётчиков два
+    (кухня и ванна), это их сумма — та же, что стоит в колонке «ГВС сумма»
+    печатной ведомости. Квартиру с неполными показаниями (передали кухню,
+    а ванну нет) не отдаём: половина суммы хуже, чем пустая ячейка.
+    """
+    single: dict[str, float] = {}
+    parts: dict[str, dict[str, float]] = {}
+    for row in repository.readings_for_period(conn, period):
+        key = apartment_key(row["apartment_number"])
+        if row["kind"] == "hws":
+            single[key] = row["value"]
+        elif row["kind"] in ("hws_kitchen", "hws_bathroom"):
+            parts.setdefault(key, {})[row["kind"]] = row["value"]
+
+    readings = dict(single)
+    for key, values in parts.items():
+        if len(values) == 2:
+            readings[key] = round(sum(values.values()), 3)
+    return readings
+
+
 def known_apartments(conn: sqlite3.Connection) -> set[str]:
     return {apartment_key(row["number"])
             for row in repository.list_apartments(conn)}
@@ -90,6 +114,7 @@ def generate_oek_registry(period: str | None = None,
     conn = repository.connect()
     try:
         readings = electricity_readings(conn, period)
+        hot = hot_water_readings(conn, period)
         known = known_apartments(conn)
     finally:
         conn.close()
@@ -101,7 +126,8 @@ def generate_oek_registry(period: str | None = None,
     taken_on = taken_on or date.today()
     try:
         result = fill_registry(template, readings, out_path,
-                               taken_on=taken_on, known_apartments=known)
+                               taken_on=taken_on, known_apartments=known,
+                               hot_readings=hot)
     except PermissionError:
         # Прошлый реестр открыт в Excel — Windows не даёт перезаписать файл.
         # Отказываться из-за этого нельзя: 20 числа в 14:30 реестр нужен
@@ -109,7 +135,8 @@ def generate_oek_registry(period: str | None = None,
         out_path = (config.reports_dir
                     / f"{OUT_PREFIX}{period}_{datetime.now():%d%m_%H%M}{suffix}")
         result = fill_registry(template, readings, out_path,
-                               taken_on=taken_on, known_apartments=known)
+                               taken_on=taken_on, known_apartments=known,
+                               hot_readings=hot)
 
     conn = repository.connect()
     try:
