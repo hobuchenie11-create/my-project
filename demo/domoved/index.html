@@ -1,0 +1,1131 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<style>:root{color-scheme:light}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Домовед</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+/* ─────────────────────────────────────────────────────────────
+   ДОМОВЕД · демо-ролик
+   Светлая сцена: сиренево-белый фон, сиреневый и бирюзовый акценты.
+   Все цвета заданы явно, ничего не наследуется от темы зрителя.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --ground:#EFEAF6;
+  --stage:#FBF9FD;
+  --panel:#FFFFFF;
+  --panel-2:#F4F0FA;
+  --line:#DCD3EE;
+  --line-soft:#E9E2F5;
+  --ink:#231E2F;
+  --ink-2:#453E5C;
+  --ink-3:#5E5678;
+  --lilac:#6A55AC;
+  --lilac-deep:#503E85;
+  --lilac-glow:rgba(150,128,214,.20);
+  --teal:#23786F;
+  --teal-deep:#1C6159;
+  --teal-glow:rgba(80,190,180,.18);
+  --warn:#95601D;
+  --rose:#9E4F5B;
+  --shadow:0 18px 50px rgba(70,50,120,.10);
+  --f-disp:'Unbounded','Golos Text',system-ui,sans-serif;
+  --f-body:'Golos Text','Segoe UI',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--f-body);
+  line-height:1.5;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.player{width:min(1280px,100%);display:flex;flex-direction:column;gap:14px}
+
+/* ── Экран ── */
+.screen{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  border-radius:16px;
+  overflow:hidden;
+  background:var(--stage);
+  border:1px solid var(--line);
+  box-shadow:0 24px 70px rgba(70,50,120,.14), 0 0 0 1px rgba(150,128,214,.06) inset;
+}
+.stage{
+  position:absolute;top:0;left:0;
+  width:1280px;height:720px;
+  transform-origin:top left;
+  transform:scale(var(--s,1));
+}
+.stage::before{ /* мягкое свечение фона */
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(720px 420px at 18% 8%, var(--lilac-glow), transparent 62%),
+    radial-gradient(680px 460px at 88% 92%, var(--teal-glow), transparent 60%);
+  pointer-events:none;
+}
+.stage::after{ /* тонкая сетка */
+  content:'';position:absolute;inset:0;opacity:.7;pointer-events:none;
+  background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+  background-size:80px 80px;
+  mask-image:radial-gradient(circle at 50% 45%,#000 30%,transparent 78%);
+}
+
+/* ── Сцена ── */
+.scene{position:absolute;inset:0;padding:52px 64px 104px;display:none;flex-direction:column}
+.scene.is-active{display:flex}
+
+.eyebrow{
+  font-family:var(--f-mono);font-size:15px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--teal);display:flex;align-items:center;gap:10px;
+}
+.eyebrow i{width:22px;height:1px;background:var(--teal-deep);display:block;font-style:normal}
+h1{font-family:var(--f-disp);font-weight:400;font-size:64px;letter-spacing:-.02em;line-height:1.05;text-wrap:balance}
+h2{font-family:var(--f-disp);font-weight:400;font-size:38px;letter-spacing:-.01em;line-height:1.15;margin-top:10px;text-wrap:balance}
+.lead{font-size:22px;color:var(--ink-2);max-width:62ch;margin-top:14px}
+.foot{font-size:15px;color:var(--ink-3);margin-top:16px;margin-bottom:auto}
+
+/* ── Титры ── */
+.captions{
+  position:absolute;left:0;right:0;bottom:0;height:96px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 100px;
+  background:linear-gradient(to top,rgba(251,249,253,.97) 55%,rgba(251,249,253,0));
+  pointer-events:none;
+}
+.captions p{
+  font-size:25px;color:var(--ink);text-align:center;max-width:64ch;
+  font-weight:600;transition:opacity .25s;
+}
+
+/* ── Панели ── */
+.panel{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;
+}
+.panel.soft{background:#F2EFF8;border-color:#E7E1F3;box-shadow:none}
+.p-title{font-size:15px;font-family:var(--f-mono);font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:26px;flex:1}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px;flex:1}
+.split{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;margin-top:24px;flex:1;align-items:start}
+
+ul{list-style:none;display:flex;flex-direction:column;gap:13px}
+li{display:flex;gap:12px;align-items:flex-start;font-size:19px;color:var(--ink-2)}
+li b{color:var(--ink);font-weight:600}
+.mk{flex:0 0 22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;margin-top:2px;font-family:var(--f-mono)}
+.mk.ok{background:rgba(46,143,135,.14);color:var(--teal)}
+.mk.no{background:rgba(126,119,150,.14);color:var(--ink-3)}
+.mk.warn{background:rgba(176,118,46,.14);color:var(--warn)}
+
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* ── Титульная сцена ── */
+.title-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center}
+.logo{display:flex;align-items:center;gap:18px}
+.logo svg{width:74px;height:74px}
+.wordmark{font-family:var(--f-disp);font-weight:300;font-size:66px;letter-spacing:.01em}
+.subtitle{font-size:22px;color:var(--ink-2);margin-top:16px;max-width:52ch}
+.stamp{margin-top:34px;font-family:var(--f-mono);font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ── Телефон ── */
+.phone{
+  width:352px;border-radius:30px;border:1px solid var(--line);background:var(--panel);
+  padding:14px 12px 18px;box-shadow:0 20px 46px rgba(70,50,120,.14);position:relative;
+}
+.phone-top{display:flex;align-items:center;gap:10px;padding:2px 8px 12px;border-bottom:1px solid var(--line-soft)}
+.pav{width:30px;height:30px;border-radius:9px;background:linear-gradient(140deg,var(--lilac-deep),var(--teal-deep));display:grid;place-items:center;font-size:14px}
+.phone-top strong{font-size:16px;font-weight:600;display:block;line-height:1.2}
+.phone-top span{font-size:13px;color:var(--teal)}
+.chat{display:flex;flex-direction:column;gap:9px;padding:14px 6px 0;height:404px;overflow:hidden;scroll-behavior:smooth}
+.bub{max-width:82%;padding:10px 14px;border-radius:14px;font-size:16.5px;line-height:1.4}
+.bub.me{align-self:flex-end;background:var(--lilac-deep);color:#fff;border-bottom-right-radius:5px;font-weight:500}
+.bub.bot{align-self:flex-start;background:var(--panel-2);color:var(--ink);border-bottom-left-radius:5px;border:1px solid var(--line)}
+.bub.bot.alert{border-color:rgba(176,118,46,.4);background:rgba(224,176,96,.14)}
+.bub small{display:block;font-size:13.5px;color:var(--ink-3);margin-top:4px}
+.bub.me small{color:rgba(255,255,255,.75)}
+
+/* ── Конвейер ── */
+.pipe{display:flex;align-items:stretch;gap:0;margin-top:28px}
+.node{
+  flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 14px;
+  display:flex;flex-direction:column;gap:8px;position:relative;
+}
+.node .n{font-family:var(--f-mono);font-size:13px;color:var(--teal)}
+.node b{font-size:18px;font-weight:600;line-height:1.25}
+.node span{font-size:14.5px;color:var(--ink-3);line-height:1.35}
+.link{flex:0 0 30px;align-self:center;height:2px;background:var(--line);position:relative;overflow:hidden}
+.link::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,var(--lilac),var(--teal));transform:scaleX(0);transform-origin:left}
+.scene.is-active .link::after{animation:sweep .5s ease-out both;animation-delay:calc(var(--d,0s) + var(--off,0s))}
+
+/* ── Таблица ── */
+.tbl{width:100%;border-collapse:collapse;font-size:18px}
+.tbl th{
+  text-align:left;font-family:var(--f-mono);font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;padding:0 12px 10px;border-bottom:1px solid var(--line);
+}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--line-soft);font-variant-numeric:tabular-nums}
+.tbl td:first-child{font-weight:600}
+.tbl td:not(:first-child){font-family:var(--f-mono);font-size:17px;color:var(--ink-2)}
+.tbl tr.sum td{border-bottom:none;color:var(--teal);font-weight:600;padding-top:16px}
+.tbl tr.sum td:not(:first-child){color:var(--teal)}
+.tbl .flag{color:var(--warn)}
+
+/* ── Файл ── */
+.file{
+  display:inline-flex;align-items:center;gap:12px;padding:13px 18px;border-radius:12px;
+  background:rgba(114,198,190,.09);border:1px solid rgba(114,198,190,.35);
+}
+.file .ic{width:34px;height:34px;border-radius:9px;background:rgba(114,198,190,.16);display:grid;place-items:center;color:var(--teal);font-family:var(--f-mono);font-size:11px}
+.file b{display:block;font-family:var(--f-mono);font-size:16px;font-weight:500}
+.file span{font-size:14px;color:var(--ink-3)}
+
+/* ── Сопоставление полей (реестр) ── */
+.map{display:grid;grid-template-columns:1fr 46px 1fr;align-items:center;gap:10px 0;margin-top:6px}
+.map .from,.map .to{padding:10px 14px;border-radius:9px;font-size:16px;border:1px solid var(--line)}
+.map .from{background:rgba(134,114,196,.14);border-color:rgba(120,98,180,.35)}
+.map .to{background:rgba(63,149,143,.14);border-color:rgba(45,140,132,.35);font-family:var(--f-mono);font-size:15px}
+.arrow{height:2px;background:linear-gradient(90deg,var(--lilac-deep),var(--teal-deep));position:relative;margin:0 6px}
+.arrow::after{content:'';position:absolute;right:-1px;top:-3px;border-left:7px solid var(--teal);border-top:4px solid transparent;border-bottom:4px solid transparent}
+
+/* ── Задачи / план / напоминания ── */
+.task{display:flex;gap:12px;align-items:flex-start;font-size:17px;color:var(--ink-2);padding:9px 0;border-bottom:1px solid var(--line-soft)}
+.task:last-child{border-bottom:none}
+.box{flex:0 0 19px;height:19px;border-radius:6px;border:1.5px solid var(--ink-3);margin-top:2px;display:grid;place-items:center;font-size:11px;color:transparent}
+.task.done .box{background:var(--teal-deep);border-color:var(--teal-deep);color:#fff}
+.task.done{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--ink-3)}
+.task .due{margin-left:auto;font-family:var(--f-mono);font-size:13.5px;color:var(--ink-3);white-space:nowrap;padding-left:10px}
+.task.hot .due{color:var(--warn)}
+
+.tl{display:flex;flex-direction:column;gap:0;position:relative;padding-left:22px}
+.tl::before{content:'';position:absolute;left:5px;top:8px;bottom:8px;width:1.5px;background:var(--line)}
+.tl-item{padding:11px 0;position:relative;font-size:17px;color:var(--ink-2)}
+.tl-item::before{content:'';position:absolute;left:-22px;top:17px;width:11px;height:11px;border-radius:50%;background:var(--panel);border:2px solid var(--lilac-deep)}
+.tl-item.now::before{background:var(--teal);border-color:var(--teal)}
+.tl-item b{display:block;font-family:var(--f-mono);font-size:13.5px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+
+.bell{display:flex;gap:12px;align-items:center;padding:11px 13px;border-radius:10px;background:var(--panel-2);font-size:16.5px;color:var(--ink-2);border-left:3px solid var(--lilac-deep)}
+.bell .t{margin-left:auto;font-family:var(--f-mono);font-size:13.5px;color:var(--lilac)}
+
+/* ── Прогресс-кольцо ── */
+.ring{position:relative;width:150px;height:150px}
+.ring svg{transform:rotate(-90deg)}
+.ring .val{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .val b{font-family:var(--f-mono);font-size:34px;font-weight:500;display:block;line-height:1}
+.ring .val span{font-size:14px;color:var(--ink-3);font-family:var(--f-mono)}
+
+/* ── Итоговые цифры ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:auto}
+.stat{padding:28px 22px;border-radius:14px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}
+.stat b{font-family:var(--f-mono);font-size:42px;font-weight:500;display:block;line-height:1;color:var(--teal)}
+.stat b.l{color:var(--lilac)}
+.stat .cap{font-size:17px;color:var(--ink-2);display:block;margin-top:12px}
+
+.chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.chip{padding:9px 16px;border-radius:99px;font-size:15.5px;border:1px solid var(--line);color:var(--ink-2);background:var(--panel)}
+.chip.soon{color:var(--ink-3);border-style:dashed;background:transparent}
+.chip.slot{color:var(--lilac);border-color:rgba(183,163,224,.4);border-style:dashed;background:rgba(183,163,224,.06)}
+
+/* ── Анимации ── */
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes slideL{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:none}}
+@keyframes slideR{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+@keyframes sweep{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(94,76,151,.28)}50%{box-shadow:0 0 0 10px rgba(94,76,151,0)}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+.scene.is-active [class*=" a-"],.scene.is-active [class^="a-"]{
+  animation-duration:.7s;animation-fill-mode:both;animation-timing-function:cubic-bezier(.2,.7,.3,1);
+  animation-delay:calc(var(--d,0s) + var(--off,0s));
+}
+.scene.is-active .a-rise{animation-name:rise}
+.scene.is-active .a-fade{animation-name:fade}
+.scene.is-active .a-l{animation-name:slideL}
+.scene.is-active .a-r{animation-name:slideR}
+.scene.is-active .a-pop{animation-name:pop;animation-duration:.5s}
+.logo svg{animation:drift 7s ease-in-out infinite}
+.pulse{animation:pulse 2.4s ease-in-out infinite}
+
+.stage.paused *,.stage.paused *::before,.stage.paused *::after{animation-play-state:paused!important}
+
+/* ── Пульт ── */
+.bar{display:flex;align-items:center;gap:16px}
+.track{
+  flex:1;height:26px;display:flex;align-items:center;cursor:pointer;position:relative;
+  border:none;background:none;padding:0;
+}
+.track .rail{width:100%;height:5px;border-radius:99px;background:var(--line);overflow:hidden}
+.track .fill{height:100%;width:0;background:linear-gradient(90deg,var(--lilac),var(--teal));border-radius:99px}
+.marks{position:absolute;inset:0;pointer-events:none}
+.marks i{position:absolute;top:50%;width:2px;height:11px;margin-top:-5.5px;background:var(--ground);opacity:.9}
+.btn{
+  width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);
+  color:var(--ink-2);display:grid;place-items:center;cursor:pointer;font-size:15px;transition:.15s;
+  font-family:var(--f-body);
+}
+.btn:hover{color:var(--ink);border-color:var(--lilac-deep);background:var(--panel-2)}
+.btn:focus-visible,.track:focus-visible,.ch:focus-visible{outline:2px solid var(--lilac);outline-offset:3px}
+.time{font-family:var(--f-mono);font-size:14px;color:var(--ink-2);font-variant-numeric:tabular-nums;min-width:92px}
+
+.chapters{display:flex;gap:8px;flex-wrap:wrap}
+.ch{
+  padding:7px 13px;border-radius:99px;border:1px solid var(--line);background:transparent;
+  color:var(--ink-2);font-size:14px;cursor:pointer;font-family:var(--f-body);transition:.15s;
+}
+.ch:hover{color:var(--ink);border-color:var(--lilac-deep)}
+.ch.on{color:#fff;background:var(--lilac-deep);border-color:var(--lilac-deep);font-weight:600}
+
+/* ── Заставка ── */
+.cover{
+  position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:22px;background:radial-gradient(900px 600px at 50% 42%,#FFFFFF,#EDE7F7 78%);text-align:center;padding:40px;
+}
+.cover.hide{display:none}
+.cover .wordmark{font-size:clamp(34px,5vw,58px)}
+.cover p{color:var(--ink-2);font-size:clamp(14px,1.4vw,19px);max-width:46ch}
+.play{
+  display:inline-flex;align-items:center;gap:12px;padding:15px 30px;border-radius:99px;border:none;cursor:pointer;
+  background:linear-gradient(120deg,var(--lilac-deep),var(--teal-deep));color:#fff;font-size:17px;font-weight:700;
+  font-family:var(--f-body);transition:transform .15s;
+}
+.play:hover{transform:translateY(-2px)}
+.cover .hint{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase}
+
+.legend{font-size:14px;color:var(--ink-3);text-align:center}
+.rotate-hint{
+  display:none;font-size:15px;color:var(--ink-2);text-align:center;background:var(--panel);
+  border:1px solid var(--line);border-radius:10px;padding:11px 14px;
+}
+@media (max-width:760px){
+  body{padding:10px}
+  .player{gap:10px}
+  .rotate-hint{display:block}
+  .legend{display:none}
+  .ch{font-size:15px;padding:8px 14px}
+  .time{font-size:15px}
+  .btn{width:42px;height:42px}
+}
+.legend kbd{font-family:var(--f-mono);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px;color:var(--ink-2)}
+
+@media (prefers-reduced-motion:reduce){
+  .logo svg,.pulse{animation:none!important}
+}
+</style>
+
+<div class="player">
+  <p class="rotate-hint">Поверните телефон горизонтально и нажмите ⛶ — надписи станут крупнее.</p>
+  <div class="screen" id="screen">
+    <div class="stage" id="stage">
+
+      <!-- ══ 1. ЗАСТАВКА ══ -->
+      <section class="scene" data-dur="9">
+        <div class="title-wrap">
+          <div class="logo a-pop">
+            <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <path d="M7 31 32 9l25 22" stroke="#5E4C97" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="15" y="30" width="34" height="25" rx="5" stroke="#24726C" stroke-width="2.5"/>
+              <path d="M27 55V42h10v13" stroke="#24726C" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="32" cy="22" r="2.6" fill="#5E4C97"/>
+            </svg>
+            <span class="wordmark">Домовед</span>
+          </div>
+          <p class="subtitle a-rise" style="--d:.5s">Показания, ведомость, реестр ОЭК и дела дома — в одной системе</p>
+          <p class="stamp a-fade" style="--d:1.4s">Демонстрация работы · август 2026</p>
+        </div>
+      </section>
+
+      <!-- ══ 2. КАК СЕЙЧАС / КАК С ДОМОВЕДОМ ══ -->
+      <section class="scene" data-dur="18">
+        <p class="eyebrow a-fade"><i></i>Зачем это нужно</p>
+        <h2 class="a-rise" style="--d:.15s">Один и тот же дом. 96 квартир.</h2>
+        <div class="grid2">
+          <div class="panel soft a-l" style="--d:.5s">
+            <p class="p-title">Как собирают сейчас</p>
+            <ul>
+              <li style="--d:.8s" class="a-fade"><span class="mk no">—</span>Показания приходят в чат, в СМС и бланками в ящик</li>
+              <li style="--d:1.1s" class="a-fade"><span class="mk no">—</span>Каждое число переносится в таблицу руками</li>
+              <li style="--d:1.4s" class="a-fade"><span class="mk no">—</span>Опечатки и переспрашивания — «а вы точно сдавали?»</li>
+              <li style="--d:1.7s" class="a-fade"><span class="mk no">—</span>Ведомость и реестр собираются в последний вечер</li>
+              <li style="--d:2s" class="a-fade"><span class="mk no">—</span><b>Около 6 часов каждый месяц</b></li>
+            </ul>
+          </div>
+          <div class="panel a-r" style="--d:.7s">
+            <p class="p-title" style="color:var(--teal)">Как с Домоведом</p>
+            <ul>
+              <li style="--d:2.6s" class="a-fade"><span class="mk ok">✓</span>Один канал приёма — бот в мессенджере</li>
+              <li style="--d:2.9s" class="a-fade"><span class="mk ok">✓</span>Каждое показание проверяется автоматически</li>
+              <li style="--d:3.2s" class="a-fade"><span class="mk ok">✓</span>Видно, кто сдал, а кому напомнить</li>
+              <li style="--d:3.5s" class="a-fade"><span class="mk ok">✓</span>Ведомость и реестр ОЭК формируются сами</li>
+              <li style="--d:3.8s" class="a-fade"><span class="mk ok">✓</span><b>Около 15 минут — и то на проверку</b></li>
+            </ul>
+          </div>
+        </div>
+        <p class="foot a-fade" style="--d:4.4s">Цифры и данные в ролике — по демонстрационному дому.</p>
+      </section>
+
+      <!-- ══ 3. ПРИЁМ ПОКАЗАНИЙ ══ -->
+      <section class="scene" data-dur="30">
+        <p class="eyebrow a-fade"><i></i>Шаг 1 · Приём показаний</p>
+        <h2 class="a-rise" style="--d:.15s">Житель пишет как умеет. Бот понимает.</h2>
+        <div class="split">
+          <div class="phone a-pop" style="--d:.5s">
+            <div class="phone-top">
+              <div class="pav">Д</div>
+              <div><strong>Домовед</strong><span>бот дома · онлайн</span></div>
+            </div>
+            <div class="chat">
+              <div class="bub me a-rise" style="--d:1.4s">кв. 42, 5417</div>
+              <div class="bub bot a-rise" style="--d:2.4s">Принято. Квартира 42 · 5417 кВт·ч<small>Расход за месяц — 214 кВт·ч, как обычно</small></div>
+              <div class="bub me a-rise" style="--d:4.4s">5203</div>
+              <div class="bub bot a-rise" style="--d:5.4s">Не вижу номера квартиры. Напишите так: <b>12 5203</b></div>
+              <div class="bub me a-rise" style="--d:7.4s">12 5203</div>
+              <div class="bub bot a-rise" style="--d:8.4s">Принято. Квартира 12 · 5203 кВт·ч</div>
+              <div class="bub me a-rise" style="--d:10.4s">Квартира 17 — 12980</div>
+              <div class="bub bot alert a-rise" style="--d:11.4s">Принял, но расход вышел 890 кВт·ч — в четыре раза больше обычного. Передал старшему на проверку.</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div class="panel a-r" style="--d:1s;display:flex;align-items:center;gap:24px">
+              <div class="ring">
+                <svg width="150" height="150">
+                  <circle cx="75" cy="75" r="63" stroke="#E2DBF0" stroke-width="10" fill="none"/>
+                  <circle id="ring1" cx="75" cy="75" r="63" stroke="#2E8F87" stroke-width="10" fill="none"
+                          stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="396"/>
+                </svg>
+                <div class="val"><b><span class="num" data-from="0" data-to="84" data-at="1.2" data-dur="7">0</span></b><span>из 96</span></div>
+              </div>
+              <div>
+                <p class="p-title" style="margin-bottom:8px">Приём за август</p>
+                <p style="font-size:17px;color:var(--ink-2);line-height:1.45">Окно приёма<br><b style="color:var(--ink)">с 20 по 25 число</b></p>
+              </div>
+            </div>
+            <ul style="gap:16px">
+              <li class="a-r" style="--d:13s"><span class="mk ok">✓</span>Принимает в любом формате записи — цифры, «кв.», текстом</li>
+              <li class="a-r" style="--d:13.4s"><span class="mk ok">✓</span>Помнит, кто уже сдал: повторное показание не задвоится</li>
+              <li class="a-r" style="--d:13.8s"><span class="mk ok">✓</span>24-го сам напомнит тем, кто не сдал — адресно, без общего чата</li>
+              <li class="a-r" style="--d:14.2s"><span class="mk ok">✓</span>Работает ночью и в выходные — старшему не нужно быть у телефона</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 4. ОБРАБОТКА ══ -->
+      <section class="scene" data-dur="26">
+        <p class="eyebrow a-fade"><i></i>Шаг 2 · Автоматическая обработка</p>
+        <h2 class="a-rise" style="--d:.15s">Что происходит с показанием за одну секунду</h2>
+        <div class="pipe">
+          <div class="node a-pop" style="--d:.6s"><span class="n">01</span><b>Получил</b><span>сообщение из чата</span></div>
+          <div class="link" style="--d:1s"></div>
+          <div class="node a-pop" style="--d:1.3s"><span class="n">02</span><b>Узнал квартиру</b><span>привязал к лицевому счёту</span></div>
+          <div class="link" style="--d:1.7s"></div>
+          <div class="node a-pop" style="--d:2s"><span class="n">03</span><b>Сверил</b><span>с прошлым месяцем</span></div>
+          <div class="link" style="--d:2.4s"></div>
+          <div class="node a-pop" style="--d:2.7s"><span class="n">04</span><b>Проверил</b><span>по правилам дома</span></div>
+          <div class="link" style="--d:3.1s"></div>
+          <div class="node a-pop" style="--d:3.4s"><span class="n">05</span><b>Записал</b><span>строку в ведомость</span></div>
+        </div>
+        <div class="grid2" style="margin-top:30px">
+          <div class="panel a-l" style="--d:4.4s">
+            <p class="p-title">Проверки на каждом показании</p>
+            <ul>
+              <li class="a-fade" style="--d:5s"><span class="mk ok">✓</span>Не меньше предыдущего</li>
+              <li class="a-fade" style="--d:5.4s"><span class="mk ok">✓</span>Не сдано дважды за месяц</li>
+              <li class="a-fade" style="--d:5.8s"><span class="mk ok">✓</span>Расход в пределах нормы этой квартиры</li>
+              <li class="a-fade" style="--d:6.2s"><span class="mk ok">✓</span>Число знаков совпадает с прибором учёта</li>
+              <li class="a-fade" style="--d:6.6s"><span class="mk warn">!</span>Всё сомнительное — не в ведомость, а на проверку</li>
+            </ul>
+          </div>
+          <div class="panel a-r" style="--d:7.4s">
+            <p class="p-title" style="color:var(--warn)">На проверке у старшего · 2</p>
+            <ul style="gap:14px">
+              <li class="a-fade" style="--d:8s"><span class="mk warn">17</span><span>Расход <b class="num">890</b> кВт·ч против обычных 230 — возможна опечатка в разряде</span></li>
+              <li class="a-fade" style="--d:8.6s"><span class="mk warn">63</span><span>Показание <b class="num">4102</b> меньше прошлого <b class="num">4390</b> — заменён счётчик?</span></li>
+            </ul>
+            <p style="margin-top:18px;font-size:15px;color:var(--ink-3);--d:9.4s" class="a-fade">Остальные 82 квартиры прошли без участия человека.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 5. ВЕДОМОСТЬ ══ -->
+      <section class="scene" data-dur="26">
+        <p class="eyebrow a-fade"><i></i>Шаг 3 · Ведомость</p>
+        <h2 class="a-rise" style="--d:.15s">Ведомость собирается по ходу приёма</h2>
+        <div class="split" style="grid-template-columns:1.35fr .65fr">
+          <div class="panel a-rise" style="--d:.6s;padding:22px 12px">
+            <table class="tbl">
+              <thead><tr><th>Кв.</th><th>Прошлое</th><th>Текущее</th><th>Расход</th><th>Принято</th></tr></thead>
+              <tbody>
+                <tr class="a-fade" style="--d:1.6s"><td>12</td><td>4 968</td><td>5 203</td><td>235</td><td>20.08</td></tr>
+                <tr class="a-fade" style="--d:2.1s"><td>17</td><td>12 090</td><td class="flag">12 980</td><td class="flag">890 ⚠</td><td>21.08</td></tr>
+                <tr class="a-fade" style="--d:2.6s"><td>28</td><td>7 741</td><td>7 903</td><td>162</td><td>21.08</td></tr>
+                <tr class="a-fade" style="--d:3.1s"><td>42</td><td>5 203</td><td>5 417</td><td>214</td><td>22.08</td></tr>
+                <tr class="a-fade" style="--d:3.6s"><td>55</td><td>9 310</td><td>9 588</td><td>278</td><td>22.08</td></tr>
+                <tr class="a-fade" style="--d:4.1s"><td>63</td><td>4 390</td><td class="flag">4 102</td><td class="flag">— ⚠</td><td>22.08</td></tr>
+                <tr class="a-fade" style="--d:4.6s"><td style="color:var(--ink-3)">…</td><td colspan="4" style="color:var(--ink-3)">ещё 78 квартир</td></tr>
+                <tr class="sum a-fade" style="--d:5.4s"><td>Итого</td><td>84 квартиры</td><td colspan="2"><span class="num" data-from="0" data-to="18640" data-at="5.4" data-dur="2.2">0</span> кВт·ч</td><td>2 на проверке</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <ul style="gap:15px">
+              <li class="a-r" style="--d:6.4s"><span class="mk ok">✓</span>Расход считается сам, вычитать ничего не нужно</li>
+              <li class="a-r" style="--d:6.8s"><span class="mk ok">✓</span>Спорные строки видны сразу и отмечены</li>
+              <li class="a-r" style="--d:7.2s"><span class="mk ok">✓</span>К 25-му числу ведомость уже готова</li>
+            </ul>
+            <div class="file a-pop" style="--d:8.2s">
+              <div class="ic">XLS</div>
+              <div><b>Ведомость_08-2026.xlsx</b><span>для архива и отчёта собранию</span></div>
+            </div>
+            <div class="file a-pop" style="--d:8.8s;background:rgba(134,114,196,.09);border-color:rgba(183,163,224,.35)">
+              <div class="ic" style="background:rgba(134,114,196,.18);color:var(--lilac)">PDF</div>
+              <div><b>Ведомость_08-2026.pdf</b><span>распечатать и повесить на стенд</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 6. РЕЕСТР ОЭК ══ -->
+      <section class="scene" data-dur="26">
+        <p class="eyebrow a-fade"><i></i>Шаг 4 · Реестр ОЭК</p>
+        <h2 class="a-rise" style="--d:.15s">Из ведомости — в формат ОЭК, без переноса руками</h2>
+        <div class="split">
+          <div class="panel a-l" style="--d:.6s">
+            <p class="p-title">Поле Домоведа → колонка реестра</p>
+            <div class="map">
+              <div class="from a-fade" style="--d:1.2s">Квартира</div><div class="arrow a-fade" style="--d:1.3s"></div><div class="to a-fade" style="--d:1.4s">Лицевой счёт</div>
+              <div class="from a-fade" style="--d:1.7s">Прибор учёта</div><div class="arrow a-fade" style="--d:1.8s"></div><div class="to a-fade" style="--d:1.9s">Номер ПУ</div>
+              <div class="from a-fade" style="--d:2.2s">Прошлое показание</div><div class="arrow a-fade" style="--d:2.3s"></div><div class="to a-fade" style="--d:2.4s">Предыдущее</div>
+              <div class="from a-fade" style="--d:2.7s">Текущее показание</div><div class="arrow a-fade" style="--d:2.8s"></div><div class="to a-fade" style="--d:2.9s">Текущее</div>
+              <div class="from a-fade" style="--d:3.2s">Дата приёма</div><div class="arrow a-fade" style="--d:3.3s"></div><div class="to a-fade" style="--d:3.4s">Дата снятия</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="panel a-r" style="--d:4.2s">
+              <p class="p-title">Перед выгрузкой</p>
+              <ul style="gap:12px">
+                <li class="a-fade" style="--d:4.8s"><span class="mk ok">✓</span>Формат файла — по шаблону ОЭК</li>
+                <li class="a-fade" style="--d:5.3s"><span class="mk ok">✓</span>Лицевые счета сверены со справочником дома</li>
+                <li class="a-fade" style="--d:5.8s"><span class="mk ok">✓</span>Пустых строк и дублей нет</li>
+                <li class="a-fade" style="--d:6.3s"><span class="mk ok">✓</span>По квартирам без показаний — расчёт по среднему</li>
+              </ul>
+            </div>
+            <div class="file a-pop pulse" style="--d:7.4s">
+              <div class="ic">XLS</div>
+              <div><b>Реестр_ОЭК_08-2026.xlsx</b><span>96 строк · готов к отправке</span></div>
+            </div>
+            <p style="font-size:17px;color:var(--ink-2)" class="a-fade">Старший открывает файл, смотрит две отмеченные строки и отправляет. Это вся его работа с реестром.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 7. ПАНЕЛЬ ПРЕДСЕДАТЕЛЯ ══ -->
+      <section class="scene" data-dur="28">
+        <p class="eyebrow a-fade"><i></i>Шаг 5 · Панель председателя</p>
+        <h2 class="a-rise" style="--d:.15s">Дела дома не в блокноте, а на одном экране</h2>
+        <div class="grid3">
+          <div class="panel a-rise" style="--d:.6s">
+            <p class="p-title">Задачи · 2 из 6 закрыто</p>
+            <div class="task done a-fade" style="--d:1.2s"><span class="box">✓</span>Открыть приём показаний<span class="due">20.08</span></div>
+            <div class="task done a-fade" style="--d:1.5s"><span class="box">✓</span>Проверить счётчик кв. 17<span class="due">22.08</span></div>
+            <div class="task hot a-fade" style="--d:1.8s"><span class="box"></span>Напомнить не сдавшим<span class="due">24.08</span></div>
+            <div class="task hot a-fade" style="--d:2.1s"><span class="box"></span>Передать реестр в ОЭК<span class="due">26.08</span></div>
+            <div class="task a-fade" style="--d:2.4s"><span class="box"></span>Заявка: подъезд 3, лампа<span class="due">28.08</span></div>
+            <div class="task a-fade" style="--d:2.7s"><span class="box"></span>Смета на домофон<span class="due">31.08</span></div>
+          </div>
+          <div class="panel a-rise" style="--d:.9s">
+            <p class="p-title">План дома</p>
+            <div class="tl">
+              <div class="tl-item now a-fade" style="--d:3.4s"><b>Август</b>Показания, реестр ОЭК, поверка счётчиков в 6 квартирах</div>
+              <div class="tl-item a-fade" style="--d:3.8s"><b>Сентябрь</b>Собрание собственников: отчёт и смета на год</div>
+              <div class="tl-item a-fade" style="--d:4.2s"><b>Октябрь</b>Договор на уборку подъездов, подготовка к отопительному</div>
+              <div class="tl-item a-fade" style="--d:4.6s"><b>Ноябрь</b>Ревизия общедомового освещения</div>
+            </div>
+          </div>
+          <div class="panel a-rise" style="--d:1.2s">
+            <p class="p-title">Напоминания</p>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <div class="bell a-fade" style="--d:5.4s">Напомнить не сдавшим<span class="t">через 2 дня</span></div>
+              <div class="bell a-fade" style="--d:5.8s">Реестр в ОЭК<span class="t">через 4 дня</span></div>
+              <div class="bell a-fade" style="--d:6.2s">Снять показания ОДПУ<span class="t">1 сентября</span></div>
+              <div class="bell a-fade" style="--d:6.6s">Продлить договор с УК<span class="t">15 сентября</span></div>
+            </div>
+            <p style="margin-top:18px;font-size:15px;color:var(--ink-3);--d:7s" class="a-fade">Напоминание приходит и старшему, и жителям — каждому своё.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 8. ОТВЕТЫ НА ВОПРОСЫ ══ -->
+      <section class="scene" data-dur="24">
+        <p class="eyebrow a-fade"><i></i>Шаг 6 · Ответы на вопросы</p>
+        <h2 class="a-rise" style="--d:.15s">Одни и те же вопросы больше не идут старшему</h2>
+        <div class="split">
+          <div class="phone a-pop" style="--d:.5s">
+            <div class="phone-top">
+              <div class="pav">Д</div>
+              <div><strong>Домовед</strong><span>отвечает по документам дома</span></div>
+            </div>
+            <div class="chat">
+              <div class="bub me a-rise" style="--d:1.4s">Когда сдавать показания?</div>
+              <div class="bub bot a-rise" style="--d:2.3s">С 20 по 25 число. Сегодня 22-е, ваша квартира ещё не сдала.</div>
+              <div class="bub me a-rise" style="--d:4.3s">Почему в июле вышло больше?</div>
+              <div class="bub bot a-rise" style="--d:5.2s">В июле у вас 268 кВт·ч, в июне — 214. Тариф не менялся.<small>Ваши показания за полгода — в карточке квартиры</small></div>
+              <div class="bub me a-rise" style="--d:7.6s">Кто чинит домофон?</div>
+              <div class="bub bot a-rise" style="--d:8.5s">По договору от 12.03.2026 — «Домофон-Сервис», заявки по телефону из решения собрания.</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:20px;justify-content:center;height:100%">
+            <ul style="gap:18px">
+              <li class="a-r" style="--d:10s"><span class="mk ok">✓</span><span>Отвечает по <b>вашим</b> документам: регламент дома, решения собраний, договоры, контакты служб</span></li>
+              <li class="a-r" style="--d:10.5s"><span class="mk ok">✓</span>Знает историю квартиры — показания, расход, что уже сдано</li>
+              <li class="a-r" style="--d:11s"><span class="mk ok">✓</span>Отвечает сразу и в любое время</li>
+              <li class="a-r" style="--d:11.5s"><span class="mk warn">!</span><span>Чего нет в документах — <b>не выдумывает</b>, а передаёт вопрос председателю</span></li>
+            </ul>
+            <div class="panel a-pop" style="--d:12.4s">
+              <p style="font-size:19px;color:var(--ink)">Тридцать с лишним звонков и сообщений в месяц закрываются без участия старшего.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ 9. ИТОГ ══ -->
+      <section class="scene" data-dur="16">
+        <p class="eyebrow a-fade"><i></i>Итог месяца</p>
+        <h2 class="a-rise" style="--d:.15s">Тот же дом, та же отчётность — другое количество работы</h2>
+        <div class="stats">
+          <div class="stat a-rise" style="--d:.7s"><b class="num">15 мин</b><span class="cap">вместо шести часов работы старшего каждый месяц</span></div>
+          <div class="stat a-rise" style="--d:1s"><b class="num"><span data-from="0" data-to="96" data-at="1" data-dur="1.6">0</span></b><span class="cap">квартир в одном списке, без чатов и записок</span></div>
+          <div class="stat a-rise" style="--d:1.3s"><b class="l num">0</b><span class="cap">строк переносится в реестр руками</span></div>
+          <div class="stat a-rise" style="--d:1.6s"><b class="l num">24/7</b><span class="cap">ответы жителям без участия человека</span></div>
+        </div>
+        <p class="foot a-fade" style="--d:2.6s">Данные демонстрационные. На вашем доме цифры уточним по факту первого месяца.</p>
+      </section>
+
+      <!-- ══ 10. ФИНАЛ ══ -->
+      <section class="scene" data-dur="13">
+        <div class="title-wrap">
+          <div class="logo a-pop">
+            <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <path d="M7 31 32 9l25 22" stroke="#5E4C97" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="15" y="30" width="34" height="25" rx="5" stroke="#24726C" stroke-width="2.5"/>
+              <path d="M27 55V42h10v13" stroke="#24726C" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="32" cy="22" r="2.6" fill="#5E4C97"/>
+            </svg>
+            <span class="wordmark">Домовед</span>
+          </div>
+          <p class="stamp a-fade" style="--d:.6s;margin-top:26px">Работает сейчас</p>
+          <div class="chips a-fade" style="--d:.9s">
+            <span class="chip">Приём показаний</span>
+            <span class="chip">Ведомость</span>
+            <span class="chip">Реестр ОЭК</span>
+            <span class="chip">Панель председателя</span>
+            <span class="chip">Ответы жителям</span>
+          </div>
+          <p class="stamp a-fade" style="--d:1.8s;margin-top:30px">Дальше — по мере запуска</p>
+          <div class="chips a-fade" style="--d:2.1s">
+            <span class="chip soon">Заявки и наряды</span>
+            <span class="chip soon">Начисления</span>
+            <span class="chip soon">Голосования</span>
+            <span class="chip slot">+ новый модуль</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="captions"><p id="cap"></p></div>
+    </div>
+
+    <!-- Заставка -->
+    <div class="cover" id="cover">
+      <div class="logo">
+        <svg viewBox="0 0 64 64" fill="none" width="64" height="64" aria-hidden="true">
+          <path d="M7 31 32 9l25 22" stroke="#5E4C97" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="15" y="30" width="34" height="25" rx="5" stroke="#24726C" stroke-width="2.5"/>
+          <path d="M27 55V42h10v13" stroke="#24726C" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="32" cy="22" r="2.6" fill="#5E4C97"/>
+        </svg>
+        <span class="wordmark">Домовед</span>
+      </div>
+      <p>Как система принимает показания, собирает ведомость и реестр ОЭК, ведёт дела дома и отвечает жителям.</p>
+      <button class="play" id="playBtn">▶ Смотреть демо · 3:36</button>
+      <p class="hint">со звуком · лучше на весь экран</p>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button class="btn" id="pp" title="Пауза / продолжить (пробел)" aria-label="Пауза или продолжить">❚❚</button>
+    <button class="btn" id="rst" title="Сначала" aria-label="Начать сначала">↺</button>
+    <button class="track" id="track" aria-label="Перемотка">
+      <span class="rail"><span class="fill" id="fill"></span></span>
+      <span class="marks" id="marks"></span>
+    </button>
+    <span class="time" id="time">0:00 / 3:36</span>
+    <button class="btn" id="mute" title="Музыка (M)" aria-label="Выключить музыку">♪</button>
+    <button class="btn" id="fs" title="На весь экран (F)" aria-label="На весь экран">⛶</button>
+  </div>
+
+  <div class="chapters" id="chapters"></div>
+  <p class="legend"><kbd>пробел</kbd> пауза · <kbd>←</kbd> <kbd>→</kbd> сцена назад / вперёд · <kbd>F</kbd> полный экран · <kbd>M</kbd> музыка</p>
+</div>
+
+<script>
+/* ══════════════ СЦЕНАРИЙ ══════════════ */
+const SCENES = [
+  { name:'Начало', cues:[
+    [0.4,'Домовед — система для старшего по дому и председателя.'],
+    [4.6,'Показать хочу не экраны, а то, сколько работы она снимает.']]},
+  { name:'Зачем', cues:[
+    [0.4,'Слева — как сбор показаний устроен сейчас. Справа — как с Домоведом.'],
+    [5.5,'Дом один и тот же: 96 квартир, тот же отчёт, те же сроки.'],
+    [10.5,'Разница только в том, кто делает рутину: человек или система.'],
+    [14.5,'Шесть часов в месяц против пятнадцати минут на проверку.']]},
+  { name:'Показания', cues:[
+    [0.4,'Приём показаний идёт в мессенджере, привычном жителю.'],
+    [4.5,'Пишут как умеют: «кв. 42, 5417». Бот разбирает и отвечает подтверждением.'],
+    [10.5,'Забыли номер квартиры — бот попросит дописать, а не промолчит.'],
+    [16.0,'Странное показание принимает, но сразу помечает и передаёт старшему.'],
+    [21.0,'Система видит, кто сдал, а кому напомнить — и напомнит сама, адресно.'],
+    [26.0,'Старшему при этом не нужно быть у телефона ни днём, ни ночью.']]},
+  { name:'Обработка', cues:[
+    [0.4,'Каждое показание проходит один и тот же путь за секунду.'],
+    [4.5,'Узнать квартиру, сверить с прошлым месяцем, проверить по правилам, записать.'],
+    [10.0,'Проверок несколько: не меньше прошлого, не дубль, расход в пределах нормы.'],
+    [15.5,'Всё сомнительное не попадает в ведомость молча — оно уходит на проверку.'],
+    [20.0,'В этом месяце вручную нужно посмотреть две квартиры из девяноста шести.']]},
+  { name:'Ведомость', cues:[
+    [0.4,'Ведомость не собирают в конце месяца — она растёт по ходу приёма.'],
+    [5.0,'Строка появляется в тот момент, когда житель прислал показание.'],
+    [10.0,'Расход считается сам, спорные строки отмечены цветом.'],
+    [15.0,'К двадцать пятому числу ведомость уже готова целиком.'],
+    [19.5,'Выгрузка — таблицей для архива и PDF, который можно повесить на стенд.']]},
+  { name:'Реестр ОЭК', cues:[
+    [0.4,'Реестр для ОЭК — это та же ведомость, разложенная по их шаблону.'],
+    [5.0,'Квартира становится лицевым счётом, дата приёма — датой снятия.'],
+    [10.0,'Перед выгрузкой система проверяет формат, счета и пустые строки.'],
+    [15.0,'По квартирам без показаний считает по среднему — как требует регламент.'],
+    [19.5,'Старший открывает готовый файл, смотрит отмеченное и отправляет.']]},
+  { name:'Панель', cues:[
+    [0.4,'Панель председателя — всё, что нужно держать в голове, на одном экране.'],
+    [5.0,'Задачи: что закрыто, что горит по сроку, что впереди.'],
+    [10.0,'План дома: поверка счётчиков, собрание, договоры — по месяцам.'],
+    [16.0,'Напоминания приходят заранее — и старшему, и жителям, каждому своё.'],
+    [22.0,'Ничего не держится в блокноте и не забывается на неделю.']]},
+  { name:'Вопросы', cues:[
+    [0.4,'Отдельный модуль отвечает жителям на повторяющиеся вопросы.'],
+    [5.0,'Когда сдавать, почему такой расход, кто чинит домофон.'],
+    [10.5,'Отвечает по документам вашего дома, а не общими словами из интернета.'],
+    [15.5,'Чего в документах нет — не выдумывает, а передаёт вопрос председателю.'],
+    [19.5,'Тридцать с лишним обращений в месяц закрываются без участия старшего.']]},
+  { name:'Итог', cues:[
+    [0.4,'Итог месяца: та же отчётность, другое количество ручной работы.'],
+    [5.5,'Шесть часов превращаются в пятнадцать минут проверки.'],
+    [10.0,'Ноль строк переносится руками — а значит, и ошибок переноса нет.']]},
+  { name:'Финал', cues:[
+    [0.6,'Это то, что работает сегодня.'],
+    [4.5,'Новые модули будем добавлять в этот же ролик по мере запуска.']]}
+];
+
+const stage   = document.getElementById('stage');
+const screen  = document.getElementById('screen');
+const scenes  = [...stage.querySelectorAll('.scene')];
+const durs    = scenes.map(s => parseFloat(s.dataset.dur));
+const starts  = durs.reduce((a,d,i)=>(a.push(i?a[i-1]+durs[i-1]:0),a),[]);
+const TOTAL   = durs.reduce((a,b)=>a+b,0);
+
+let t = 0, playing = false, cur = -1, lastTs = 0;
+
+/* ── Масштаб сцены под ширину экрана ── */
+function fit(){ stage.style.setProperty('--s', screen.clientWidth / 1280); }
+new ResizeObserver(fit).observe(screen); fit();
+
+/* ── Разметка пульта ── */
+const marks = document.getElementById('marks');
+const chapters = document.getElementById('chapters');
+starts.forEach((s,i)=>{
+  if(i){ const m=document.createElement('i'); m.style.left = (s/TOTAL*100)+'%'; marks.appendChild(m); }
+  const b=document.createElement('button');
+  b.className='ch'; b.textContent=SCENES[i].name; b.onclick=()=>{ seek(s+0.001); if(!playing) play(); };
+  chapters.appendChild(b);
+});
+const chBtns=[...chapters.children];
+
+/* ── Проигрывание ── */
+function activate(i, local){
+  scenes.forEach(s=>s.classList.remove('is-active'));
+  const sc = scenes[i];
+  sc.style.setProperty('--off', (-local)+'s');
+  void sc.offsetWidth;                       // перезапуск CSS-анимаций
+  sc.classList.add('is-active');
+  sc.querySelectorAll('.chat').forEach(ch=>{ ch.scrollTop = 0; ch.dataset.tgt = ''; });
+  cur = i;
+  chBtns.forEach((b,j)=>b.classList.toggle('on', j===i));
+}
+
+const capEl = document.getElementById('cap');
+function paint(){
+  let i = scenes.length-1;
+  while(i>0 && t < starts[i]) i--;
+  const local = t - starts[i];
+  if(i !== cur) activate(i, local);
+
+  // титры
+  const cues = SCENES[i].cues;
+  let line = '';
+  for(const c of cues) if(local >= c[0]) line = c[1];
+  if(capEl.textContent !== line) capEl.textContent = line;
+
+  // счётчики
+  scenes[i].querySelectorAll('[data-to]').forEach(el=>{
+    const from=+el.dataset.from, to=+el.dataset.to, at=+el.dataset.at, dur=+el.dataset.dur||1;
+    const k = dur ? Math.min(1, Math.max(0, (local-at)/dur)) : 1;
+    const e = 1-Math.pow(1-k,3);
+    el.textContent = Math.round(from + (to-from)*e).toLocaleString('ru-RU');
+  });
+  // переписка «доматывается» к последнему появившемуся сообщению
+  scenes[i].querySelectorAll('.chat').forEach(ch=>{
+    let last = null;
+    for(const b of ch.children){
+      const d = parseFloat(getComputedStyle(b).getPropertyValue('--d')) || 0;
+      if(local >= d + .4) last = b;
+    }
+    const target = last ? Math.max(0, last.offsetTop + last.offsetHeight - ch.clientHeight + 6) : 0;
+    if(ch.dataset.tgt !== String(target)){ ch.dataset.tgt = String(target); ch.scrollTop = target; }
+  });
+
+  const ring = scenes[i].querySelector('#ring1');
+  if(ring){ const k=Math.min(1,Math.max(0,(local-1.2)/7)); ring.setAttribute('stroke-dashoffset', 396 - 396*(84/96)*(1-Math.pow(1-k,3))); }
+
+  document.getElementById('fill').style.width = (t/TOTAL*100)+'%';
+  document.getElementById('time').textContent = fmt(t)+' / '+fmt(TOTAL);
+}
+function fmt(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+function loop(ts){
+  if(playing){
+    if(lastTs) t = Math.min(TOTAL, t + Math.min((ts-lastTs)/1000, .12));
+    lastTs = ts;
+    paint();
+    if(t >= TOTAL) pause();
+  } else lastTs = 0;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+function play(){ playing=true; lastTs=0; stage.classList.remove('paused'); document.getElementById('pp').textContent='❚❚'; music.resume(); }
+function pause(){ playing=false; stage.classList.add('paused'); document.getElementById('pp').textContent='▶'; music.suspend(); }
+function seek(x){ t = Math.max(0, Math.min(TOTAL, x)); cur=-1; paint(); }
+
+document.getElementById('pp').onclick  = ()=> playing ? pause() : play();
+document.getElementById('rst').onclick = ()=>{ seek(0); play(); };
+document.getElementById('track').onclick = e=>{
+  const r = e.currentTarget.getBoundingClientRect();
+  seek((e.clientX - r.left)/r.width * TOTAL);
+};
+document.getElementById('fs').onclick = ()=>{
+  document.fullscreenElement ? document.exitFullscreen() : screen.requestFullscreen?.();
+};
+document.getElementById('playBtn').onclick = ()=>{
+  document.getElementById('cover').classList.add('hide');
+  music.start(); seek(0); play();
+};
+const muteBtn = document.getElementById('mute');
+muteBtn.onclick = ()=>{ const on = music.toggle(); muteBtn.textContent = on ? '♪' : '✕'; muteBtn.style.color = on ? '' : 'var(--ink-3)'; };
+
+addEventListener('keydown', e=>{
+  if(e.code==='Space'){ e.preventDefault(); playing?pause():play(); }
+  if(e.code==='ArrowRight'){ const i=Math.min(scenes.length-1,cur+1); seek(starts[i]+0.001); }
+  if(e.code==='ArrowLeft'){ const i=Math.max(0,cur-1); seek(starts[i]+0.001); }
+  if(e.key==='f'||e.key==='F'||e.key==='а'||e.key==='А'){ document.getElementById('fs').click(); }
+  if(e.key==='m'||e.key==='M'||e.key==='ь'||e.key==='Ь'){ muteBtn.click(); }
+});
+
+/* ══════════════ МУЗЫКА · САКСОФОННЫЙ ФАНК ══════════════
+   Ритм-секция и саксофон-хук, синтез в браузере. Темп вдвое живее баллады:
+   116 ударов в минуту, бочка с бас-линией на восьмых, электропиано на слабую
+   долю, саксофон ведёт короткие фразы. Круг из двух восьмитактов: первый
+   сдержаннее, второй — в полную силу, чтобы ролик не топтался на месте.
+   Эта же музыка идёт звуковой дорожкой к MP3/WAV-выгрузке ролика. */
+const music = (()=>{
+  let ctx, bus, timer, on = true, started = false, bar0 = 0;
+  const mtof = m => 440*Math.pow(2,(m-69)/12);
+  const BEAT = 60/116;
+  const BAR  = BEAT*4;
+  const BARS = 8;
+  const LOOP = BAR*BARS*2;
+
+  const CHORDS = [
+    {b:41, v:[57,60,64,67]}, {b:43, v:[59,62,64,69]},
+    {b:40, v:[59,62,67,71]}, {b:45, v:[57,60,64,67]},
+    {b:38, v:[57,60,64,65]}, {b:43, v:[60,62,65,67]},
+    {b:36, v:[59,64,67,71]}, {b:36, v:[58,60,64,67]}
+  ];
+
+  const KICK     = [0, 0.75, 2.5];
+  const SNARE    = [1, 3];
+  const COMPHITS = [0.5, 2.5, 3.75];
+  const BASSLINE = [
+    [0,    0, .68, 1  ], [0.75, 0, .38, .75], [1.5, 12, .45, .8 ],
+    [2.5,  7, .45, .85], [3.0, 12, .38, .7 ], [3.5,  7, .42, .8 ]
+  ];
+
+  const SAX_A = [
+    [0.5,72,.5,.8], [1.0,74,.5,.8], [1.5,76,1.0,.85], [2.5,74,.5,.75], [3.0,72,1.0,.8],
+    [4.5,74,.5,.8], [5.0,76,.5,.8], [5.5,79,1.5,.9],  [7.0,76,.5,.75], [7.5,74,.5,.75],
+    [8.5,71,.5,.8], [9.0,74,.5,.8], [9.5,76,1.0,.85], [10.5,79,1.4,.9],
+    [12.5,76,.5,.8],[13.0,74,.5,.8],[13.5,72,.5,.8],  [14.0,69,1.5,.85],
+    [16.5,69,.5,.8],[17.0,72,.5,.8],[17.5,74,1.0,.85],[18.5,77,1.2,.9],
+    [20.5,76,.5,.8],[21.0,74,.5,.8],[21.5,72,1.0,.8], [22.5,74,1.2,.85],
+    [24.5,76,.5,.85],[25.0,79,.5,.85],[25.5,81,1.5,.95],[27.0,79,.5,.8],[27.5,76,.5,.8],
+    [28.0,74,.5,.8],[28.5,72,.5,.8],[29.0,70,.5,.85], [29.5,72,1.0,.85],[30.5,76,1.3,.9]
+  ];
+  const SAX_B = [
+    [0,77,.35,.9], [0.5,76,.35,.85],[1.0,72,.6,.85], [2.0,74,.35,.85],[2.5,76,.35,.85],[3.0,79,1.0,.95],
+    [4.0,79,.35,.9],[4.5,78,.35,.85],[5.0,76,.6,.85],[6.0,74,.35,.85],[6.5,76,.35,.85],[7.0,81,1.0,.95],
+    [8.0,79,.35,.9],[8.5,76,.35,.85],[9.0,74,.8,.85], [10.0,71,.4,.8], [10.5,74,.4,.85],[11.0,76,1.0,.9],
+    [12.0,76,.35,.9],[12.5,79,.35,.9],[13.0,81,1.2,.95],[14.5,79,.5,.85],[15.0,76,.9,.9],
+    [16.0,74,.35,.9],[16.5,77,.35,.9],[17.0,81,1.2,.95],[18.5,79,1.2,.9],
+    [20.0,77,.35,.9],[20.5,76,.35,.85],[21.0,74,.8,.85],[22.0,72,.4,.8],[22.5,74,.4,.85],[23.0,79,.9,.9],
+    [24.0,81,.5,.95],[24.5,83,.5,.95],[25.0,83,1.5,1],  [26.5,81,.6,.9], [27.0,79,.9,.9],
+    [28.0,77,.4,.9],[28.5,76,.4,.85],[29.0,74,.4,.85],[29.5,70,.5,.9],[30.0,72,1.6,.95]
+  ];
+
+  function noise(dur){
+    const n = ctx.sampleRate*dur, buf = ctx.createBuffer(1,n,ctx.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i] = Math.random()*2-1;
+    const s = ctx.createBufferSource(); s.buffer = buf; return s;
+  }
+
+  function sax(at, midi, dur, vel, from){
+    const f = mtof(midi), g = ctx.createGain(), filt = ctx.createBiquadFilter();
+    const open = Math.min(f*2.6, 2600), top = Math.min(f*4.5, 4200);
+    filt.type='lowpass'; filt.Q.value=1.6;
+    filt.frequency.setValueAtTime(open*.8, at);
+    filt.frequency.linearRampToValueAtTime(top, at+Math.min(.12, dur*.35));
+    filt.frequency.linearRampToValueAtTime(open, at+dur);
+
+    const o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
+    const g1 = ctx.createGain(), g2 = ctx.createGain();
+    o1.type='sawtooth'; g1.gain.value=.5;
+    o2.type='triangle'; g2.gain.value=.55; o2.detune.value=6;
+
+    const startF = from ? mtof(from) : f*.988;
+    [o1,o2].forEach(o=>{
+      o.frequency.setValueAtTime(startF, at);
+      o.frequency.exponentialRampToValueAtTime(f, at + (from ? .07 : .035));
+    });
+
+    const lfo = ctx.createOscillator(), lg = ctx.createGain();
+    lfo.frequency.value=5.6; lg.gain.setValueAtTime(0,at);
+    lg.gain.linearRampToValueAtTime(f*.007, at+Math.min(.32, dur*.5));
+    lfo.connect(lg); lg.connect(o1.frequency); lg.connect(o2.frequency);
+
+    const br = noise(dur+.1), bf = ctx.createBiquadFilter(), bg = ctx.createGain();
+    bf.type='bandpass'; bf.frequency.value=Math.min(f*2.6, 3200); bf.Q.value=.8;
+    bg.gain.setValueAtTime(.0001,at);
+    bg.gain.linearRampToValueAtTime(.009*vel, at+.03);
+    bg.gain.exponentialRampToValueAtTime(.0008, at+dur);
+    br.connect(bf); bf.connect(bg); bg.connect(bus);
+
+    const a=.035, r=.08, peak=.085*vel;
+    g.gain.setValueAtTime(.0001, at);
+    g.gain.exponentialRampToValueAtTime(peak, at+a);
+    g.gain.setValueAtTime(peak, at+Math.max(a, dur-r));
+    g.gain.exponentialRampToValueAtTime(.0001, at+dur+.05);
+
+    o1.connect(g1); o2.connect(g2); g1.connect(filt); g2.connect(filt);
+    filt.connect(g); g.connect(bus);
+    [o1,o2,lfo].forEach(o=>{ o.start(at); o.stop(at+dur+.2); });
+    br.start(at); br.stop(at+dur+.1);
+  }
+
+  function pad(at, notes, vel){
+    notes.forEach((m,i)=>{
+      const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+      o.type = i%2 ? 'triangle' : 'sine';
+      o.frequency.value = mtof(m-12); o.detune.value = (i-1.5)*4;
+      f.type='lowpass'; f.frequency.value=1100;
+      g.gain.setValueAtTime(.0001, at);
+      g.gain.exponentialRampToValueAtTime(.009*vel, at+.35);
+      g.gain.setValueAtTime(.009*vel, at+BAR-.5);
+      g.gain.exponentialRampToValueAtTime(.0001, at+BAR+.15);
+      o.connect(f); f.connect(g); g.connect(bus);
+      o.start(at); o.stop(at+BAR+.3);
+    });
+  }
+
+  function comp(at, notes, vel){
+    notes.forEach((m,i)=>{
+      const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+      o.type = i%2 ? 'sine' : 'triangle';
+      o.frequency.value = mtof(m); o.detune.value = (i-1.5)*5;
+      f.type='lowpass'; f.frequency.setValueAtTime(3400, at);
+      f.frequency.exponentialRampToValueAtTime(900, at+.35);
+      const peak = .034*vel, t0 = at + i*.008;
+      g.gain.setValueAtTime(.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0+.012);
+      g.gain.exponentialRampToValueAtTime(.0001, t0+.5);
+      o.connect(f); f.connect(g); g.connect(bus);
+      o.start(t0); o.stop(t0+.55);
+    });
+  }
+
+  function bass(at, m, dur, vel){
+    const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    o.type='sawtooth'; o.frequency.setValueAtTime(mtof(m)*.985, at);
+    o.frequency.linearRampToValueAtTime(mtof(m), at+.03);
+    f.type='lowpass'; f.Q.value=6;
+    f.frequency.setValueAtTime(950, at);
+    f.frequency.exponentialRampToValueAtTime(260, at+dur);
+    g.gain.setValueAtTime(.0001, at);
+    g.gain.exponentialRampToValueAtTime(.10*vel, at+.02);
+    g.gain.exponentialRampToValueAtTime(.0001, at+dur);
+    o.connect(f); f.connect(g); g.connect(bus);
+    o.start(at); o.stop(at+dur+.05);
+  }
+
+  function kick(at, vel){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(120, at);
+    o.frequency.exponentialRampToValueAtTime(46, at+.09);
+    g.gain.setValueAtTime(.0001, at);
+    g.gain.exponentialRampToValueAtTime(.2*vel, at+.008);
+    g.gain.exponentialRampToValueAtTime(.0001, at+.19);
+    o.connect(g); g.connect(bus);
+    o.start(at); o.stop(at+.22);
+  }
+
+  function snare(at, vel){
+    const s = noise(.2), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type='bandpass'; f.frequency.value=1900; f.Q.value=.9;
+    g.gain.setValueAtTime(.05*vel, at);
+    g.gain.exponentialRampToValueAtTime(.0003, at+.15);
+    s.connect(f); f.connect(g); g.connect(bus);
+    s.start(at); s.stop(at+.2);
+
+    const o = ctx.createOscillator(), tg = ctx.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(195, at);
+    tg.gain.setValueAtTime(.03*vel, at);
+    tg.gain.exponentialRampToValueAtTime(.0003, at+.09);
+    o.connect(tg); tg.connect(bus);
+    o.start(at); o.stop(at+.11);
+  }
+
+  function hat(at, vel, open){
+    const d = open ? .22 : .055;
+    const s = noise(d+.02), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type='highpass'; f.frequency.value=7200;
+    g.gain.setValueAtTime(.022*vel, at);
+    g.gain.exponentialRampToValueAtTime(.0002, at+d);
+    s.connect(f); f.connect(g); g.connect(bus);
+    s.start(at); s.stop(at+d+.02);
+  }
+
+  function scheduleLoop(base){
+    for(let half=0; half<2; half++){
+      const hb = base + half*BAR*BARS;
+      const I  = half ? 1 : .85;
+      CHORDS.forEach((c,i)=>{
+        const at = hb + i*BAR;
+        pad(at, c.v, I);
+        COMPHITS.forEach(b => comp(at + b*BEAT, c.v, I));
+        BASSLINE.forEach(([b,d,dur,v]) => bass(at + b*BEAT, c.b+d, dur*BEAT, v*I));
+        KICK.forEach(b  => kick(at + b*BEAT, I));
+        SNARE.forEach(b => snare(at + b*BEAT, I));
+        for(let h=0; h<8; h++)
+          hat(at + h*.5*BEAT, (h%2 ? .95 : .6)*I, half && h===7);
+        if(i===BARS-1)
+          [3,3.25,3.5,3.75].forEach((b,k)=> snare(at + b*BEAT, (.55+k*.13)*I));
+      });
+      const line = half ? SAX_B : SAX_A;
+      line.forEach(([b,n,d,v], k)=>{
+        const p = line[k-1];
+        const legato = p && (b - (p[0]+p[2])) < .2 ? p[1] : null;
+        sax(hb + b*BEAT, n, d*BEAT, v*(half ? 1 : .9), legato);
+      });
+    }
+  }
+
+  function schedule(){
+    scheduleLoop(bar0);
+    bar0 += LOOP;
+    timer = setTimeout(schedule, (LOOP-1.5)*1000);
+  }
+
+  // общий тракт: верх почти не срезаем — фанку нужна звонкость,
+  // короткое эхо для объёма и компрессор, чтобы бочка и сакс не спорили
+  function buildChain(){
+    const tone = ctx.createBiquadFilter(); tone.type='lowpass'; tone.frequency.value=8000; tone.Q.value=.5;
+    const room = ctx.createDelay(1); room.delayTime.value=.18;
+    const roomLp = ctx.createBiquadFilter(); roomLp.type='lowpass'; roomLp.frequency.value=2600;
+    const fb = ctx.createGain(); fb.gain.value=.18;
+    const wet = ctx.createGain(); wet.gain.value=.1;
+    const lim = ctx.createDynamicsCompressor();
+    lim.threshold.value=-18; lim.knee.value=18; lim.ratio.value=4;
+    lim.attack.value=.004; lim.release.value=.18;
+
+    bus.connect(tone);
+    tone.connect(lim);
+    tone.connect(room); room.connect(roomLp);
+    roomLp.connect(fb); fb.connect(room);
+    roomLp.connect(wet); wet.connect(lim);
+    lim.connect(ctx.destination);
+  }
+
+  return {
+    start(){
+      if(started) return; started = true;
+      ctx = new (window.AudioContext||window.webkitAudioContext)();
+      bus = ctx.createGain();
+      bus.gain.value = 0;
+      buildChain();
+      bus.gain.linearRampToValueAtTime(on ? .5 : 0, ctx.currentTime + 1.2);
+      bar0 = ctx.currentTime + .4;
+      schedule();
+    },
+    // Офлайн-рендер той же музыки — нужен, чтобы собрать звуковую дорожку для MP4
+    async renderBuffer(seconds){
+      const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      const oc = new OC(1, Math.ceil(44100*(seconds+2)), 44100);
+      const savedCtx = ctx, savedBus = bus;
+      ctx = oc;
+      bus = oc.createGain(); bus.gain.value = .5;
+      buildChain();
+      for(let base = 0; base < seconds; base += LOOP) scheduleLoop(base);
+      const buf = await oc.startRendering();
+      ctx = savedCtx; bus = savedBus;
+      return buf;
+    },
+    toggle(){
+      on = !on;
+      if(ctx) bus.gain.linearRampToValueAtTime(on ? .5 : 0, ctx.currentTime + .5);
+      return on;
+    },
+    suspend(){ if(ctx && ctx.state==='running') ctx.suspend(); },
+    resume(){ if(ctx && ctx.state==='suspended') ctx.resume(); }
+  };
+})();
+
+paint(); pause();
+
+// Небольшой доступ снаружи: им пользуется скрипт покадровой записи MP4
+window.DomovedDemo = { music, seek, play, pause, total: TOTAL };
+</script>
+
+</body>
+</html>
