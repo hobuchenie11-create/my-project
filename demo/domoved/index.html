@@ -867,6 +867,8 @@ const music = (()=>{
   const BAR  = BEAT*4;
   const BARS = 8;
   const LOOP = BAR*BARS*2;
+  const VOL  = 1.8;                                   // общая громкость музыки:
+                                                      // при 0.5 ролик было почти не слышно на ноутбуке
 
   const CHORDS = [
     {b:41, v:[57,60,64,67]}, {b:43, v:[59,62,64,69]},
@@ -1094,7 +1096,7 @@ const music = (()=>{
       bus = ctx.createGain();
       bus.gain.value = 0;
       buildChain();
-      bus.gain.linearRampToValueAtTime(on ? .5 : 0, ctx.currentTime + 1.2);
+      bus.gain.linearRampToValueAtTime(on ? VOL : 0, ctx.currentTime + 1.2);
       bar0 = ctx.currentTime + .4;
       schedule();
     },
@@ -1104,7 +1106,7 @@ const music = (()=>{
       const oc = new OC(1, Math.ceil(44100*(seconds+2)), 44100);
       const savedCtx = ctx, savedBus = bus;
       ctx = oc;
-      bus = oc.createGain(); bus.gain.value = .5;
+      bus = oc.createGain(); bus.gain.value = VOL;
       buildChain();
       for(let base = 0; base < seconds; base += LOOP) scheduleLoop(base);
       const buf = await oc.startRendering();
@@ -1113,7 +1115,7 @@ const music = (()=>{
     },
     toggle(){
       on = !on;
-      if(ctx) bus.gain.linearRampToValueAtTime(on ? .5 : 0, ctx.currentTime + .5);
+      if(ctx) bus.gain.linearRampToValueAtTime(on ? VOL : 0, ctx.currentTime + .5);
       return on;
     },
     suspend(){ if(ctx && ctx.state==='running') ctx.suspend(); },
