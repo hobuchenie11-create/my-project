@@ -153,8 +153,7 @@ async def _describe_template(message: Message, saved: Path, info,
     lines.append(f"Колонка показаний: «{info.reading_header}»")
     if info.date_header:
         lines.append(f"Колонка даты: «{info.date_header}»")
-    if info.dropped_sheets:
-        lines.append("При выгрузке уберу листы: " + ", ".join(info.dropped_sheets))
+    lines.append("Остальные листы книги остаются без изменений.")
     if replaced and replaced.name != saved.name:
         lines.append(f"Прежний шаблон удалён: {replaced.name}")
     lines += ["", f"Папка: <code>{templates_dir()}</code>",

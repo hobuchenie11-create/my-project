@@ -102,9 +102,7 @@ def test_sheet_role_reads_service_line(tmp_path):
     """«Адрес электронной почты» есть на каждом листе — по слову «электро»
     лист по воде когда-то считался электрическим."""
     grids = open_grids(make_xls(tmp_path / "oek.xls"))
-    # Горячую и холодную различаем: горячую заполняем, холодную — нет
-    assert [sheet_role(g) for g in grids] == ["electricity", "hot_water",
-                                              "cold_water"]
+    assert [sheet_role(g) for g in grids] == ["electricity", "water", "water"]
 
 
 def test_find_layout_picks_day_column(tmp_path):
@@ -168,7 +166,7 @@ def test_inspect_template_reports_what_bot_found(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_fill_xls_writes_readings_and_keeps_water(tmp_path):
-    """Листы по воде остаются в книге: по горячей дом отчитывается тому же ОЭК."""
+    """Все листы книги остаются как прислал ресурсник — ОЭК просит не трогать."""
     template = make_xls(tmp_path / "oek.xls", flats=("1", "2", "3"))
     out = tmp_path / "out.xls"
     result = fill_registry(template, {"1": 31668.0, "3": 12608.0}, out,
@@ -177,7 +175,6 @@ def test_fill_xls_writes_readings_and_keeps_water(tmp_path):
 
     assert result.filled == ["1", "3"]
     assert result.empty == ["2"]
-    assert result.dropped_sheets == []
 
     book = xlrd.open_workbook(out)
     assert book.sheet_names() == ["ЭЛЕКТРОЭНЕРГИЯ", "ГОРЯЧАЯ ВОДА",
@@ -286,7 +283,6 @@ def test_fill_xlsx_template(tmp_path):
                            taken_on=date(2026, 8, 20))
 
     assert result.filled == ["2"]
-    assert result.dropped_sheets == []
     book = load_workbook(out)
     assert book.sheetnames == ["ЭЛЕКТРОЭНЕРГИЯ", "ГОРЯЧАЯ ВОДА"]
     sheet = book["ЭЛЕКТРОЭНЕРГИЯ"]
@@ -392,117 +388,3 @@ def test_summary_lists_who_did_not_report(tmp_path):
     assert "август 2026" in text
     assert "Заполнено показаний: 1 из 3" in text
     assert "Не передали: 2, 3" in text
-
-
-# ---------------------------------------------------------------------------
-# Лист по горячей воде
-# ---------------------------------------------------------------------------
-
-def test_hot_water_sheet_is_filled_too(tmp_path):
-    """ГВС уходит тому же ресурснику — заполняем и её лист."""
-    template = make_xls(tmp_path / "oek.xls", flats=("1", "2", "3"),
-                        water_rows=True)
-    out = tmp_path / "out.xls"
-    result = fill_registry(template, {"1": 31668.0}, out,
-                           taken_on=date(2026, 8, 20),
-                           hot_readings={"1": 813.0, "3": 288.0})
-
-    assert result.hot_sheet == "ГОРЯЧАЯ ВОДА"
-    assert result.hot_filled == ["1", "3"]
-    assert result.hot_empty == ["2"]
-
-    book = xlrd.open_workbook(out)
-    hot = book.sheet_by_name("ГОРЯЧАЯ ВОДА")
-    assert hot.cell_value(FIRST_DATA_ROW, READING_COL) == 813
-    assert hot.cell_value(FIRST_DATA_ROW + 2, READING_COL) == 288
-    # Без показания ячейка остаётся пустой, а дата снятия не проставляется
-    assert hot.cell_value(FIRST_DATA_ROW + 1, READING_COL) == ""
-    assert hot.cell_value(FIRST_DATA_ROW + 1, DATE_COL) == ""
-
-
-def test_cold_water_sheet_is_left_alone(tmp_path):
-    """Холодная вода уходит в Росводоканал — её лист не трогаем."""
-    template = make_xls(tmp_path / "oek.xls", flats=("1",), water_rows=True)
-    out = tmp_path / "out.xls"
-    fill_registry(template, {"1": 1.0}, out, hot_readings={"1": 813.0})
-
-    cold = xlrd.open_workbook(out).sheet_by_name("ХОЛОДНАЯ ВОДА")
-    assert cold.cell_value(FIRST_DATA_ROW, READING_COL) == ""
-
-
-def test_empty_water_sheet_is_not_reported(tmp_path):
-    """Ресурсник прислал лист ГВС без квартир — заполнять нечего, молчим."""
-    template = make_xls(tmp_path / "oek.xls", flats=("1",),
-                        water_sheets=("Горячая вода",))
-    out = tmp_path / "out.xls"
-    result = fill_registry(template, {"1": 31668.0}, out,
-                           hot_readings={"1": 813.0})
-
-    assert result.filled == ["1"]
-    assert result.hot_sheet == ""
-    assert "ГОРЯЧАЯ ВОДА" not in result.summary()
-    book = xlrd.open_workbook(out)
-    assert book.sheet_by_index(0).cell_value(FIRST_DATA_ROW, READING_COL) == 31668
-
-
-def test_hot_water_in_xlsx(tmp_path):
-    template = make_xlsx(tmp_path / "oek.xlsx", flats=("1", "2"),
-                         water_rows=True)
-    out = tmp_path / "out.xlsx"
-    result = fill_registry(template, {"1": 100.0}, out,
-                           taken_on=date(2026, 8, 20),
-                           hot_readings={"2": 668.0})
-
-    assert result.hot_filled == ["2"]
-    hot = load_workbook(out)["ГОРЯЧАЯ ВОДА"]
-    assert hot.cell(row=FIRST_DATA_ROW + 2, column=READING_COL + 1).value == 668
-
-
-def test_summary_mentions_the_hot_water_sheet(tmp_path):
-    template = make_xls(tmp_path / "oek.xls", flats=("1", "2"), water_rows=True)
-    result = fill_registry(template, {"1": 1.0}, tmp_path / "out.xls",
-                           hot_readings={"1": 813.0})
-
-    text = result.summary("август 2026")
-    assert "ГОРЯЧАЯ ВОДА" in text
-    assert "заполнено 1 из 2" in text
-
-
-# ---------------------------------------------------------------------------
-# Откуда берутся показания ГВС
-# ---------------------------------------------------------------------------
-
-def test_hot_water_readings_sum_two_meters(tmp_path):
-    """У трёхкомнатной два счётчика ГВС, а ОЭК ждёт одну цифру — их сумму."""
-    from bot.services.reading_service import save_reading
-    from database import repository
-    from database.init_db import init_db
-    from database.models import apartment_meters
-    from reports.oek_registry import hot_water_readings
-
-    db = tmp_path / "oek.db"
-    init_db(db, apartments_count=3, nonresidential_count=0)
-    conn = repository.connect(db)
-    try:
-        split = repository.get_apartment_by_number(conn, "2")
-        repository.set_meters(conn, split["id"], apartment_meters(2, 2))
-        conn.commit()
-
-        one = repository.get_apartment_by_number(conn, "1")
-        save_reading(conn, one["id"], "hws", 813, None, period="2026-08")
-        save_reading(conn, split["id"], "hws_kitchen", 304, None, period="2026-08")
-        save_reading(conn, split["id"], "hws_bathroom", 513, None, period="2026-08")
-
-        # Кв. 3: передали только кухню — половину суммы отдавать нельзя
-        half = repository.get_apartment_by_number(conn, "3")
-        repository.set_meters(conn, half["id"], apartment_meters(2, 2))
-        conn.commit()
-        save_reading(conn, half["id"], "hws_kitchen", 186, None, period="2026-08")
-
-        readings = hot_water_readings(conn, "2026-08")
-    finally:
-        conn.close()
-
-    assert readings["1"] == 813
-    assert readings["2"] == 817          # 304 + 513
-    assert "3" not in readings

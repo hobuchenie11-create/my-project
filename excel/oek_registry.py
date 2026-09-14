@@ -2,10 +2,9 @@
 
 Ресурсник (ОЭК) присылает книгу «Реестр индивидуальных приборов учета» —
 по листу на услугу: электроэнергия, горячая вода, холодная вода. Бот
-проставляет текущие показания напротив каждой квартиры на листе
-электроэнергии и на листе горячей воды: и то и другое дом сдаёт в ОЭК.
-Холодная вода уходит в Росводоканал — её лист остаётся нетронутым.
-Все листы сохраняются: ресурснику книга нужна целиком.
+проставляет текущие показания напротив каждой квартиры только на листе
+электроэнергии. Показания по воде в файл не вносятся — так просит ОЭК.
+Все листы книги сохраняются нетронутыми: ресурснику она нужна целиком.
 
 Форму ресурсник меняет от периода к периоду, поэтому колонки ищутся по
 заголовкам, а не по буквам: «Квартира», «Текущие показания … день»,
@@ -38,11 +37,9 @@ XLS_SUFFIXES = (".xls",)
 XLSX_SUFFIXES = (".xlsx", ".xlsm")
 TEMPLATE_SUFFIXES = XLS_SUFFIXES + XLSX_SUFFIXES
 
-# Листы по воде. Горячую заполняем — по ней дом отчитывается тому же ОЭК;
-# холодная уходит в Росводоканал, её лист оставляем нетронутым.
-HOT_WATER_HINTS = ("горяч", "гвс")
-COLD_WATER_HINTS = ("холод", "хвс")
-WATER_HINTS = HOT_WATER_HINTS + COLD_WATER_HINTS + ("вода", "вод.")
+# Листы по воде. Их не заполняем и не трогаем — ОЭК просит оставить книгу
+# как есть. Распознаём только чтобы не принять такой лист за электрический.
+WATER_HINTS = ("горяч", "холод", "гвс", "хвс", "вода", "вод.")
 # Лист по электроэнергии: его и заполняем. Проверяем «электроэнерг», а не
 # «электро»: в шапке каждого листа есть «Адрес электронной почты» — по нему
 # лист по воде тоже считался бы электрическим.
@@ -132,28 +129,19 @@ class _Grid:
 
 
 def sheet_role(grid: _Grid) -> str:
-    """«electricity» | «hot_water» | «cold_water» | «water» | «other».
+    """«electricity» | «water» | «other».
 
     Сначала смотрим строку «Услуга:» — она у ОЭК есть на каждом листе и
     называет услугу прямо. Если её убрали, судим по названию листа.
-    Горячую и холодную различаем: заполняем только горячую.
     """
     for haystack in (grid.service_text(), _norm(grid.name)):
         if not haystack:
             continue
-        if any(hint in haystack for hint in HOT_WATER_HINTS):
-            return "hot_water"
-        if any(hint in haystack for hint in COLD_WATER_HINTS):
-            return "cold_water"
         if any(hint in haystack for hint in WATER_HINTS):
-            return "water"      # вода, но какая — не сказано: не трогаем
+            return "water"
         if any(hint in haystack for hint in ELECTRICITY_HINTS):
             return "electricity"
     return "other"
-
-
-def is_water(role: str) -> bool:
-    return role in ("hot_water", "cold_water", "water")
 
 
 def _reading_column(headers: list[str]) -> int | None:
@@ -238,7 +226,6 @@ class TemplateInfo:
     sheet: str
     period: str
     rows: int
-    dropped_sheets: list[str]
     reading_header: str
     date_header: str
 
@@ -260,17 +247,17 @@ def open_grids(path: Path) -> list[_Grid]:
         f"Не умею читать «{path.name}». Реестр ОЭК приходит в .xls или .xlsx.")
 
 
-def inspect_template(path: Path, drop_water_sheets: bool = True) -> TemplateInfo:
+def inspect_template(path: Path) -> TemplateInfo:
     """Разбирает шаблон, ничего не записывая. Бросает OekFormatError."""
     path = Path(path)
     grids = open_grids(path)
-    target, dropped = _choose_sheets(grids, drop_water_sheets)
+    target = electricity_sheet(grids)
     layout = find_layout(target)
     header = [str(target.value(layout.header_row, col) or "").strip()
               for col in range(target.ncols)]
     return TemplateInfo(
         path=path, sheet=target.name, period=template_period(target),
-        rows=len(data_rows(target, layout)), dropped_sheets=dropped,
+        rows=len(data_rows(target, layout)),
         reading_header=header[layout.reading_col],
         date_header=header[layout.date_col] if layout.date_col is not None else "",
     )
@@ -287,7 +274,7 @@ class FilledRow:
 def read_filled(path: Path) -> tuple[list[FilledRow], RegistryLayout]:
     """Читает уже заполненный реестр — чтобы перенести столбцы в другой файл."""
     grids = open_grids(path)
-    target, _ = _choose_sheets(grids, drop_water=False)
+    target = electricity_sheet(grids)
     layout = find_layout(target)
 
     filled: list[FilledRow] = []
@@ -315,12 +302,7 @@ class OekResult:
     empty: list[str] = field(default_factory=list)
     unknown: list[str] = field(default_factory=list)
     not_in_registry: list[str] = field(default_factory=list)
-    dropped_sheets: list[str] = field(default_factory=list)
     date_written: bool = False
-    # Лист по горячей воде: заполняется, если он есть в шаблоне
-    hot_sheet: str = ""
-    hot_filled: list[str] = field(default_factory=list)
-    hot_empty: list[str] = field(default_factory=list)
 
     @property
     def rows_total(self) -> int:
@@ -340,15 +322,6 @@ class OekResult:
         if self.not_in_registry:
             lines.append("Показания есть, строки в реестре нет: "
                          f"{_join(self.not_in_registry)}")
-        if self.hot_sheet:
-            lines.append("")
-            lines.append(f"Лист «{self.hot_sheet}» (горячая вода): заполнено "
-                         f"{len(self.hot_filled)} из "
-                         f"{len(self.hot_filled) + len(self.hot_empty)}")
-            if self.hot_empty:
-                lines.append(f"Без показаний ГВС: {_join(self.hot_empty)}")
-        if self.dropped_sheets:
-            lines.append("Убраны листы: " + ", ".join(self.dropped_sheets))
         return "\n".join(lines)
 
 
@@ -370,15 +343,10 @@ def _as_number(value: float) -> float | int:
 
 def fill_registry(template: Path, readings: dict[str, float], out_path: Path,
                   taken_on: date | None = None,
-                  known_apartments: set[str] | None = None,
-                  drop_water_sheets: bool = False,
-                  hot_readings: dict[str, float] | None = None) -> OekResult:
+                  known_apartments: set[str] | None = None) -> OekResult:
     """Заполняет реестр ОЭК и сохраняет копию в out_path. Шаблон не меняется.
 
     readings          — {номер помещения: показание} по электроэнергии;
-    hot_readings      — то же по горячей воде: заполняется лист ГВС, если он
-                        есть в книге. Лист холодной воды не трогаем — она
-                        уходит в Росводоканал;
     taken_on          — дата снятия показаний (в колонку «Дата снятия»);
     known_apartments  — номера из нашего справочника: строки реестра, которых
                         там нет, попадут в отчёт отдельно, а не в «не передали».
@@ -389,44 +357,16 @@ def fill_registry(template: Path, readings: dict[str, float], out_path: Path,
     suffix = template.suffix.lower()
     if suffix in XLS_SUFFIXES:
         return _fill_xls(template, readings, out_path, taken_on,
-                         known_apartments, drop_water_sheets, hot_readings)
+                         known_apartments)
     if suffix in XLSX_SUFFIXES:
         return _fill_xlsx(template, readings, out_path, taken_on,
-                          known_apartments, drop_water_sheets, hot_readings)
+                          known_apartments)
     raise OekFormatError(
         f"Не умею читать «{template.name}». Реестр ОЭК приходит в .xls или .xlsx.")
 
 
-def _hot_rows(grid: _Grid | None, hot_readings: dict[str, float] | None):
-    """Строки листа ГВС и его разметка. (None, None, []) — заполнять нечего.
-
-    Если лист есть, а шапку в нём разобрать не вышло, реестр по электричеству
-    всё равно должен уйти вовремя: молча пропускаем воду, а не роняем выгрузку.
-    """
-    if grid is None or not hot_readings:
-        return None, None, []
-    try:
-        layout = find_layout(grid)
-    except OekFormatError:
-        return None, None, []
-    rows = data_rows(grid, layout)
-    # Лист есть, а квартир в нём нет — ресурсник прислал его пустым:
-    # заполнять нечего, и в отчёте писать не о чем
-    return (grid, layout, rows) if rows else (None, None, [])
-
-
-def _note_hot(result: OekResult, grid: _Grid, rows, hot_readings) -> None:
-    result.hot_sheet = grid.name
-    for _, key in rows:
-        if hot_readings.get(key) is not None:
-            result.hot_filled.append(key)
-        else:
-            result.hot_empty.append(key)
-
-
 def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
-              taken_on: date | None, known: set[str] | None,
-              drop_water: bool, hot_readings: dict[str, float] | None = None) -> OekResult:
+              taken_on: date | None, known: set[str] | None) -> OekResult:
     import copy
 
     import xlrd
@@ -435,7 +375,7 @@ def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
     book = xlrd.open_workbook(template, formatting_info=True)
     grids = [_xls_grid(book.sheet_by_index(i), book.datemode)
              for i in range(book.nsheets)]
-    target, dropped = _choose_sheets(grids, drop_water)
+    target = electricity_sheet(grids)
     layout = find_layout(target)
     rows = data_rows(target, layout)
 
@@ -444,7 +384,6 @@ def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
     out_book = writer.output[0][1]
     styles = writer.style_list
 
-    _drop_xls_sheets(out_book, dropped)
     names = [sheet.name for sheet in _xls_sheets(out_book)]
     out_sheet = out_book.get_sheet(names.index(target.name))
     read_sheet = book.sheet_by_name(target.name)
@@ -460,7 +399,7 @@ def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
             styles[read_sheet.cell_xf_index(rows[0][0], layout.date_col)])
         date_style.num_format_str = DATE_FORMAT
 
-    result = _build_result(template, out_path, target.name, dropped,
+    result = _build_result(template, out_path, target.name,
                            readings, rows, known)
     result.template_period = template_period(target)
     for row, key in rows:
@@ -477,44 +416,24 @@ def _fill_xls(template: Path, readings: dict[str, float], out_path: Path,
                             taken_on if value is not None else "", date_style)
             result.date_written = result.date_written or value is not None
 
-    hot_grid, hot_layout, hot_rows = _hot_rows(hot_water_sheet(grids), hot_readings)
-    if hot_grid is not None:
-        hot_out = out_book.get_sheet(names.index(hot_grid.name))
-        hot_read = book.sheet_by_name(hot_grid.name)
-        hot_date_style = None
-        if taken_on is not None and hot_layout.date_col is not None and hot_rows:
-            hot_date_style = copy.copy(
-                styles[hot_read.cell_xf_index(hot_rows[0][0], hot_layout.date_col)])
-            hot_date_style.num_format_str = DATE_FORMAT
-        for row, key in hot_rows:
-            value = hot_readings.get(key)
-            if value is not None:
-                style = styles[hot_read.cell_xf_index(row, hot_layout.reading_col)]
-                hot_out.write(row, hot_layout.reading_col, _as_number(value), style)
-            if hot_date_style is not None:
-                hot_out.write(row, hot_layout.date_col,
-                              taken_on if value is not None else "", hot_date_style)
-        _note_hot(result, hot_grid, hot_rows, hot_readings)
-
     out_book.save(str(out_path))
     return result
 
 
 def _fill_xlsx(template: Path, readings: dict[str, float], out_path: Path,
-               taken_on: date | None, known: set[str] | None,
-               drop_water: bool, hot_readings: dict[str, float] | None = None) -> OekResult:
+               taken_on: date | None, known: set[str] | None) -> OekResult:
     from openpyxl import load_workbook
 
     # Пишем в копию: openpyxl сохраняет книгу целиком, шаблон должен остаться
     shutil.copyfile(template, out_path)
     book = load_workbook(out_path)
     grids = [_xlsx_grid(book[name]) for name in book.sheetnames]
-    target, dropped = _choose_sheets(grids, drop_water)
+    target = electricity_sheet(grids)
     layout = find_layout(target)
     rows = data_rows(target, layout)
 
     sheet = book[target.name]
-    result = _build_result(template, out_path, target.name, dropped,
+    result = _build_result(template, out_path, target.name,
                            readings, rows, known)
     result.template_period = template_period(target)
     write_date = taken_on is not None and layout.date_col is not None
@@ -530,22 +449,6 @@ def _fill_xlsx(template: Path, readings: dict[str, float], out_path: Path,
             cell.number_format = DATE_FORMAT
             result.date_written = result.date_written or value is not None
 
-    hot_grid, hot_layout, hot_rows = _hot_rows(hot_water_sheet(grids), hot_readings)
-    if hot_grid is not None:
-        hot_sheet = book[hot_grid.name]
-        for row, key in hot_rows:
-            value = hot_readings.get(key)
-            if value is not None:
-                hot_sheet.cell(row=row + 1, column=hot_layout.reading_col + 1,
-                               value=_as_number(value))
-            if taken_on is not None and hot_layout.date_col is not None:
-                cell = hot_sheet.cell(row=row + 1, column=hot_layout.date_col + 1)
-                cell.value = taken_on if value is not None else None
-                cell.number_format = DATE_FORMAT
-        _note_hot(result, hot_grid, hot_rows, hot_readings)
-
-    for name in dropped:
-        del book[name]
     book.save(out_path)
     return result
 
@@ -576,13 +479,12 @@ def _xlsx_grid(sheet) -> _Grid:
                  to_date)
 
 
-def hot_water_sheet(grids: list[_Grid]) -> _Grid | None:
-    """Лист по горячей воде, если он в книге есть."""
-    return next((g for g in grids if sheet_role(g) == "hot_water"), None)
+def electricity_sheet(grids: list[_Grid]) -> _Grid:
+    """Лист по электроэнергии — единственный, который бот заполняет.
 
-
-def _choose_sheets(grids: list[_Grid], drop_water: bool) -> tuple[_Grid, list[str]]:
-    """Возвращает лист по электроэнергии и имена листов, которые надо убрать."""
+    Остальные листы книги остаются как прислал ресурсник: показания по
+    горячей и холодной воде ОЭК в этот файл не ждёт.
+    """
     roles = {grid.name: sheet_role(grid) for grid in grids}
     target = next((g for g in grids if roles[g.name] == "electricity"), None)
     if target is None:
@@ -594,19 +496,17 @@ def _choose_sheets(grids: list[_Grid], drop_water: bool) -> tuple[_Grid, list[st
             raise OekFormatError(
                 "В книге нет листа по электроэнергии. Листы: "
                 + ", ".join(g.name for g in grids))
-    dropped = [g.name for g in grids
-               if drop_water and is_water(roles[g.name]) and g.name != target.name]
-    return target, dropped
+    return target
 
 
-def _build_result(template: Path, out_path: Path, sheet: str, dropped: list[str],
+def _build_result(template: Path, out_path: Path, sheet: str,
                   readings: dict[str, float], rows: list[tuple[int, str]],
                   known: set[str] | None) -> OekResult:
     """Раскладывает строки реестра на «заполнено / не передали / чужие»."""
     keys = [key for _, key in rows]
     in_registry = set(keys)
     result = OekResult(path=out_path, template=template, sheet=sheet,
-                       dropped_sheets=dropped)
+                       )
     for key in keys:
         if readings.get(key) is not None:
             result.filled.append(key)
@@ -630,17 +530,3 @@ def _xls_sheets(book) -> list:
             "Версия xlwt не даёт добраться до списка листов — "
             "проверьте requirements.txt (xlwt).")
     return sheets
-
-
-def _drop_xls_sheets(book, names: list[str]) -> None:
-    """Убирает листы из копии книги (у xlwt нет remove_sheet)."""
-    if not names:
-        return
-    sheets = _xls_sheets(book)
-    kept = [sheet for sheet in sheets if sheet.name not in names]
-    if not kept:
-        raise OekFormatError("После удаления листов книга осталась пустой.")
-    sheets[:] = kept
-    book._Workbook__active_sheet = 0
-    for index, sheet in enumerate(kept):
-        sheet.selected = index == 0
