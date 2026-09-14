@@ -176,6 +176,25 @@ table.tot tr.sum td{border-bottom:0; border-top:2px solid var(--ink); font-weigh
 .notes{font-size:.85rem; color:var(--ink-3); display:flex; flex-direction:column; gap:9px; max-width:74ch}
 .notes b{color:var(--ink-2); font-weight:600}
 
+/* ── дефектная ведомость ── */
+.vedbox{background:var(--surface); border:1px solid var(--line); border-radius:3px; overflow-x:auto; box-shadow:var(--shadow)}
+table.ved{width:100%; min-width:620px; border-collapse:collapse; font-size:.86rem}
+table.ved th,table.ved td{padding:8px 10px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+table.ved th{font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); font-weight:600; white-space:nowrap}
+table.ved td:nth-child(1){color:var(--ink-3); font-family:"JetBrains Mono",monospace; font-size:.78rem; white-space:nowrap}
+table.ved td:nth-child(3){color:var(--ink-3); white-space:nowrap}
+table.ved td:nth-child(n+4),table.ved th:nth-child(n+4){text-align:right; font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+tr.sec td{background:var(--surface-2); font-weight:700; font-size:.8rem; letter-spacing:.02em; padding-top:11px; padding-bottom:11px}
+tr.sub td{font-weight:600; color:var(--ink-2); background:color-mix(in srgb, var(--surface-2) 45%, transparent)}
+tr.grand td{border-top:2px solid var(--ink); border-bottom:0; font-weight:700; font-size:.95rem; padding-top:13px}
+tr.reserve td{color:var(--ink-2)}
+.budget{display:flex; flex-direction:column; gap:9px; padding:18px 20px; border:1px solid var(--accent); border-radius:3px; background:var(--accent-soft)}
+.budget .row{display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap}
+.budget b{font-family:"Bitter",serif; font-size:1.3rem; color:var(--accent-ink)}
+.budget small{font-size:.82rem; color:var(--ink-2)}
+.bar{height:9px; border-radius:2px; background:color-mix(in srgb, var(--accent) 22%, transparent); overflow:hidden}
+.bar i{display:block; height:100%; background:var(--accent)}
+
 @media (max-width:760px){
   .row{grid-template-columns:32px 1fr; gap:6px 12px; padding:16px 4px}
   .row .ds{grid-column:2}
@@ -280,8 +299,28 @@ table.tot tr.sum td{border-bottom:0; border-top:2px solid var(--ink); font-weigh
   <table class="tot"><thead><tr><th>Покрытие</th><th>Объекты</th><th>Площадь, м²</th></tr></thead><tbody id="totBody"></tbody></table>
 </section>
 
+<section id="vedomost">
+  <div class="sechead">
+    <p class="eyebrow">Лист 6</p>
+    <h2>Дефектная ведомость и ориентировочная стоимость</h2>
+    <p>Объёмы приняты по генплану и экспликации. Расценки укрупнённые, ориентировочные — до подачи заявки их нужно подтвердить коммерческими предложениями.</p>
+  </div>
+  <div class="vedbox">
+    <table class="ved">
+      <thead><tr><th>№</th><th>Наименование работ и материалов</th><th>Ед.</th><th>Кол-во</th><th>Цена, ₽</th><th>Стоимость, ₽</th></tr></thead>
+      <tbody id="vedA"></tbody>
+      <tbody id="vedB"></tbody>
+    </table>
+  </div>
+  <div class="budget" id="budget"></div>
+  <div class="notes">
+    <p><b>Статус расценок.</b> Ведомость укрупнённая и служит для обоснования заявки. Она не является локальным сметным расчётом по ТЕР/ФЕР и не заменяет его: для конкурсной документации потребуется сметный расчёт, выполненный в базисно-индексном методе с территориальными индексами Омской области на квартал подачи.</p>
+    <p><b>Что не учтено.</b> НДС не выделен — принято, что работы выполняет подрядчик на УСН. Не учтены кадастровые работы по уточнению границ (вариант 2), вынос сетей, ливневая канализация и санитарный блок в здании клуба взамен сносимых туалетов — это отдельные позиции за рамками заявки.</p>
+  </div>
+</section>
+
 <section id="src">
-  <div class="sechead"><p class="eyebrow">Примечания</p><h2>Исходные данные и допущения</h2></div>
+  <div class="sechead"><p class="eyebrow">Лист 7</p><h2>Исходные данные и допущения</h2></div>
   <div class="notes">
     <p><b>Источник по участку.</b> Публичная кадастровая карта, участок <span class="num">55:11:100201:1471</span>, уточнённая площадь <span class="num">1 712</span> м², категория — земли населённых пунктов, вид использования — для размещения объектов культуры. В выписке ЕГРН адрес указан как ул. Старожильская, д. 46, на карте участок подписан номером 44 — расхождение адресации нужно устранить до подачи заявки.</p>
     <p><b>Источник по размерам.</b> Схема-обмер инициативной группы: длина участка по берегу <span class="num">40</span> м, по улице <span class="num">38</span> м, глубина <span class="num">43–44</span> м; сцена <span class="num">8×5</span> м; ширина асфальтированного прохода <span class="num">5</span> м при длине <span class="num">22</span> м до существующего забора; отступ от восточной границы до клуба <span class="num">11,8</span> м; отступ от южного забора до клуба <span class="num">7</span> м; заезд <span class="num">6</span> м от забора до дороги; ширина парковки <span class="num">6</span> м.</p>
@@ -546,6 +585,85 @@ const BALANCE = [
   document.getElementById('totalArea').textContent = t;
 })();
 </script>
+<script>
+/* ═══════════════ Лист 6. Дефектная ведомость ═══════════════ */
+const ЛИМИТ = 3500000, РЕЗЕРВ = 0.05;
+const VED = [
+ ['Подготовительные работы и демонтаж', [
+   ['Демонтаж двух дощатых уличных туалетов с вывозом и утилизацией','компл.',1,30000],
+   ['Срезка растительного слоя h = 15 см с вывозом грунта','м²',726,165],
+   ['Вертикальная планировка и уплотнение основания','м²',726,95],
+ ]],
+ ['Покрытия и озеленение основания', [
+   ['Щебёночное основание h = 15 см под асфальтобетон','м²',193,780],
+   ['Асфальтобетонное покрытие h = 5 см','м²',193,1250],
+   ['Отсыпка асфальтовой крошкой h = 10 см с уплотнением (парковка)','м²',76,620],
+   ['Бортовой камень БР 100.20.8 с установкой на бетон','п.м',152,1150],
+   ['Основание под травмобезопасное покрытие (щебень, песок, бетон)','м²',130,1450],
+   ['Резиновое бесшовное покрытие 30 мм','м²',130,2350],
+   ['Песчаная зона площадки: песок сеяный, ограждающий борт','м²',65,420],
+   ['Газон обыкновенный по плодородному слою 15 см','м²',211,390],
+   ['Цветник: борт, плодородный грунт, посадка многолетников','м²',10,2800],
+ ]],
+ ['Малые формы детской площадки', [
+   ['Песочница 2,5 × 2,5 м с крышкой','шт',1,62000],
+   ['Качалка-балансир для малышей','шт',1,38000],
+   ['Качели «Гнездо» ⌀ 1,0 м на стойке 2,5 м','шт',1,96000],
+   ['Лазилка спортивная 4,0 × 3,0 м: рукоход, шведская стенка, канатная сетка','шт',1,158000],
+   ['Лавочка детская 1,4 м с сиденьем на отм. 0,35 м','шт',1,19000],
+   ['Урна уличная','шт',2,7500],
+   ['Монтаж МАФ с бетонированием опор и разметкой зон приземления','компл.',1,74000],
+ ]],
+ ['Сценический комплекс', [
+   ['Фундаменты столбчатые под сцену и навес','шт',10,9500],
+   ['Настил сцены полукруглый h = 0,9 м: каркас, лаги, террасная доска','м²',25,9800],
+   ['Навес сцены: гнутый металлокаркас, поликарбонат оранжевый 8 мм','компл.',1,268000],
+   ['Ветрозащита со стороны озера: прозрачный поликарбонат 8 мм в раме','м²',23,4600],
+ ]],
+ ['Прочие малые формы и входная группа', [
+   ['Беседка шестигранная ⌀ 5,0 м: каркас, кровля, скамьи, настил','шт',1,285000],
+   ['Лавочка 1,8 м со спинкой у входа в клуб','шт',1,24000],
+   ['Козырёк над входом 2,2 × 3,6 м на металлическом каркасе','компл.',1,78000],
+   ['Ворота распашные 5,0 м с прорезной резьбой, резные столбы','компл.',1,112000],
+   ['Таблички латунные «под золото» с гравировкой','шт',2,14500],
+ ]],
+ ['Озеленение', [
+   ['Берёза повислая h = 3–4 м с комом, посадка с креплением','шт',2,8500],
+   ['Тополь пирамидальный h = 3–4 м с комом, посадка с креплением','шт',1,9500],
+   ['Защита приствольного круга существующего дерева на время работ','компл.',1,12000],
+ ]],
+];
+
+(function(){
+  const R = n => n.toLocaleString('ru-RU');
+  const Q = n => n.toLocaleString('ru-RU',{maximumFractionDigits:2});
+  let html=['',''], totals=[], sum=0, n=0;
+  VED.forEach((sec,si)=>{
+    const part = si<3 ? 0 : 1;
+    let st=0;
+    html[part]+=`<tr class="sec"><td>${si+1}</td><td colspan="5">${sec[0]}</td></tr>`;
+    sec[1].forEach(it=>{
+      const cost=it[2]*it[3]; st+=cost; n++;
+      html[part]+=`<tr><td>${si+1}.${sec[1].indexOf(it)+1}</td><td>${it[0]}</td><td>${it[1]}</td><td>${Q(it[2])}</td><td>${R(it[3])}</td><td>${R(cost)}</td></tr>`;
+    });
+    totals.push(st); sum+=st;
+    html[part]+=`<tr class="sub"><td></td><td colspan="4">Итого по разделу ${si+1}</td><td>${R(st)}</td></tr>`;
+  });
+  const res=Math.round(sum*РЕЗЕРВ), all=sum+res, left=ЛИМИТ-all;
+  html[1]+=`<tr class="sub"><td></td><td colspan="4">Итого прямые затраты</td><td>${R(sum)}</td></tr>`
+        +`<tr class="reserve"><td></td><td colspan="4">Непредвиденные работы и затраты, 5 %</td><td>${R(res)}</td></tr>`
+        +`<tr class="grand"><td></td><td colspan="4">Всего по ведомости</td><td>${R(all)}</td></tr>`;
+  document.getElementById('vedA').innerHTML=html[0];
+  document.getElementById('vedB').innerHTML=html[1];
+  document.getElementById('budget').innerHTML=
+     `<div class="row"><span><b>${R(all)} ₽</b> <small>— ориентировочная стоимость; позиций в ведомости: ${n}</small></span>`
+    +`<small>предельный бюджет <span class="num">${R(ЛИМИТ)}</span> ₽</small></div>`
+    +`<div class="bar"><i style="width:${(all/ЛИМИТ*100).toFixed(1)}%"></i></div>`
+    +`<div class="row"><small>Использовано ${(all/ЛИМИТ*100).toFixed(1)} % лимита</small>`
+    +`<small>запас <span class="num">${R(left)}</span> ₽ (${(left/ЛИМИТ*100).toFixed(1)} %)</small></div>`;
+})();
+</script>
+
 <script>
 /* ═══════════════ Лист 1. Объёмная модель ═══════════════ */
 (function(){
