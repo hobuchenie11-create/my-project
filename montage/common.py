@@ -7,6 +7,7 @@ ffprobe wrappers, Remotion's browser resolution, and the output library.
 from __future__ import annotations
 
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -202,17 +203,93 @@ def remotion_public(subdir: str) -> Path:
     return target
 
 
+def word_captions(segments: list[dict]) -> list[dict]:
+    """Flatten transcriber segments into the WordCaption shape Remotion wants."""
+    caps: list[dict] = []
+    for seg in segments:
+        for w in seg.get("words") or []:
+            text = str(w.get("word", "")).strip()
+            if not text:
+                continue
+            caps.append({
+                "word": text,
+                "startMs": round(float(w["start"]) * 1000),
+                "endMs": round(float(w["end"]) * 1000),
+            })
+    return caps
+
+
+def render_talking_head(
+    video: Path, out_path: Path, *,
+    captions: list[dict] | None = None,
+    overlays: list[dict] | None = None,
+    font_size: int = 52,
+    highlight: str = "#22D3EE",
+    words_per_page: int = 4,
+) -> bool:
+    """Draw captions and overlays over a video with Remotion's TalkingHead.
+
+    OpenMontage ships a bridge for exactly this, but it hands the composition a
+    `public/`-prefixed asset path that Remotion's own `staticFile()` refuses,
+    so the call fails outright on current checkouts. Driving the CLI ourselves
+    keeps the path correct and leaves us independent of that bug.
+
+    Returns False instead of raising: a failed title is never a good reason to
+    lose an otherwise finished cut.
+    """
+    captions = captions or []
+    overlays = overlays or []
+    if not captions and not overlays:
+        return False
+
+    meta = probe_media(video)
+    fps = 30                                  # the composition is registered at 30
+    frames = max(1, math.ceil(meta["duration"] * fps))
+
+    staged = remotion_public("render")
+    shutil.copy2(video, staged / video.name)
+
+    props = {
+        # No `public/` prefix — staticFile() rejects it.
+        "videoSrc": f"automontage/render/{video.name}",
+        "captions": captions,
+        "overlays": overlays,
+        "wordsPerPage": words_per_page,
+        "fontSize": font_size,
+        "highlightColor": highlight,
+        # Each word sits in its own inline-block span, and CSS drops a trailing
+        # ordinary space at the edge of one — words would run together. A
+        # non-breaking space survives.
+        "captionWordSeparator": " ",
+    }
+    props_file = REMOTION_ROOT / "public" / "demo-props" / "automontage-overlay.json"
+    props_file.parent.mkdir(parents=True, exist_ok=True)
+    props_file.write_text(json.dumps(props, indent=2), encoding="utf-8")
+
+    try:
+        run([
+            "npx", "remotion", "render", "src/index.tsx", "TalkingHead",
+            f"--props={props_file.relative_to(REMOTION_ROOT)}",
+            f"--width={meta['width']}", f"--height={meta['height']}", f"--fps={fps}",
+            f"--frames=0-{frames - 1}",
+            "--codec=h264", "--crf=18",
+            f"--output={out_path.resolve()}",
+        ], cwd=REMOTION_ROOT, timeout=7200)
+    except SystemExit as exc:
+        log(f"overlay render failed: {str(exc).splitlines()[-1][:160]}")
+        return False
+
+    return out_path.exists()
+
+
 def add_title_overlays(
     video: Path, out_path: Path, title: str, outro: str, *, font_size: int = 64,
 ) -> Path:
-    """Render title / end-tag overlays onto a finished cut with Remotion.
+    """Render title / end-tag overlays onto a finished cut.
 
-    Reuses OpenMontage's caption-burn bridge, which also accepts overlays with
-    no captions. Falls back to the untouched cut if the render fails, so a
-    title is never the reason a montage is lost.
+    Falls back to the untouched cut if the render fails, so a title is never
+    the reason a montage is lost.
     """
-    from tools.video.remotion_caption_burn import RemotionCaptionBurn
-
     duration = media_duration(video)
     overlays: list[dict] = []
     if title:
@@ -227,22 +304,8 @@ def add_title_overlays(
             "out_seconds": duration, "position": "lower_third", "text": outro,
         })
 
-    if not overlays:
-        shutil.copy(video, out_path)
-        return out_path
-
-    tool = RemotionCaptionBurn()
-    if not hasattr(tool, "_render_remotion"):
-        shutil.copy(video, out_path)
-        log("caption tool cannot render overlays alone; keeping the clean cut")
-        return out_path
-
-    result = tool._render_remotion(
-        input_path=str(video), output_path=str(out_path), captions=[],
-        words_per_page=4, font_size=font_size, highlight_color="#22D3EE",
-        overlays=overlays,
-    )
-    if not result.success or not out_path.exists():
-        log(f"title render failed ({result.error}); keeping the clean cut")
+    if not overlays or not render_talking_head(
+        video, out_path, overlays=overlays, font_size=font_size,
+    ):
         shutil.copy(video, out_path)
     return out_path

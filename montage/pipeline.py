@@ -37,7 +37,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from common import (  # noqa: E402
     PROJECT_ROOT, Stage, library_path, log, prepare_remotion_env, probe_media,
-    require_binaries, require_engine, write_manifest,
+    render_talking_head, require_binaries, require_engine, word_captions,
+    write_manifest,
 )
 
 require_engine()
@@ -434,54 +435,26 @@ def finish(
     stitched: Path, out_path: Path, transcript: list[dict], overlays: list[dict],
     font_size: int, highlight: str,
 ) -> Path:
-    """Burn animated captions + overlays with OpenMontage's Remotion bridge.
+    """Burn animated captions + overlays with Remotion.
 
-    The bridge falls back to FFmpeg subtitle burn if Remotion can't run, so this
-    stage degrades instead of failing.
+    Degrades to the clean cut rather than failing: a montage without captions
+    still beats no montage.
     """
-    from tools.video.remotion_caption_burn import RemotionCaptionBurn
-
     if not transcript and not overlays:
         shutil.copy(stitched, out_path)
         log("nothing to overlay; using the stitched cut as-is")
         return out_path
 
-    tool = RemotionCaptionBurn()
-
-    if transcript:
-        result = tool.execute({
-            "input_path": str(stitched),
-            "output_path": str(out_path),
-            "segments": transcript,
-            "overlays": overlays,
-            "font_size": font_size,
-            "highlight_color": highlight,
-            "words_per_page": 4,
-        })
-    else:
-        # execute() rejects a call with no captions, but titles alone are a
-        # legitimate edit. The renderer underneath handles an empty caption
-        # list fine, so drive it directly — guarded, in case upstream renames it.
-        if not hasattr(tool, "_render_remotion"):
-            shutil.copy(stitched, out_path)
-            log("caption tool cannot render overlays alone; using the clean cut")
-            return out_path
-        result = tool._render_remotion(
-            input_path=str(stitched),
-            output_path=str(out_path),
-            captions=[],
-            words_per_page=4,
-            font_size=font_size,
-            highlight_color=highlight,
-            overlays=overlays,
-        )
-
-    if not result.success or not out_path.exists():
-        log(f"overlay render failed ({result.error}); falling back to the clean cut")
+    ok = render_talking_head(
+        stitched, out_path,
+        captions=word_captions(transcript),
+        overlays=overlays,
+        font_size=font_size,
+        highlight=highlight,
+    )
+    if not ok:
+        log("falling back to the clean cut")
         shutil.copy(stitched, out_path)
-        return out_path
-
-    log(f"rendered via {result.data.get('method', 'remotion')}")
     return out_path
 
 

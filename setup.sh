@@ -24,14 +24,24 @@ fi
 
 if ! have ffmpeg || ! have ffprobe; then
   echo "ffmpeg/ffprobe missing — attempting install"
+  # Work out the privilege prefix in *this* shell: assigning it inside a
+  # subshell leaves it unset out here, and `set -u` then aborts on $SUDO.
+  SUDO=""
+  if [ "$(id -u)" -ne 0 ]; then
+    have sudo || { echo "Need root or sudo to install ffmpeg." >&2; exit 1; }
+    SUDO="sudo"
+  fi
   if have apt-get; then
-    (sudo -n true 2>/dev/null && SUDO=sudo || SUDO="")
     $SUDO apt-get update -qq || true
     # --no-install-recommends skips the VA driver packages, which are optional
     # for our use and frequently 404 on stale mirrors.
     $SUDO apt-get install -y --no-install-recommends ffmpeg
+  elif have dnf; then
+    $SUDO dnf install -y ffmpeg
+  elif have pacman; then
+    $SUDO pacman -S --noconfirm ffmpeg
   elif have brew; then
-    brew install ffmpeg
+    brew install ffmpeg          # Homebrew refuses to run under sudo
   else
     echo "Install ffmpeg manually: https://ffmpeg.org/download.html" >&2
     exit 1
@@ -40,13 +50,30 @@ fi
 echo "node $(node -v) · python $(python3 -V 2>&1 | cut -d' ' -f2) · $(ffmpeg -version | head -1 | cut -d' ' -f1-3)"
 
 # --- OpenMontage -----------------------------------------------------------
+# Pinned to a commit this project has actually been tested against. Upstream
+# moves fast and has broken the Remotion bridge before; unpin deliberately with
+#   OPENMONTAGE_REF=main ./setup.sh
+OPENMONTAGE_REF="${OPENMONTAGE_REF:-08e2151fa02de28a5d6a312b3d575692bf147ad7}"
+
 step "Fetching OpenMontage"
 mkdir -p "$ROOT/engine"
 if [ -d "$ENGINE/.git" ]; then
-  echo "already cloned — pulling"
-  git -C "$ENGINE" pull --ff-only || echo "pull skipped (local changes)"
+  echo "already cloned"
 else
   git clone --depth 1 "$OPENMONTAGE_REPO" "$ENGINE"
+fi
+
+if [ "$OPENMONTAGE_REF" = "main" ] || [ "$OPENMONTAGE_REF" = "HEAD" ]; then
+  git -C "$ENGINE" pull --ff-only || echo "pull skipped (local changes or detached HEAD)"
+  echo "using upstream latest: $(git -C "$ENGINE" rev-parse --short HEAD)"
+elif [ "$(git -C "$ENGINE" rev-parse HEAD)" = "$OPENMONTAGE_REF" ]; then
+  echo "already pinned to ${OPENMONTAGE_REF:0:7}"
+elif git -C "$ENGINE" fetch --depth 1 origin "$OPENMONTAGE_REF" 2>/dev/null &&
+     git -C "$ENGINE" checkout -q FETCH_HEAD 2>/dev/null; then
+  echo "pinned to ${OPENMONTAGE_REF:0:7}"
+else
+  echo "could not pin ${OPENMONTAGE_REF:0:7} — continuing on $(git -C "$ENGINE" rev-parse --short HEAD)"
+  echo "if a render fails, this is the first thing to suspect" >&2
 fi
 
 # --- Python side -----------------------------------------------------------

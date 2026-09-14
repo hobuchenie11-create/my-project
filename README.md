@@ -197,7 +197,48 @@ For long sources, `--captions off` skips the most expensive stage.
 
 ## Requirements
 
-Python 3.10+, Node 18+, ffmpeg, and a Chromium for Remotion's renderer.
+Python 3.10+, Node 18+, git, ffmpeg, and a Chromium for Remotion's renderer.
+
+### Installing on your own machine
+
+**Linux / WSL (Debian, Ubuntu):**
+
+```bash
+sudo apt update && sudo apt install -y git python3 python3-venv nodejs npm ffmpeg
+```
+
+**macOS** (Homebrew from [brew.sh](https://brew.sh)):
+
+```bash
+brew install git python node ffmpeg
+```
+
+**Windows:** `setup.sh` is a bash script and needs WSL2 — Git Bash will not do,
+because it has no `python3`. In PowerShell as administrator:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+Reboot, open Ubuntu, then follow the Linux line above.
+
+Then:
+
+```bash
+git clone https://github.com/hobuchenie11-create/my-project.git
+cd my-project
+git checkout claude/auto-video-editing-engine-m29h4t
+./setup.sh
+./autophotos input/photos --title "Test"
+```
+
+`setup.sh` took 1m41s on a fast connection; budget 5–15 minutes on a home one.
+It writes about 1.2 GB (`engine/` 548 MB, `.venv` 599 MB). The first run with
+captions downloads a Whisper model (~150 MB) and the first render downloads
+Remotion's headless browser, unless one is already installed.
+
+### The Remotion browser
+
 Remotion downloads its own Chrome Headless Shell by default; if that's blocked,
 point it at an existing browser:
 
@@ -207,6 +248,16 @@ export REMOTION_IGNORE_CERT_ERRORS=1   # only behind a TLS-intercepting proxy
 ```
 
 `setup.sh` and both pipelines auto-detect a local Chromium when one is present.
+
+### Upstream pinning
+
+`setup.sh` pins the OpenMontage checkout to a commit this project is tested
+against, because upstream has broken the Remotion bridge between releases. To
+track the latest instead:
+
+```bash
+OPENMONTAGE_REF=main ./setup.sh
+```
 
 ## Layout
 
