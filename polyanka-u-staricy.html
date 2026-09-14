@@ -1,0 +1,742 @@
+<title>Полянка у Старицы</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+:root{
+  --ground:#EBEEE8; --surface:#FFFFFF; --surface-2:#F2F5EF; --sunk:#E2E7DE;
+  --ink:#15201A; --ink-2:#4C5A52; --ink-3:#7B8A80;
+  --line:#D2DAD0; --line-strong:#B4BFB2;
+  --accent:#D65E10; --accent-ink:#A44708; --accent-soft:#FAE9DC;
+  --water:#2F7386; --water-soft:#DDEBEF;
+  --grass:#6E9A4E; --sand:#D9C48C;
+  --shadow:0 1px 2px rgba(21,32,26,.06), 0 8px 24px -14px rgba(21,32,26,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#111714; --surface:#19211D; --surface-2:#212A25; --sunk:#0C110E;
+    --ink:#E6EDE6; --ink-2:#A2B0A6; --ink-3:#78877D;
+    --line:#2C3832; --line-strong:#3D4B43;
+    --accent:#F0813A; --accent-ink:#F4A16B; --accent-soft:#33200F;
+    --water:#5AA8BE; --water-soft:#132A31;
+    --grass:#8CB769; --sand:#B9A268;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#111714; --surface:#19211D; --surface-2:#212A25; --sunk:#0C110E;
+  --ink:#E6EDE6; --ink-2:#A2B0A6; --ink-3:#78877D;
+  --line:#2C3832; --line-strong:#3D4B43;
+  --accent:#F0813A; --accent-ink:#F4A16B; --accent-soft:#33200F;
+  --water:#5AA8BE; --water-soft:#132A31;
+  --grass:#8CB769; --sand:#B9A268;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Golos Text","Segoe UI",system-ui,sans-serif;
+  font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px; margin:0 auto; padding-inline:20px; padding-block:0 64px}
+h1,h2,h3{font-family:"Bitter",Georgia,serif; font-weight:700; text-wrap:balance; margin:0}
+h1{font-size:clamp(2rem,5.2vw,3.4rem); line-height:1.05; letter-spacing:-.02em}
+h2{font-size:clamp(1.35rem,3vw,1.85rem); line-height:1.15}
+h3{font-size:1.06rem; line-height:1.3; font-weight:600}
+p{margin:0}
+.eyebrow{
+  font-size:.72rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-3); font-family:"Golos Text",sans-serif;
+}
+.num{font-family:"JetBrains Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+/* ── header ── */
+header.masthead{padding-block:48px 28px; display:flex; flex-direction:column; gap:18px}
+.masthead .lede{max-width:60ch; color:var(--ink-2); font-size:1.06rem}
+.titleblock{display:flex; flex-direction:column; gap:10px}
+.sub{font-size:1.02rem; color:var(--ink-2); max-width:62ch}
+.rule{height:1px; background:var(--line); border:0; margin:0}
+
+/* spec strip — cadastral facts, no cards */
+.specs{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+  gap:1px; background:var(--line); border-block:1px solid var(--line); margin-top:6px;
+}
+.specs div{background:var(--ground); padding:14px 16px 16px}
+.specs dt{font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+.specs dd{margin:4px 0 0; font-size:.98rem; font-weight:500}
+
+/* ── section ── */
+section{margin-top:56px; display:flex; flex-direction:column; gap:18px}
+.sechead{display:flex; flex-direction:column; gap:6px}
+.sechead p{color:var(--ink-2); max-width:66ch}
+
+/* ── 3D viewer ── */
+.viewer{
+  position:relative; background:var(--sunk); border:1px solid var(--line);
+  border-radius:3px; overflow:hidden; box-shadow:var(--shadow);
+}
+#scene{display:block; width:100%; height:clamp(360px,58vh,600px); touch-action:none; cursor:grab}
+#scene:active{cursor:grabbing}
+.pinlayer{position:absolute; inset:0; pointer-events:none}
+.pin{
+  position:absolute; transform:translate(-50%,-50%); display:flex; align-items:center; gap:6px;
+  pointer-events:none; white-space:nowrap; transition:opacity .18s;
+}
+.pin b{
+  width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff;
+  display:grid; place-items:center; font-size:.72rem; font-weight:700;
+  font-family:"JetBrains Mono",monospace; box-shadow:0 1px 6px rgba(0,0,0,.45); flex:none;
+}
+.pin span{
+  background:var(--surface); color:var(--ink); font-size:.75rem; font-weight:600;
+  padding:2px 8px; border-radius:2px; border:1px solid var(--line);
+  box-shadow:0 1px 6px rgba(0,0,0,.2);
+}
+.vbar{
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  padding:12px 14px; background:var(--surface); border-top:1px solid var(--line);
+}
+.vbar .grow{flex:1 1 auto}
+button.view{
+  font:inherit; font-size:.82rem; font-weight:600; color:var(--ink-2);
+  background:var(--surface-2); border:1px solid var(--line); border-radius:2px;
+  padding:7px 12px; cursor:pointer; transition:.15s;
+}
+button.view:hover{border-color:var(--line-strong); color:var(--ink)}
+button.view[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+button.view:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.hint{font-size:.78rem; color:var(--ink-3)}
+.loading{
+  position:absolute; inset:0; display:grid; place-items:center;
+  background:var(--sunk); color:var(--ink-3); font-size:.85rem;
+}
+
+/* ── plan ── */
+.planbox{
+  background:var(--surface); border:1px solid var(--line); border-radius:3px;
+  padding:18px; box-shadow:var(--shadow); overflow-x:auto;
+}
+.planbox svg{display:block; width:100%; min-width:460px; height:auto; max-width:100%}
+.plantext{font-family:"Golos Text",sans-serif; font-size:9px; font-weight:600; fill:var(--ink)}
+.plandim{font-family:"JetBrains Mono",monospace; font-size:9px; fill:var(--ink-2)}
+.planmini{font-family:"Golos Text",sans-serif; font-size:7.5px; fill:var(--ink-2)}
+
+/* ── экспликация ── */
+.expl{display:flex; flex-direction:column; gap:1px; background:var(--line); border-block:1px solid var(--line)}
+.row{
+  background:var(--ground); display:grid; grid-template-columns:40px minmax(0,1.5fr) minmax(0,2fr) 130px;
+  gap:18px; padding:18px 4px; align-items:start;
+}
+.row .idx{
+  font-family:"JetBrains Mono",monospace; font-size:.85rem; font-weight:700;
+  color:var(--accent); padding-top:2px;
+}
+.row .nm{display:flex; flex-direction:column; gap:5px}
+.row .nm b{font-size:1rem; font-weight:600; line-height:1.3}
+.row .nm em{font-style:normal; font-size:.78rem; color:var(--ink-3)}
+.row .ds{font-size:.9rem; color:var(--ink-2); line-height:1.55}
+.row .mt{display:flex; flex-direction:column; gap:3px; text-align:right}
+.row .mt .num{font-size:.86rem; font-weight:600}
+.row .mt small{font-size:.72rem; color:var(--ink-3)}
+.chip{
+  align-self:flex-start; font-size:.68rem; font-weight:600; letter-spacing:.06em;
+  text-transform:uppercase; padding:2px 7px; border-radius:2px;
+  background:var(--accent-soft); color:var(--accent-ink);
+}
+.chip.ex{background:var(--surface-2); color:var(--ink-3)}
+
+/* ── variants ── */
+.two{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px}
+.vcard{background:var(--surface); border:1px solid var(--line); border-radius:3px; padding:20px; display:flex; flex-direction:column; gap:10px}
+.vcard.pick{border-color:var(--accent); border-width:1px; box-shadow:0 0 0 1px var(--accent)}
+.vcard h3{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+.vcard p{font-size:.9rem; color:var(--ink-2)}
+.vcard ul{margin:0; padding-left:18px; font-size:.88rem; color:var(--ink-2); display:flex; flex-direction:column; gap:5px}
+
+/* ── totals ── */
+table.tot{width:100%; border-collapse:collapse; font-size:.92rem}
+table.tot th,table.tot td{padding:11px 8px; text-align:left; border-bottom:1px solid var(--line)}
+table.tot th{font-size:.7rem; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+table.tot td:last-child,table.tot th:last-child{text-align:right; font-variant-numeric:tabular-nums; font-family:"JetBrains Mono",monospace}
+table.tot tr.sum td{border-bottom:0; border-top:2px solid var(--ink); font-weight:700; padding-top:13px}
+.swatch{display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:9px; vertical-align:-1px; border:1px solid rgba(0,0,0,.18)}
+
+/* ── notes ── */
+.notes{font-size:.85rem; color:var(--ink-3); display:flex; flex-direction:column; gap:9px; max-width:74ch}
+.notes b{color:var(--ink-2); font-weight:600}
+
+@media (max-width:760px){
+  .row{grid-template-columns:32px 1fr; gap:6px 12px; padding:16px 4px}
+  .row .ds{grid-column:2}
+  .row .mt{grid-column:2; text-align:left; flex-direction:row; gap:12px; align-items:baseline}
+}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms !important}}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="titleblock">
+    <p class="eyebrow">Инициативное бюджетирование · Омская область · 2026</p>
+    <h1>Полянка у Старицы</h1>
+    <p class="sub">Благоустройство территории Любино-Старожильского сельского клуба: открытая сцена с видом на реку, зелёная полянка для деревенских праздников, детская площадка и асфальтированный вход.</p>
+  </div>
+  <dl class="specs">
+    <div><dt>Адрес</dt><dd>с. Любино-Малороссы,<br>ул. Старожильская, 44в</dd></div>
+    <div><dt>Кадастровый номер</dt><dd class="num">55:11:100201:1471</dd></div>
+    <div><dt>Площадь участка</dt><dd><span class="num">1 712</span> м² <span style="color:var(--ink-3)">(уточнённая)</span></dd></div>
+    <div><dt>Категория</dt><dd>Земли населённых пунктов — для размещения объектов культуры</dd></div>
+    <div><dt>Площадь благоустройства</dt><dd><span class="num" id="totalArea">—</span> м²</dd></div>
+  </dl>
+</header>
+
+<section id="v3d">
+  <div class="sechead">
+    <p class="eyebrow">Лист 1</p>
+    <h2>Объёмная модель участка</h2>
+    <p>Вращайте модель мышью или пальцем, колесо — приближение. Номера на выносках соответствуют экспликации ниже. Север — в сторону реки Старицы, юг — ул. Старожильская.</p>
+  </div>
+  <div class="viewer">
+    <canvas id="scene"></canvas>
+    <div class="pinlayer" id="pins"></div>
+    <div class="loading" id="loading">Загрузка модели…</div>
+    <div class="vbar">
+      <button class="view" data-cam="0" aria-pressed="true">От ворот</button>
+      <button class="view" data-cam="1" aria-pressed="false">С полянки на сцену</button>
+      <button class="view" data-cam="2" aria-pressed="false">Детская площадка</button>
+      <button class="view" data-cam="3" aria-pressed="false">Общий вид</button>
+      <span class="grow"></span>
+      <button class="view" id="togglePins" aria-pressed="true">Выноски</button>
+      <span class="hint">Модель в масштабе 1:1, м</span>
+    </div>
+  </div>
+</section>
+
+<section id="plan">
+  <div class="sechead">
+    <p class="eyebrow">Лист 2</p>
+    <h2>Схема размещения объектов</h2>
+    <p>Генеральный план, масштаб 1:200 при печати на A3. Сплошная линия — действующая граница участка по ЕГРН, штриховая — предлагаемое уточнение границ.</p>
+  </div>
+  <div class="planbox"><svg id="planSvg" viewBox="-78 -84 566 668" role="img" aria-label="Генеральный план благоустройства участка"></svg></div>
+</section>
+
+<section id="expl">
+  <div class="sechead">
+    <p class="eyebrow">Лист 3</p>
+    <h2>Экспликация объектов</h2>
+    <p>Габариты приняты по замерам, выполненным инициативной группой, и по данным ЕГРН. Позиции 1–8 — проектируемые, 9–11 — существующие.</p>
+  </div>
+  <div class="expl" id="explList"></div>
+</section>
+
+<section id="border">
+  <div class="sechead">
+    <p class="eyebrow">Лист 4</p>
+    <h2>Сцена и северная граница участка</h2>
+    <p>Сценический комплекс выходит к берегу — именно там открывается вид на Старицу, ради которого сцена и разворачивается на юг. Ниже — два варианта его посадки.</p>
+  </div>
+  <div class="two">
+    <div class="vcard">
+      <h3>Вариант 1 <span class="chip ex">в действующих границах</span></h3>
+      <p>Сцена целиком внутри участка, задняя стена — в 3,0 м от северной границы.</p>
+      <ul>
+        <li>Не требует кадастровых работ, реализуется сразу.</li>
+        <li>Технический проход за сценой — 3,0 м: достаточно для обслуживания, но тесно для эвакуации артистов при массовом мероприятии.</li>
+        <li>Вид на реку сохраняется: навес поднят на 4,2 м, задняя стена не зашивается.</li>
+      </ul>
+    </div>
+    <div class="vcard pick">
+      <h3>Вариант 2 <span class="chip">предлагаемый</span></h3>
+      <p>Северная граница уточняется на 3,0 м в сторону берега, южная — на 3,0 м к дороге.</p>
+      <ul>
+        <li>За сценой появляется полноценная зона 6,0 м: закулисье, эвакуационный выход, подъезд для разгрузки аппаратуры.</li>
+        <li>У дороги высвобождается <span class="num">114</span> м² под парковочные карманы и безопасный заезд — автомобили перестают стоять на проезжей части.</li>
+        <li>Створ обзора реки с полянки не меняется: сцена смещается вместе с границей.</li>
+        <li>Требуются кадастровые работы до начала СМР.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="totals">
+  <div class="sechead">
+    <p class="eyebrow">Лист 5</p>
+    <h2>Баланс территории</h2>
+    <p>Распределение площадей по типам покрытий в границах благоустройства.</p>
+  </div>
+  <table class="tot"><thead><tr><th>Покрытие</th><th>Объекты</th><th>Площадь, м²</th></tr></thead><tbody id="totBody"></tbody></table>
+</section>
+
+<section id="src">
+  <div class="sechead"><p class="eyebrow">Примечания</p><h2>Исходные данные и допущения</h2></div>
+  <div class="notes">
+    <p><b>Источник по участку.</b> Публичная кадастровая карта, участок <span class="num">55:11:100201:1471</span>, уточнённая площадь <span class="num">1 712</span> м², категория — земли населённых пунктов, вид использования — для размещения объектов культуры. В выписке ЕГРН адрес указан как ул. Старожильская, д. 46, на карте участок подписан номером 44 — расхождение адресации нужно устранить до подачи заявки.</p>
+    <p><b>Источник по размерам.</b> Схема-обмер инициативной группы: длина участка по берегу <span class="num">40</span> м, по улице <span class="num">38</span> м, глубина <span class="num">43–44</span> м; сцена <span class="num">8×5</span> м; ширина асфальтированного прохода <span class="num">5</span> м при длине <span class="num">22</span> м до существующего забора; отступ от восточной границы до клуба <span class="num">11,8</span> м; отступ от южного забора до клуба <span class="num">7</span> м; заезд <span class="num">6</span> м от забора до дороги; ширина парковки <span class="num">6</span> м.</p>
+    <p><b>Допущение.</b> Участок вычерчен трапецией <span class="num">40 / 38 / 44</span> м — это даёт <span class="num">1 716</span> м² против <span class="num">1 712</span> м² по ЕГРН (расхождение 0,2 %). Габариты здания клуба и положение септика приняты по контуру на кадастровой карте; перед проектированием их следует подтвердить исполнительной съёмкой.</p>
+    <p><b>Что не входит в объём.</b> Демонтаж существующих уличных туалетов и вынос септика показаны на плане, но в баланс площадей благоустройства не включены — это отдельная позиция сметы.</p>
+  </div>
+</section>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ═══ Геометрия участка, м. Начало координат — ЮЗ угол. +x на восток, +y на север (к реке) ═══ */
+const SITE = { yN: 44, wN: 40, wS: 38 };          // северная кромка 40 м, южная 38 м, глубина 44 м
+const BORDER   = [[0,0],[SITE.wS,0],[SITE.wN,SITE.yN],[0,SITE.yN]];
+const BORDER_2 = [[0,-3],[SITE.wS,-3],[SITE.wN+0.3,SITE.yN+3],[0,SITE.yN+3]];  // предлагаемое уточнение
+
+const OBJECTS = [
+ { n:1, name:'Сцена полукруглая с навесом', kind:'new',
+   shape:{t:'semi', cx:5.5, cy:41, r:4}, dims:'8,0 × 4,0 м', area:25, h:4.8,
+   surf:'Деревянный настил, навес — оранжевый монолитный поликарбонат 8 мм',
+   pin:[5.5,39.5,5.2],
+   desc:'Эстрада высотой 0,9 м, фронт развёрнут на юг — к полянке. Навес на четырёх стойках: нижняя отметка 2,7 м, конёк 4,8 м, задняя стена не зашивается: со зрительских мест сцена читается на фоне Старицы. Оранжевый поликарбонат даёт тёплый рассеянный свет и служит визуальной доминантой участка.' },
+
+ { n:2, name:'Зрительская площадка перед сценой', kind:'new',
+   shape:{t:'rect', x:1.5, y:32, w:8, h:5}, dims:'8,0 × 5,0 м', area:40, h:0.05,
+   surf:'Асфальтобетон', pin:[5.5,34.5,0.6],
+   desc:'Твёрдое покрытие для танцев, выступлений и установки скамей на время праздника. Совпадает по ширине со сценой, образуя с ней единый прямоугольник композиции.' },
+
+ { n:3, name:'Полянка с газоном и ткаными половиками', kind:'new',
+   shape:{t:'rect', x:0.8, y:8, w:8.8, h:24}, dims:'8,8 × 24,0 м', area:211, h:0.02,
+   surf:'Газон обыкновенный по плодородному слою 15 см', pin:[5.2,20,1.0],
+   desc:'Главное зрительское пространство: ровный газон, на который к праздникам расстилают деревенские тканые половики — привычный для села способ рассадки вместо скамеек. Полянка лежит левее входной тропы и раскрыта на сцену, образуя естественный амфитеатр глубиной 24 м.' },
+
+ { n:4, name:'Входная асфальтированная тропа', kind:'new',
+   shape:{t:'rect', x:9.6, y:0, w:5, h:25}, dims:'5,0 × 25,0 м', area:125, h:0.05,
+   surf:'Асфальтобетон по щебёночному основанию', pin:[12.1,12,0.7],
+   desc:'Главная ось участка от ворот до клуба, ширина 5,0 м — проезд пожарной техники и подвоз аппаратуры. От действующего забора до поворота к клубу — 22,0 м. Делит территорию на тихую западную (полянка, сцена) и активную восточную (беседка, детская) половины.' },
+
+ { n:5, name:'Беседка шестигранная', kind:'new',
+   shape:{t:'hex', cx:17.5, cy:5.5, r:2.5}, dims:'⌀ 5,0 м', area:16, h:3.2,
+   surf:'Дерево, кровля — мягкая черепица', pin:[17.5,5.5,3.6],
+   desc:'Стоит сразу справа от ворот — первая точка на участке, где можно сесть. Шесть опор, скамьи по периметру, стол в центре; вмещает 10–12 человек. Работает как место ожидания для родителей, чьи дети на площадке напротив.' },
+
+ { n:6, name:'Детская площадка', kind:'new',
+   shape:{t:'rect', x:20, y:9, w:15, h:13}, dims:'15,0 × 13,0 м', area:195, h:0.1,
+   surf:'Песок и травмобезопасное резиновое покрытие 30 мм',
+   pin:[27.5,15.5,3.4],
+   desc:'Перед клубом справа, в одном поле зрения с беседкой. Четыре элемента: песочница 2,5 × 2,5 м с крышкой; качалка-балансир для малышей 1,8 м; качели «Гнездо» ⌀1,0 м на стойке 2,5 м; спортивная лазилка 4,0 × 3,0 м с рукоходом и канатом. Зоны приземления выдержаны по ГОСТ Р 52169.' },
+
+ { n:7, name:'Цветник', kind:'new',
+   shape:{t:'rect', x:10, y:34, w:4.2, h:6}, dims:'4,2 × 6,0 м', area:25, h:0.4,
+   surf:'Многолетники, бортовой камень', pin:[12.1,37,0.9],
+   desc:'Разделяет сцену и торец клуба, закрывая технический разрыв между ними. Содержание передаётся на общественный уход силами школы и совета ветеранов.' },
+
+ { n:8, name:'Парковочный карман и заезд', kind:'new',
+   shape:{t:'rect', x:23, y:0.5, w:9, h:5.5}, dims:'9,0 × 5,5 м', area:50, h:0.05,
+   surf:'Щебёночное покрытие, заезд — асфальтобетон', pin:[27.5,3,0.8],
+   desc:'Четыре машиноместа внутри ограждения плюс заезд шириной 5,0 м от проезжей части ул. Старожильской. Убирает стоянку автомобилей с дороги в дни мероприятий.' },
+
+ { n:9, name:'Здание клуба', kind:'exist',
+   shape:{t:'rect', x:14.6, y:25, w:13, h:16}, dims:'13,0 × 16,0 м', area:null, h:6.2,
+   surf:'Существующее здание', pin:[21,33,7.2],
+   desc:'Любино-Старожильский сельский клуб. Главный вход обращён на юг, к воротам; отступ от восточной границы участка — 11,8 м. В объём заявки не входит, благоустройство выполняется по его периметру.' },
+
+ { n:10, name:'Септик', kind:'exist',
+   shape:{t:'circ', cx:32.5, cy:33, r:1.6}, dims:'⌀ 3,2 м', area:null, h:0.3,
+   surf:'Существующее сооружение', pin:[32.5,33,1.4],
+   desc:'Действующий септик в 12,0 м от восточного забора. Сохраняется; люк выводится в отметку газона, зона обслуживания 3,0 м не застраивается.' },
+
+ { n:11, name:'Уличные туалеты — на демонтаж', kind:'demo',
+   shape:{t:'rect', x:0.5, y:41.4, w:3.2, h:2.2}, dims:'3,2 × 2,2 м', area:null, h:2.4,
+   surf:'Демонтаж', pin:[2.1,42.5,3.2],
+   desc:'Две дощатые кабины у северо-западного угла. Демонтируются: они занимают закулисную зону сцены и закрывают выход к берегу. Взамен — санитарный блок в здании клуба (отдельная позиция сметы).' },
+];
+
+const BALANCE = [
+ { c:'#4A4E50', n:'Асфальтобетон',            o:'Тропа, зрительская площадка, подход к клубу, заезд', a:198 },
+ { c:'#6E9A4E', n:'Газон (полянка)',          o:'Полянка с ткаными половиками', a:211 },
+ { c:'#D9C48C', n:'Песок и резина',           o:'Детская площадка', a:195 },
+ { c:'#B07A46', n:'Деревянный настил',        o:'Сцена, беседка', a:41 },
+ { c:'#C2557B', n:'Цветник',                  o:'Многолетники у торца клуба', a:25 },
+ { c:'#9AA0A2', n:'Щебень',                   o:'Парковочный карман', a:50 },
+];
+</script>
+<script>
+/* ═══════════════ Лист 2. Генплан ═══════════════ */
+(function(){
+  const S=10, PX=x=>(x*S).toFixed(1), PY=y=>((SITE.yN-y)*S).toFixed(1);
+  const poly = pts => pts.map(p=>PX(p[0])+','+PY(p[1])).join(' ');
+  const FILL = {1:'#B07A46',2:'#4A4E50',3:'#6E9A4E',4:'#4A4E50',5:'#B07A46',
+                6:'#D9C48C',7:'#C2557B',8:'#9AA0A2',9:'#8C9AA0',10:'#8C9AA0',11:'#8C9AA0'};
+  let s='';
+
+  /* река и дальний берег */
+  s+=`<rect x="-78" y="-84" width="566" height="54" fill="var(--water)" opacity=".30"/>`;
+  s+=`<text x="205" y="-44" text-anchor="middle" class="plantext" fill="var(--water)" style="font-size:12px;letter-spacing:.12em">р. С Т А Р И Ц А</text>`;
+  s+=`<text x="205" y="-33" text-anchor="middle" class="planmini">направление обзора со сцены и полянки</text>`;
+
+  /* дорога */
+  s+=`<rect x="-78" y="516" width="566" height="60" fill="#4A4E50" opacity=".26"/>`;
+  s+=`<line x1="-78" y1="546" x2="488" y2="546" stroke="var(--ink-3)" stroke-width="1.2" stroke-dasharray="14 11"/>`;
+  s+=`<text x="205" y="568" text-anchor="middle" class="plantext" fill="var(--ink-2)" style="letter-spacing:.1em">ул. СТАРОЖИЛЬСКАЯ</text>`;
+
+  /* предлагаемая граница + участок */
+  s+=`<polygon points="${poly(BORDER_2)}" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="9 6"/>`;
+  s+=`<polygon points="${poly(BORDER)}" fill="#6E9A4E" fill-opacity=".10" stroke="var(--ink)" stroke-width="1.8"/>`;
+  /* действующий забор */
+  s+=`<line x1="${PX(0)}" y1="${PY(3)}" x2="${PX(38.1)}" y2="${PY(3)}" stroke="var(--ink-3)" stroke-width="1.1" stroke-dasharray="5 4"/>`;
+  s+=`<text x="${PX(9.4)}" y="${PY(4.6)}" text-anchor="end" class="planmini">действующий забор</text>`;
+
+  /* объекты */
+  const cen={};
+  OBJECTS.forEach(o=>{
+    const sh=o.shape, f=FILL[o.n];
+    const op = o.kind==='new' ? .58 : (o.kind==='demo' ? .22 : .40);
+    const st = o.kind==='demo' ? ' stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="4 3"' : ' stroke="var(--ink)" stroke-width=".9" stroke-opacity=".55"';
+    if(sh.t==='rect'){
+      s+=`<rect x="${PX(sh.x)}" y="${PY(sh.y+sh.h)}" width="${(sh.w*S).toFixed(1)}" height="${(sh.h*S).toFixed(1)}" fill="${f}" fill-opacity="${op}"${st}/>`;
+      cen[o.n]=[sh.x+sh.w/2, sh.y+sh.h/2];
+    } else if(sh.t==='semi'){
+      s+=`<path d="M ${PX(sh.cx-sh.r)} ${PY(sh.cy)} A ${sh.r*S} ${sh.r*S} 0 0 0 ${PX(sh.cx+sh.r)} ${PY(sh.cy)} Z" fill="${f}" fill-opacity="${op}"${st}/>`;
+      cen[o.n]=[sh.cx, sh.cy-sh.r*0.45];
+    } else if(sh.t==='hex'){
+      const p=[...Array(6)].map((_,i)=>{const a=Math.PI/6+i*Math.PI/3;return [sh.cx+sh.r*Math.cos(a), sh.cy+sh.r*Math.sin(a)];});
+      s+=`<polygon points="${poly(p)}" fill="${f}" fill-opacity="${op}"${st}/>`;
+      cen[o.n]=[sh.cx, sh.cy];
+    } else if(sh.t==='circ'){
+      s+=`<circle cx="${PX(sh.cx)}" cy="${PY(sh.cy)}" r="${(sh.r*S).toFixed(1)}" fill="${f}" fill-opacity="${op}"${st}/>`;
+      cen[o.n]=[sh.cx, sh.cy];
+    }
+  });
+
+  /* оборудование детской площадки */
+  const kid=[[22.2,18.5,2.5,2.5,'песочница'],[22.4,11.2,1.8,.9,'качалка'],[28.6,18.2,3,2,'«Гнездо»'],[29.5,11.5,4,3,'лазилка']];
+  kid.forEach(k=>{
+    s+=`<rect x="${PX(k[0])}" y="${PY(k[1]+k[3])}" width="${(k[2]*S).toFixed(1)}" height="${(k[3]*S).toFixed(1)}" fill="var(--ink)" fill-opacity=".30" stroke="var(--ink)" stroke-width=".7" stroke-opacity=".5"/>`;
+    s+=`<text x="${PX(k[0]+k[2]/2)}" y="${PY(k[1])-3}" text-anchor="middle" class="planmini">${k[4]}</text>`;
+  });
+  /* половики на полянке */
+  for(let i=0;i<5;i++) s+=`<rect x="${PX(1.6+ (i%2)*4.2)}" y="${PY(12+i*3.7+1.1)}" width="${(3.4*S)}" height="${(1.1*S)}" fill="#C2557B" fill-opacity=".45" stroke="#C2557B" stroke-width=".6"/>`;
+  s+=`<text x="${PX(5.2)}" y="${PY(9.6)}" text-anchor="middle" class="planmini">тканые половики</text>`;
+  /* подход к клубу и вход */
+  s+=`<rect x="${PX(14.6)}" y="${PY(25)}" width="${(7*S)}" height="${(2.5*S)}" fill="#4A4E50" fill-opacity=".58" stroke="var(--ink)" stroke-width=".9" stroke-opacity=".55"/>`;
+  s+=`<rect x="${PX(9.6)}" y="${PY(0)}" width="${(5*S)}" height="${(3*S)}" fill="#4A4E50" fill-opacity=".45"/>`;
+  s+=`<text x="${PX(21)}" y="${PY(28.2)}" text-anchor="middle" class="plantext" style="font-size:11px">КЛУБ</text>`;
+  s+=`<text x="${PX(12.1)}" y="${PY(-1.6)}" text-anchor="middle" class="planmini">заезд 5,0 м</text>`;
+  /* ворота */
+  s+=`<line x1="${PX(9.6)}" y1="${PY(0)}" x2="${PX(14.6)}" y2="${PY(0)}" stroke="var(--accent)" stroke-width="3"/>`;
+  s+=`<text x="${PX(9.2)}" y="${PY(0)-7}" text-anchor="end" class="planmini" fill="var(--accent)">ворота</text>`;
+
+  /* выноски с номерами */
+  OBJECTS.forEach(o=>{
+    const c=cen[o.n]; if(!c) return;
+    s+=`<circle cx="${PX(c[0])}" cy="${PY(c[1])}" r="8.5" fill="${o.kind==='new'?'var(--accent)':'var(--ink-2)'}"/>`;
+    s+=`<text x="${PX(c[0])}" y="${PY(c[1])}" text-anchor="middle" dy="3.2" fill="#fff" style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700">${o.n}</text>`;
+  });
+
+  /* размерные линии */
+  const dim=(x1,y1,x2,y2,txt,off)=>{
+    const a=[PX(x1),PY(y1)], b=[PX(x2),PY(y2)];
+    let g='';
+    g+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="var(--ink-2)" stroke-width=".9"/>`;
+    g+=`<line x1="${a[0]}" y1="${+a[1]-4}" x2="${a[0]}" y2="${+a[1]+4}" stroke="var(--ink-2)" stroke-width="1.4"/>`;
+    g+=`<line x1="${b[0]}" y1="${+b[1]-4}" x2="${b[0]}" y2="${+b[1]+4}" stroke="var(--ink-2)" stroke-width="1.4"/>`;
+    g+=`<text x="${(+a[0]+ +b[0])/2}" y="${(+a[1]+ +b[1])/2 + off}" text-anchor="middle" class="plandim">${txt}</text>`;
+    return g;
+  };
+  s+=dim(0,50.2,40,50.2,'40,0 м по берегу',-7);
+  s+=dim(0,-5,38,-5,'38,0 м по улице',14);
+  s+=`<line x1="-30" y1="${PY(0)}" x2="-30" y2="${PY(44)}" stroke="var(--ink-2)" stroke-width=".9"/>`;
+  s+=`<line x1="-34" y1="${PY(0)}" x2="-26" y2="${PY(0)}" stroke="var(--ink-2)" stroke-width="1.4"/>`;
+  s+=`<line x1="-34" y1="${PY(44)}" x2="-26" y2="${PY(44)}" stroke="var(--ink-2)" stroke-width="1.4"/>`;
+  s+=`<text x="-38" y="220" text-anchor="middle" class="plandim" transform="rotate(-90 -38 220)">44,0 м</text>`;
+  s+=`<text x="414" y="-14" class="plandim" fill="var(--accent)">+3,0 м</text>`;
+  s+=`<text x="414" y="474" class="plandim" fill="var(--accent)">+3,0 м</text>`;
+
+  /* роза ветров и масштабная линейка */
+  s+=`<g transform="translate(452,160)"><path d="M0,-22 L7,8 L0,2 L-7,8 Z" fill="var(--ink)"/><text x="0" y="24" text-anchor="middle" class="plantext">С</text></g>`;
+  s+=`<g transform="translate(296,492)"><rect x="0" y="0" width="50" height="5" fill="var(--ink)"/><rect x="50" y="0" width="50" height="5" fill="none" stroke="var(--ink)" stroke-width="1"/><text x="0" y="-4" class="plandim">0</text><text x="100" y="-4" text-anchor="middle" class="plandim">10 м</text></g>`;
+
+  document.getElementById('planSvg').innerHTML=s;
+})();
+
+/* ═══════════════ Лист 3. Экспликация ═══════════════ */
+(function(){
+  const box=document.getElementById('explList');
+  box.innerHTML = OBJECTS.map(o=>{
+    const tag = o.kind==='new' ? '<span class="chip">проект</span>'
+              : o.kind==='demo' ? '<span class="chip ex">демонтаж</span>'
+              : '<span class="chip ex">существующее</span>';
+    return `<div class="row">
+      <div class="idx">${String(o.n).padStart(2,'0')}</div>
+      <div class="nm"><b>${o.name}</b>${tag}<em>${o.surf}</em></div>
+      <div class="ds">${o.desc}</div>
+      <div class="mt"><span class="num">${o.dims}</span>${o.area?`<small>${o.area} м²</small>`:'<small>вне объёма</small>'}</div>
+    </div>`;
+  }).join('');
+})();
+
+/* ═══════════════ Лист 5. Баланс ═══════════════ */
+(function(){
+  const t=BALANCE.reduce((a,b)=>a+b.a,0);
+  document.getElementById('totBody').innerHTML =
+    BALANCE.map(b=>`<tr><td><span class="swatch" style="background:${b.c}"></span>${b.n}</td><td style="color:var(--ink-2);font-size:.88rem">${b.o}</td><td>${b.a}</td></tr>`).join('')
+    + `<tr class="sum"><td>Итого благоустройство</td><td></td><td>${t}</td></tr>`;
+  document.getElementById('totalArea').textContent = t;
+})();
+</script>
+<script>
+/* ═══════════════ Лист 1. Объёмная модель ═══════════════ */
+(function(){
+if(!window.THREE){ document.getElementById('loading').textContent='Не удалось загрузить 3D-библиотеку'; return; }
+const T=THREE, cv=document.getElementById('scene');
+const TX = x => x-19, TZ = y => 22-y;                    // участок → мировые координаты
+
+const SKY=0xBFD8E6;
+const scene=new T.Scene(); scene.background=new T.Color(SKY); scene.fog=new T.Fog(SKY,70,260);
+const cam=new T.PerspectiveCamera(48,1,.1,700);
+const rnd=new T.WebGLRenderer({canvas:cv,antialias:true});
+rnd.setPixelRatio(Math.min(devicePixelRatio,2)); rnd.shadowMap.enabled=true; rnd.shadowMap.type=T.PCFSoftShadowMap;
+
+scene.add(new T.HemisphereLight(0xdcecf7,0x62774a,.78));
+const sun=new T.DirectionalLight(0xfff3df,.95); sun.position.set(34,48,26); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.near=1; sun.shadow.camera.far=160;
+Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45}); sun.shadow.camera.updateProjectionMatrix();
+scene.add(sun);
+
+const M=(c,o={})=>new T.MeshLambertMaterial(Object.assign({color:c},o));
+function box(w,h,d,mat,x,y,z,ry){
+  const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat);
+  m.position.set(x,y+h/2,z); if(ry) m.rotation.y=ry; m.castShadow=true; m.receiveShadow=true; scene.add(m); return m;
+}
+function slab(sx,sy,w,d,col,h){                           // покрытие по координатам участка
+  const m=new T.Mesh(new T.BoxGeometry(w,h||.12,d),M(col));
+  m.position.set(TX(sx+w/2),(h||.12)/2,TZ(sy+d/2)); m.receiveShadow=true; scene.add(m); return m;
+}
+function cyl(r1,r2,h,seg,mat,x,y,z){
+  const m=new T.Mesh(new T.CylinderGeometry(r1,r2,h,seg),mat);
+  m.position.set(x,y+h/2,z); m.castShadow=true; m.receiveShadow=true; scene.add(m); return m;
+}
+
+/* ── земля, река, дальний берег ── */
+const grass=new T.Mesh(new T.PlaneGeometry(600,600),M(0x6d8f52));
+grass.rotation.x=-Math.PI/2; grass.receiveShadow=true; scene.add(grass);
+const plot=new T.Mesh(new T.ShapeGeometry(new T.Shape(BORDER.map(p=>new T.Vector2(TX(p[0]),-TZ(p[1]))))),M(0x7ba05c));
+plot.rotation.x=-Math.PI/2; plot.position.y=.02; plot.receiveShadow=true; scene.add(plot);
+
+const river=new T.Mesh(new T.PlaneGeometry(600,70),M(0x2f7386));
+river.rotation.x=-Math.PI/2; river.position.set(0,.05,TZ(44)-38); scene.add(river);
+const farbank=new T.Mesh(new T.PlaneGeometry(600,300),M(0x5e7f4c));
+farbank.rotation.x=-Math.PI/2; farbank.position.set(0,.04,TZ(44)-223); scene.add(farbank);
+
+/* ── дорога ── */
+slab(-40,-11,120,7,0x45494b,.1);
+/* разметка */
+for(let i=-38;i<78;i+=6) slab(i,-7.7,3,.3,0xd8d2be,.12);
+
+/* ── деревья ── */
+const trunkM=M(0x6b5136);
+function tree(x,z,s){
+  cyl(.16*s,.22*s,1.9*s,7,trunkM,x,0,z);
+  const c=new T.Mesh(new T.ConeGeometry(1.5*s,4.4*s,8),M(0x4f7340));
+  c.position.set(x,1.9*s+2.2*s,z); c.castShadow=true; scene.add(c);
+}
+[[-1.6,10],[-1.6,20],[-1.6,30],[38.6,8],[39,20],[39.4,30],[39.6,40],[-1.6,40]].forEach(p=>tree(TX(p[0]),TZ(p[1]),1));
+for(let i=0;i<34;i++) tree(-150+i*9+((i*37)%7),TZ(44)-80-((i*53)%26),1.5+((i*31)%9)/9);
+
+/* ── ограждение (предлагаемая линия) ── */
+const fPost=M(0x8d6a45), fRail=M(0xa07f56);
+function fenceRun(x1,y1,x2,y2){
+  const n=Math.max(2,Math.round(Math.hypot(x2-x1,y2-y1)/2.5));
+  for(let i=0;i<=n;i++){ const t=i/n; box(.12,1.35,.12,fPost,TX(x1+(x2-x1)*t),0,TZ(y1+(y2-y1)*t)); }
+  const len=Math.hypot(TX(x2)-TX(x1),TZ(y2)-TZ(y1));
+  const ang=Math.atan2(-(TZ(y2)-TZ(y1)),TX(x2)-TX(x1));
+  [0.45,1.1].forEach(h=>box(len,.09,.06,fRail,(TX(x1)+TX(x2))/2,h,(TZ(y1)+TZ(y2))/2,ang));
+}
+fenceRun(0,0,9.6,0); fenceRun(14.6,0,38,0); fenceRun(0,0,0,44); fenceRun(38,0,40,44); fenceRun(0,44,40,44);
+/* створки ворот */
+box(.14,1.7,.14,M(0x8a4f22),TX(9.6),0,TZ(0)); box(.14,1.7,.14,M(0x8a4f22),TX(14.6),0,TZ(0));
+box(5,.12,.1,M(0xc8703a),TX(12.1),1.62,TZ(0));
+
+/* ── покрытия ── */
+slab(9.6,0,5,25,0x46494c);          // входная тропа
+slab(14.6,22.5,7,2.5,0x46494c);
+slab(1.5,32,8,5,0x46494c);          // зрительская площадка
+slab(9.6,-3,5,3,0x46494c);          // заезд
+slab(23,0.5,9,5.5,0x9aa0a2,.1);     // парковка щебень
+slab(20,9,15,13,0xd2bd86,.14);      // детская — песок
+slab(0.8,8,8.8,24,0x7fa85e,.06);    // полянка
+
+/* тканые половики */
+const rugCv=document.createElement('canvas'); rugCv.width=8; rugCv.height=64;
+const rc=rugCv.getContext('2d'); ['#b84a68','#e2d3ae','#2f6c86','#d98b2b','#e2d3ae','#5b7f45','#b84a68','#e2d3ae'].forEach((c,i)=>{rc.fillStyle=c;rc.fillRect(0,i*8,8,8);});
+const rugTex=new T.CanvasTexture(rugCv);
+for(let i=0;i<5;i++){
+  const m=new T.Mesh(new T.PlaneGeometry(3.4,1.1),new T.MeshLambertMaterial({map:rugTex}));
+  m.rotation.x=-Math.PI/2; m.position.set(TX(1.6+(i%2)*4.2+1.7),.09,TZ(12+i*3.7+.55)); m.receiveShadow=true; scene.add(m);
+}
+
+/* ── здание клуба ── */
+const wall=M(0xe4ddcb), roofM=M(0x6b4436), trim=M(0x3f5f74);
+box(13,5.2,16,wall,TX(21.1),0,TZ(33));
+(function(){
+  const sh=new T.Shape(); sh.moveTo(-6.9,0); sh.lineTo(0,2.6); sh.lineTo(6.9,0); sh.lineTo(0,0);
+  const g=new T.ExtrudeGeometry(sh,{depth:16.6,bevelEnabled:false});
+  const m=new T.Mesh(g,roofM); m.position.set(TX(21.1),5.2,TZ(33)-8.3);
+  m.castShadow=true; scene.add(m);
+})();
+box(4.2,.25,1.8,roofM,TX(21.1),3.3,TZ(25)-.9);                 // козырёк входа
+box(1.6,2.3,.14,M(0x8a5a33),TX(21.1),.35,TZ(25)+.06);          // дверь
+box(3.6,.35,3.4,M(0xcfc7b4),TX(21.1),0,TZ(25)-1.3);            // крыльцо
+[16.8,18.6,23.6,25.4].forEach(x=>box(1.1,1.5,.12,trim,TX(x),1.7,TZ(25)+.06));
+[27,30,36,39].forEach(z=>{box(.12,1.5,1.1,trim,TX(14.6)-.06,1.7,TZ(z)); box(.12,1.5,1.1,trim,TX(27.6)+.06,1.7,TZ(z));});
+box(13.2,.35,16.2,M(0xb9b0a0),TX(21.1),0,TZ(33));              // цоколь
+
+/* ── сцена: полукруглый настил + свод из оранжевого поликарбоната ── */
+(function(){
+  const sh=new T.Shape(); sh.moveTo(-4,0); sh.absarc(0,0,4,Math.PI,Math.PI*2,false); sh.lineTo(-4,0);
+  const deck=new T.Mesh(new T.ExtrudeGeometry(sh,{depth:.9,bevelEnabled:false}),M(0xa97b4c));
+  deck.rotation.x=-Math.PI/2; deck.position.set(TX(5.5),0,TZ(41)); deck.castShadow=true; deck.receiveShadow=true; scene.add(deck);
+  const skirt=new T.Mesh(new T.ExtrudeGeometry(sh,{depth:.12,bevelEnabled:false}),M(0x7d5a37));
+  skirt.rotation.x=-Math.PI/2; skirt.scale.set(1.05,1.05,1); skirt.position.set(TX(5.5),.9,TZ(41)); scene.add(skirt);
+  // свод из оранжевого поликарбоната на четырёх стойках
+  const R=4.6, SPR=2.7, arch=new T.Shape();
+  arch.absarc(0,0,R,0,Math.PI,false); arch.absarc(0,0,R-.1,Math.PI,0,true);
+  const vault=new T.Mesh(new T.ExtrudeGeometry(arch,{depth:5.6,bevelEnabled:false}),
+    new T.MeshPhongMaterial({color:0xE0651A,transparent:true,opacity:.66,side:T.DoubleSide,shininess:80,specular:0x552200}));
+  vault.scale.y=.46; vault.position.set(TX(5.5),SPR,TZ(41.8)); scene.add(vault);
+  [[-R,0],[R,0],[-R,5.6],[R,5.6]].forEach(p=>cyl(.09,.09,SPR,10,M(0xcfc8ba),TX(5.5)+p[0],0,TZ(41.8)+p[1]));
+  [0,5.6].forEach(dz=>box(9.4,.14,.14,M(0xC2560F),TX(5.5),SPR-.07,TZ(41.8)+dz));
+})();
+
+/* цветник */
+slab(10,34,4.2,6,0x6b4f33,.3);
+for(let i=0;i<22;i++){ const s2=new T.Mesh(new T.SphereGeometry(.26,7,6),M([0xd44f6e,0xe8b23a,0xb45ec8,0xe2643a][i%4]));
+  s2.position.set(TX(10.4+ (i%4)*1.1),.46,TZ(34.5+Math.floor(i/4)*1)); s2.castShadow=true; scene.add(s2); }
+
+/* ── беседка ── */
+(function(){
+  const cx=TX(17.5), cz=TZ(5.5);
+  cyl(2.6,2.6,.3,6,M(0xb08a5c),cx,0,cz);
+  for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3; box(.15,2.5,.15,M(0x8d6a45),cx+2.3*Math.cos(a),.3,cz+2.3*Math.sin(a));}
+  for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3, a2=a+Math.PI/3;
+    const mx=(2.3*Math.cos(a)+2.3*Math.cos(a2))/2, mz=(2.3*Math.sin(a)+2.3*Math.sin(a2))/2;
+    box(2.4,.35,.18,M(0xc09a68),cx+mx,.75,cz+mz,-Math.atan2(Math.sin(a2)-Math.sin(a),Math.cos(a2)-Math.cos(a)));}
+  const rf=new T.Mesh(new T.ConeGeometry(3.05,1.25,6),M(0x54463c)); rf.position.set(cx,3.45,cz); rf.castShadow=true; scene.add(rf);
+  cyl(.5,.5,.6,8,M(0xb08a5c),cx,.3,cz);
+})();
+
+/* ── детская площадка ── */
+const woodM=M(0xc59a5e), steelB=M(0x2f6c86), steelO=M(0xE0651A), steelG=M(0x5b8f4e);
+// песочница 2,5×2,5
+(function(){const x=TX(23.45),z=TZ(19.75); slab(22.2,18.5,2.5,2.5,0xe0cb95,.16);
+  box(2.7,.34,.22,woodM,x,.1,z-1.35); box(2.7,.34,.22,woodM,x,.1,z+1.35);
+  box(.22,.34,2.7,woodM,x-1.35,.1,z); box(.22,.34,2.7,woodM,x+1.35,.1,z);})();
+// качалка-балансир
+(function(){const x=TX(23.3),z=TZ(11.65);
+  cyl(.3,.3,.5,10,steelB,x,0,z);
+  const p=box(1.9,.16,.34,steelO,x,.52,z); p.rotation.z=.13;
+  [-.85,.85].forEach(d=>box(.2,.42,.1,steelB,x+d,.52+(d>0?-.11:.11),z));})();
+// качели «Гнездо»
+(function(){const x=TX(30.1),z=TZ(19.2);
+  [-1.5,1.5].forEach(d=>{ [-0.75,0.75].forEach(e=>{const m=box(.13,2.6,.13,steelG,x+d,0,z+e); m.rotation.x=e>0?-.26:.26;}); });
+  box(3.4,.14,.14,steelG,x,2.5,z);
+  [-.62,.62].forEach(d=>box(.05,1.35,.05,M(0x3b3b3b),x+d,1.15,z));
+  const nest=new T.Mesh(new T.TorusGeometry(.52,.1,8,20),steelO);
+  nest.rotation.x=Math.PI/2; nest.position.set(x,1.15,z); nest.castShadow=true; scene.add(nest);
+  const web=new T.Mesh(new T.CircleGeometry(.5,16),new T.MeshLambertMaterial({color:0x33383a,side:T.DoubleSide}));
+  web.rotation.x=-Math.PI/2; web.position.set(x,1.14,z); scene.add(web);})();
+// спортивная лазилка
+(function(){const x=TX(31.5),z=TZ(13);
+  [[-2,-1.5],[2,-1.5],[-2,1.5],[2,1.5]].forEach(p=>box(.14,2.5,.14,steelB,x+p[0],0,z+p[1]));
+  box(4.28,.14,.14,steelB,x,2.45,z-1.5); box(4.28,.14,.14,steelB,x,2.45,z+1.5);
+  box(.14,.14,3.14,steelB,x-2,2.45,z); box(.14,.14,3.14,steelB,x+2,2.45,z);
+  for(let i=1;i<7;i++) box(.09,.09,3.0,steelO,x-2+i*0.57,2.4,z);       // рукоход
+  for(let i=1;i<6;i++) box(3.9,.08,.08,steelG,x,0.42*i,z+1.5);          // шведская стенка
+  for(let i=0;i<7;i++) box(.04,2.3,.04,M(0x8a6a44),x-1.8+i*.6,.1,z-1.5);// канатная сетка
+})();
+
+/* парковка — автомобили */
+[[24.6,2.4,0xbcbfc2],[27.1,2.4,0x3f5f74],[29.6,2.4,0x8a4f42]].forEach(c=>{
+  box(1.9,1.0,4.2,M(c[2]),TX(c[0]),.18,TZ(c[1]+2));
+  box(1.7,.7,2.1,M(0x6f7a80),TX(c[0]),1.18,TZ(c[1]+2.6));});
+
+/* септик */
+cyl(1.6,1.6,.35,16,M(0x8b8f86),TX(32.5),0,TZ(33));
+cyl(.4,.4,.12,12,M(0x5a5f58),TX(32.5),.35,TZ(33));
+
+/* туалеты на демонтаж */
+[[1.3,42.5],[3,42.5]].forEach(p=>{
+  const m=new T.Mesh(new T.BoxGeometry(1.4,2.3,1.5),new T.MeshLambertMaterial({color:0x7b6b55,transparent:true,opacity:.45}));
+  m.position.set(TX(p[0]),1.15,TZ(p[1])); scene.add(m);});
+
+/* ── выноски с номерами ── */
+const layer=document.getElementById('pins');
+const pinEls=OBJECTS.map(o=>{
+  const d=document.createElement('div'); d.className='pin';
+  d.innerHTML='<b>'+o.n+'</b><span>'+o.name+'</span>';
+  layer.appendChild(d); return d;
+});
+const pinVec=OBJECTS.map(o=>new T.Vector3(TX(o.pin[0]),o.pin[2],TZ(o.pin[1])));
+let pinsOn=true;
+
+/* ── орбитальное управление ── */
+const target=new T.Vector3(), sph=new T.Spherical();
+function setView(eye,tgt){
+  target.copy(tgt); cam.position.copy(eye);
+  sph.setFromVector3(cam.position.clone().sub(target));
+}
+const VIEWS=[
+  [new T.Vector3(-6.9,2.4,26),  new T.Vector3(-4,1.6,-2)],
+  [new T.Vector3(-13.8,1.7,2),  new T.Vector3(-13.5,3.0,-19)],
+  [new T.Vector3(14,4.5,20),    new T.Vector3(8.5,1.2,6.5)],
+  [new T.Vector3(30,36,44),     new T.Vector3(-1,0,0)],
+];
+setView(VIEWS[0][0],VIEWS[0][1]);
+
+let drag=null;
+const pointerPos=e=>({x:e.touches?e.touches[0].clientX:e.clientX, y:e.touches?e.touches[0].clientY:e.clientY});
+function down(e){ drag=pointerPos(e); }
+function move(e){
+  if(!drag) return;
+  const p=pointerPos(e), dx=p.x-drag.x, dy=p.y-drag.y; drag=p;
+  sph.theta-=dx*.005;
+  sph.phi=Math.max(.12,Math.min(Math.PI/2-.03, sph.phi-dy*.005));
+  e.preventDefault();
+}
+function up(){ drag=null; }
+cv.addEventListener('mousedown',down); cv.addEventListener('touchstart',down,{passive:true});
+addEventListener('mousemove',move); cv.addEventListener('touchmove',move,{passive:false});
+addEventListener('mouseup',up); addEventListener('touchend',up);
+cv.addEventListener('wheel',e=>{ sph.radius=Math.max(6,Math.min(140,sph.radius*(1+Math.sign(e.deltaY)*.11))); e.preventDefault(); },{passive:false});
+
+document.querySelectorAll('button.view[data-cam]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('button.view[data-cam]').forEach(o=>o.setAttribute('aria-pressed','false'));
+  b.setAttribute('aria-pressed','true');
+  const v=VIEWS[+b.dataset.cam]; setView(v[0],v[1]);
+}));
+const tgBtn=document.getElementById('togglePins');
+tgBtn.addEventListener('click',()=>{ pinsOn=!pinsOn; tgBtn.setAttribute('aria-pressed',String(pinsOn));
+  if(!pinsOn) pinEls.forEach(p=>p.style.opacity=0); });
+
+/* ── цикл отрисовки ── */
+function resize(){
+  const w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==w*rnd.getPixelRatio()||cv.height!==h*rnd.getPixelRatio()){
+    rnd.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();
+  }
+}
+const v3=new T.Vector3();
+function frame(){
+  resize();
+  cam.position.setFromSpherical(sph).add(target); cam.lookAt(target);
+  rnd.render(scene,cam);
+  if(pinsOn){
+    const w=cv.clientWidth,h=cv.clientHeight;
+    pinVec.forEach((p,i)=>{
+      v3.copy(p).project(cam);
+      const el=pinEls[i], vis=v3.z>-1&&v3.z<1&&Math.abs(v3.x)<1.25&&Math.abs(v3.y)<1.25;
+      el.style.opacity=vis?'1':'0';
+      if(vis){ el.style.left=((v3.x*.5+.5)*w)+'px'; el.style.top=((-v3.y*.5+.5)*h)+'px'; }
+    });
+  }
+  requestAnimationFrame(frame);
+}
+document.getElementById('loading').remove();
+frame();
+})();
+</script>
