@@ -60,12 +60,13 @@ class Config:
     debtors_hour: int = int(os.getenv("DEBTORS_HOUR", "9"))
     # Во сколько присылать напоминания по задачам председателя
     tasks_reminder_hour: int = int(os.getenv("TASKS_REMINDER_HOUR", "9"))
-    # Квартиры, которые передают показания ресурсникам сами. В печатной
-    # ведомости их строки скрыты (в реестре остаются — при необходимости
-    # достаточно убрать номер отсюда, и строка вернётся).
+    # Помещения, которые рассчитываются с ресурсниками напрямую: 2 и 3 —
+    # нежилые, 42 — тоже нежилое (у ОЭК строк для них в реестре нет).
+    # В печатной ведомости их строки скрыты и в счёт «сдали показания» не
+    # идут; в реестре они остаются — уберите номер отсюда, и строка вернётся.
     self_reporting_flats: tuple[str, ...] = field(
         default_factory=lambda: tuple(
-            x.strip() for x in os.getenv("SELF_REPORTING_FLATS", "2,3")
+            x.strip() for x in os.getenv("SELF_REPORTING_FLATS", "2,3,42")
             .replace(";", ",").split(",") if x.strip()))
 
     base_dir: Path = BASE_DIR
