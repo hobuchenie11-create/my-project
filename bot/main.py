@@ -7,7 +7,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
-from bot import single_instance
+from bot import diagnostics, single_instance
 from bot.config import config
 from bot.handlers import (admin, common, faq, group, manual, oek, readings,
                           registration, reports, start, tasks)
@@ -142,6 +142,11 @@ async def main() -> None:
     bot = Bot(token=config.bot_token, session=session,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
+
+    # Журнал входящих и ответ при внутренней ошибке. Подключаем до роутеров:
+    # молчание в ответ на показания — худшее, что может случиться, житель
+    # считает их переданными, а в ведомости их нет.
+    diagnostics.setup(dp)
 
     # Порядок важен: FSM-сценарии раньше общих обработчиков меню
     dp.include_router(common.router)
