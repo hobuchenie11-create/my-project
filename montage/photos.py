@@ -18,10 +18,12 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import random
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -92,7 +94,7 @@ def normalise_formats(photos: list[Path], work: Path) -> list[Path]:
     if not register_heif():
         sys.exit(
             f"{len(heic)} photo(s) are HEIC/HEIF, which ffmpeg cannot read here.\n"
-            f"Install support with:  .venv/bin/pip install pillow-heif\n"
+            f"Install support with:  {Path(sys.prefix) / ('Scripts' if os.name == 'nt' else 'bin') / 'pip'} install pillow-heif\n"
             f"Or export them as JPEG (iPhone: Settings → Camera → Formats → "
             f"Most Compatible)."
         )
@@ -324,7 +326,7 @@ def build_collage(
 
     run([
         "npx", "remotion", "render", "src/index.tsx", "CollageBurst",
-        f"--props={props_file.relative_to(REMOTION_ROOT)}",
+        f"--props={props_file.relative_to(REMOTION_ROOT).as_posix()}",
         f"--frames={start_frame}-{end_frame}",
         "--codec=h264", "--crf=20",
         f"--output={out.resolve()}",
@@ -420,7 +422,8 @@ def main() -> int:
     if args.style == "collage":
         size = SIZES["vertical"]
 
-    work = (args.work_dir or Path("/tmp") / f"autophotos-{int(time.time())}").resolve()
+    work = (args.work_dir
+        or Path(tempfile.gettempdir()) / f"autophotos-{int(time.time())}").resolve()
     work.mkdir(parents=True, exist_ok=True)
 
     started = time.time()

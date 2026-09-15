@@ -1,123 +1,20 @@
 #!/usr/bin/env bash
-# Provision the automontage engine: OpenMontage (agent + tools) + Remotion
-# (animation, titles, transitions). Safe to re-run — every step is idempotent.
+# Provision the automontage engine on macOS / Linux.
+#
+# The real work lives in setup.py so that Windows and POSIX share one tested
+# code path; this wrapper only finds a Python to run it with.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENGINE="$ROOT/engine/OpenMontage"
-OPENMONTAGE_REPO="${OPENMONTAGE_REPO:-https://github.com/calesthio/OpenMontage.git}"
 
-step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
-have() { command -v "$1" >/dev/null 2>&1; }
+PY=""
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1; then PY="$candidate"; break; fi
+done
 
-# --- system dependencies ---------------------------------------------------
-step "Checking system dependencies"
-missing=()
-have git  || missing+=("git")
-have node || missing+=("nodejs (18+)")
-have npm  || missing+=("npm")
-have python3 || missing+=("python3 (3.10+)")
-if ((${#missing[@]})); then
-  echo "Install these first: ${missing[*]}" >&2
+if [ -z "$PY" ]; then
+  echo "Python 3.10+ не найден. Установите его и запустите ещё раз." >&2
   exit 1
 fi
 
-if ! have ffmpeg || ! have ffprobe; then
-  echo "ffmpeg/ffprobe missing — attempting install"
-  # Work out the privilege prefix in *this* shell: assigning it inside a
-  # subshell leaves it unset out here, and `set -u` then aborts on $SUDO.
-  SUDO=""
-  if [ "$(id -u)" -ne 0 ]; then
-    have sudo || { echo "Need root or sudo to install ffmpeg." >&2; exit 1; }
-    SUDO="sudo"
-  fi
-  if have apt-get; then
-    $SUDO apt-get update -qq || true
-    # --no-install-recommends skips the VA driver packages, which are optional
-    # for our use and frequently 404 on stale mirrors.
-    $SUDO apt-get install -y --no-install-recommends ffmpeg
-  elif have dnf; then
-    $SUDO dnf install -y ffmpeg
-  elif have pacman; then
-    $SUDO pacman -S --noconfirm ffmpeg
-  elif have brew; then
-    brew install ffmpeg          # Homebrew refuses to run under sudo
-  else
-    echo "Install ffmpeg manually: https://ffmpeg.org/download.html" >&2
-    exit 1
-  fi
-fi
-echo "node $(node -v) · python $(python3 -V 2>&1 | cut -d' ' -f2) · $(ffmpeg -version | head -1 | cut -d' ' -f1-3)"
-
-# --- OpenMontage -----------------------------------------------------------
-# Pinned to a commit this project has actually been tested against. Upstream
-# moves fast and has broken the Remotion bridge before; unpin deliberately with
-#   OPENMONTAGE_REF=main ./setup.sh
-OPENMONTAGE_REF="${OPENMONTAGE_REF:-08e2151fa02de28a5d6a312b3d575692bf147ad7}"
-
-step "Fetching OpenMontage"
-mkdir -p "$ROOT/engine"
-if [ -d "$ENGINE/.git" ]; then
-  echo "already cloned"
-else
-  git clone --depth 1 "$OPENMONTAGE_REPO" "$ENGINE"
-fi
-
-if [ "$OPENMONTAGE_REF" = "main" ] || [ "$OPENMONTAGE_REF" = "HEAD" ]; then
-  git -C "$ENGINE" pull --ff-only || echo "pull skipped (local changes or detached HEAD)"
-  echo "using upstream latest: $(git -C "$ENGINE" rev-parse --short HEAD)"
-elif [ "$(git -C "$ENGINE" rev-parse HEAD)" = "$OPENMONTAGE_REF" ]; then
-  echo "already pinned to ${OPENMONTAGE_REF:0:7}"
-elif git -C "$ENGINE" fetch --depth 1 origin "$OPENMONTAGE_REF" 2>/dev/null &&
-     git -C "$ENGINE" checkout -q FETCH_HEAD 2>/dev/null; then
-  echo "pinned to ${OPENMONTAGE_REF:0:7}"
-else
-  echo "could not pin ${OPENMONTAGE_REF:0:7} — continuing on $(git -C "$ENGINE" rev-parse --short HEAD)"
-  echo "if a render fails, this is the first thing to suspect" >&2
-fi
-
-# --- Python side -----------------------------------------------------------
-step "Installing Python dependencies"
-[ -d "$ROOT/.venv" ] || python3 -m venv "$ROOT/.venv"
-PIP="$ROOT/.venv/bin/pip"
-"$PIP" install -q --upgrade pip
-"$PIP" install -q -r "$ENGINE/requirements.txt"
-# Local speech-to-text for captions, the Claude SDK for --select llm, and
-# HEIC support — ffmpeg has no HEIF demuxer, so iPhone photos need transcoding.
-"$PIP" install -q faster-whisper anthropic pillow-heif
-echo "installed into $ROOT/.venv"
-
-# --- Remotion --------------------------------------------------------------
-step "Installing Remotion"
-# Our config makes the headless browser environment-driven; the upstream
-# checkout ships none, so install it after every clone/pull.
-cp "$ROOT/montage/remotion/remotion.config.ts" "$ENGINE/remotion-composer/remotion.config.ts"
-(cd "$ENGINE/remotion-composer" && npm install --no-audit --no-fund)
-echo "remotion $(cd "$ENGINE/remotion-composer" && node -p "require('remotion/package.json').version")"
-
-# --- Remotion browser ------------------------------------------------------
-# Remotion renders in headless Chrome. It downloads its own by default, but
-# locked-down networks block that, so prefer a Chromium that is already here.
-step "Checking the Remotion renderer"
-BROWSER=""
-for candidate in \
-  /opt/pw-browsers/chromium_headless_shell-*/chrome-linux/headless_shell \
-  /opt/pw-browsers/chromium-*/chrome-linux/chrome; do
-  [ -x "$candidate" ] && BROWSER="$candidate" && break
-done
-[ -z "$BROWSER" ] && BROWSER="$(command -v chromium chromium-browser google-chrome 2>/dev/null | head -1 || true)"
-
-if [ -n "$BROWSER" ]; then
-  echo "using local browser: $BROWSER"
-else
-  echo "no local Chromium found — Remotion will download its own on first render"
-fi
-
-step "Done"
-cat <<EOF
-
-Run a montage with:
-
-  ./automontage <video-file>
-
-EOF
+exec "$PY" "$ROOT/setup.py" "$@"

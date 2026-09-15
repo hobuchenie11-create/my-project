@@ -104,10 +104,24 @@ def media_duration(path: Path) -> float:
     return float(ffprobe_json(path)["format"]["duration"])
 
 
+def resolve_executable(cmd: list[str]) -> list[str]:
+    """Expand a bare command name to a full path on Windows.
+
+    `npx` and `npm` are .cmd shims there, and CreateProcess will not find them
+    from a bare name the way a POSIX shell does.
+    """
+    if os.name == "nt" and cmd:
+        found = shutil.which(cmd[0])
+        if found:
+            return [found, *cmd[1:]]
+    return cmd
+
+
 def run(cmd: list[str], *, cwd: Path | None = None, timeout: int | None = None):
     """Run a command, surfacing stderr on failure instead of swallowing it."""
     proc = subprocess.run(
-        cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+        resolve_executable(cmd),
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
         cwd=str(cwd) if cwd else None, timeout=timeout,
     )
     if proc.returncode != 0:
@@ -269,7 +283,7 @@ def render_talking_head(
     try:
         run([
             "npx", "remotion", "render", "src/index.tsx", "TalkingHead",
-            f"--props={props_file.relative_to(REMOTION_ROOT)}",
+            f"--props={props_file.relative_to(REMOTION_ROOT).as_posix()}",
             f"--width={meta['width']}", f"--height={meta['height']}", f"--fps={fps}",
             f"--frames=0-{frames - 1}",
             "--codec=h264", "--crf=18",
