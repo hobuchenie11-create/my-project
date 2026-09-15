@@ -229,7 +229,7 @@ git clone https://github.com/hobuchenie11-create/my-project.git
 cd my-project
 git checkout claude/auto-video-editing-engine-m29h4t
 ./setup.sh
-./autophotos input/photos --title "Test"
+./autophotos samples/demo --title "Test"
 ```
 
 `setup.sh` took 1m41s on a fast connection; budget 5–15 minutes on a home one.

@@ -231,11 +231,11 @@ def main() -> int:
     step("Готово")
     if WINDOWS:
         print("\nЗапуск монтажа:\n"
-              "  .\\autophotos.cmd input\\photos --title \"Проверка\"\n"
+              "  .\\autophotos.cmd samples\\demo --title \"Проверка\"\n"
               "  .\\automontage.cmd input\\video\\запись.mp4\n")
     else:
         print("\nЗапуск монтажа:\n"
-              "  ./autophotos input/photos --title \"Проверка\"\n"
+              "  ./autophotos samples/demo --title \"Проверка\"\n"
               "  ./automontage input/video/запись.mp4\n")
     return 0
 
