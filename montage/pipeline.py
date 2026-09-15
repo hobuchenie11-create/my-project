@@ -36,7 +36,8 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from common import (  # noqa: E402
-    PROJECT_ROOT, Stage, library_path, log, prepare_remotion_env, probe_media,
+    PROJECT_ROOT, Stage, library_path, log, make_portable,
+    prepare_remotion_env, probe_media,
     render_talking_head, require_binaries, require_engine, word_captions,
     write_manifest,
 )
@@ -594,7 +595,9 @@ def main() -> int:
     if transcript and not edited_transcript:
         log("no transcript words survived the cut; skipping captions")
     overlays = build_overlays(title, args.outro, probe_media(stitched)["duration"])
-    finish(stitched, out_path, edited_transcript, overlays, args.font_size, args.highlight)
+    rendered = finish(stitched, work / "rendered.mp4", edited_transcript,
+                      overlays, args.font_size, args.highlight)
+    make_portable(rendered, out_path)
 
     final = probe_media(out_path)
     write_manifest(out_path, {

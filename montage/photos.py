@@ -31,8 +31,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from common import (  # noqa: E402
     LIBRARY, REMOTION_ROOT, Stage, add_title_overlays, library_path, log,
-    media_duration, prepare_remotion_env, probe_media, remotion_public,
-    require_binaries, require_engine, run, write_manifest,
+    make_portable, media_duration, prepare_remotion_env, probe_media,
+    remotion_public, require_binaries, require_engine, run, write_manifest,
 )
 
 PHOTO_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff", ".heic"}
@@ -471,7 +471,7 @@ def main() -> int:
     label = args.label or args.title or f"{args.style}-{len(photos)}-photos"
     out_path = args.output.expanduser().resolve() if args.output else library_path(label)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(titled), out_path)
+    make_portable(titled, out_path)
 
     final = probe_media(out_path)
     write_manifest(out_path, {

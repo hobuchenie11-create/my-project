@@ -296,6 +296,39 @@ def render_talking_head(
     return out_path.exists()
 
 
+def make_portable(video: Path, out_path: Path) -> Path:
+    """Write the finished file in a form stock players will actually open.
+
+    Encoders upstream can emit full-range `yuvj420p`; Windows' built-in player
+    refuses those outright, and other players show washed-out colour. Convert
+    only when the file is actually non-conforming — otherwise just move the
+    moov atom to the front, which costs nothing and makes playback start
+    immediately.
+    """
+    info = ffprobe_json(video)
+    stream = next((s for s in info["streams"] if s["codec_type"] == "video"), {})
+    non_conforming = (
+        stream.get("codec_name") != "h264"
+        or stream.get("pix_fmt") != "yuv420p"
+        or stream.get("color_range") == "pc"
+    )
+
+    if non_conforming:
+        run([
+            "ffmpeg", "-v", "error", "-i", str(video),
+            "-c:v", "libx264", "-profile:v", "high", "-level", "4.0",
+            "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "medium",
+            "-c:a", "aac", "-b:a", "192k",
+            "-movflags", "+faststart", str(out_path), "-y",
+        ])
+    else:
+        run([
+            "ffmpeg", "-v", "error", "-i", str(video), "-c", "copy",
+            "-movflags", "+faststart", str(out_path), "-y",
+        ])
+    return out_path
+
+
 def add_title_overlays(
     video: Path, out_path: Path, title: str, outro: str, *, font_size: int = 64,
 ) -> Path:
