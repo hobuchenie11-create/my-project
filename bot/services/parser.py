@@ -49,6 +49,12 @@ COMMON_RE = re.compile(r"общедом\w*|одпу|общ\w*\s+прибор|\b�
 # такой хвост пропускаем, иначе строка выглядит как подпись без показания.
 VALUE_RE = re.compile(r"(\d[\d\s]*(?:[.,]\d+)?)\s*[;.,)\]]*\s*$")
 
+# Единицы измерения после числа: «Хвс 281 м3», «Эл.эн 8770 кВт·ч».
+# Отбрасываем — иначе строка не выглядит показанием.
+UNIT_TAIL_RE = re.compile(
+    r"\s*(?:м\s*3|м³|куб\.?\s*м\.?|квт\s*[·*x/-]?\s*ч|квт)\s*[.;]*\s*$",
+    re.IGNORECASE)
+
 # Дробная часть в скобках: «Хвс с/у 1238(13)» — на счётчике чёрные ролики
 # (кубометры) и красные (литры), и жители дописывают красные в скобках.
 # Ресурсникам передаются целые кубометры, поэтому скобку отбрасываем.
@@ -199,6 +205,7 @@ def parse_message(text: str) -> ParsedReadings:
     for raw_line in text.splitlines():
         for segment in SEGMENT_RE.split(raw_line):
             line = TRAILING_FRACTION_RE.sub("", segment.strip()).strip()
+            line = UNIT_TAIL_RE.sub("", line).strip()
             if not line:
                 continue
 
@@ -225,6 +232,15 @@ def parse_message(text: str) -> ParsedReadings:
             if not raw_value:
                 if pending_value and label:
                     raw_value, pending_value = pending_value, ""
+                elif (any(ch.isdigit() for ch in line)
+                        and _classify(label, context)[0] not in (None, "gas")):
+                    # Прибор назван, цифры в строке есть, а числа не вышло —
+                    # обычно к нему прилипла буква («Гвс 140С»). Молчать нельзя:
+                    # показание исчезло бы, и житель об этом не узнал.
+                    result.errors.append(
+                        f"Не удалось разобрать число в строке: «{line}»")
+                    pending_raw = ""
+                    continue
                 else:
                     pending_raw = raw_label     # подпись без числа — ждём число
                     continue

@@ -118,3 +118,29 @@ def test_separate_meters_still_need_their_locations(conn):
     assert outcome.errors == []
     assert outcome.saved == {"cws_kitchen": 10.0, "cws_bathroom": 20.0,
                              "hws_kitchen": 30.0, "hws_bathroom": 40.0}
+
+
+def test_single_water_figure_for_a_split_flat_is_reported(conn):
+    """Одна цифра ХВС там, где счётчиков два, и раздельных нет — не молчим.
+
+    Такая строка считается итогом для сверки и в приборы не пишется. Пока
+    рядом есть кухня и санузел — это верно, но без них показание просто
+    исчезало, и житель об этом не узнавал.
+    """
+    apt = repository.get_apartment_by_number(conn, "1")
+    parsed = parse_message("Кв 1\nЭлект. 29814\nХвс 304")
+    outcome = save_parsed_readings(conn, apt, parsed, None, period="2026-07")
+
+    assert outcome.saved == {"electricity": 29814.0}
+    assert any("два счётчика" in e for e in outcome.errors)
+    assert any("304" in e for e in outcome.errors)
+
+
+def test_single_water_figure_stays_a_checksum_when_parts_are_there(conn):
+    """Кухня и санузел присланы — «Хвс» рядом с ними по-прежнему итог."""
+    apt = repository.get_apartment_by_number(conn, "1")
+    parsed = parse_message("Кв 1\nХвс кухня 100\nХвс с/у 204\nХвс 304")
+    outcome = save_parsed_readings(conn, apt, parsed, None, period="2026-07")
+
+    assert outcome.saved == {"cws_kitchen": 100.0, "cws_bathroom": 204.0}
+    assert not any("два счётчика" in e for e in outcome.errors)

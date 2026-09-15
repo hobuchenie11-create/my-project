@@ -314,3 +314,26 @@ def test_hot_total_written_as_obshch_gor():
     """«Общ. Гор.» — тоже итог по горячей воде."""
     parsed = parse_message("Кв. 5\nГв. Кух. 186\nГв. Ван. 378\nОбщ. Гор. 564")
     assert parsed.values["hws_total"] == 564.0
+
+
+def test_letter_stuck_to_the_value_is_reported(tmp_path=None):
+    """«Гвс 140С» — опечатка. Раньше строка пропадала молча вместе с показанием."""
+    parsed = parse_message("Кв 31\nЭлект. 29814\nХвс 304\nГвс 140С")
+
+    assert parsed.values == {"electricity": 29814.0, "cws": 304.0}
+    assert parsed.errors == ["Не удалось разобрать число в строке: «Гвс 140С»"]
+
+
+def test_units_after_the_value_are_dropped():
+    """«Хвс 281 м3», «Эл.эн 8770 кВт·ч» — единицы измерения не мешают."""
+    assert parse_message("Кв 5\nХвс 281 м3").values == {"cws": 281.0}
+    assert parse_message("Кв 5\nХвс 281 м³").values == {"cws": 281.0}
+    assert parse_message("Кв 5\nХвс 15 куб.м").values == {"cws": 15.0}
+    assert parse_message("Кв 5\nЭл.эн 8770 кВт·ч").values == {"electricity": 8770.0}
+
+
+def test_label_without_digits_still_waits_for_its_value():
+    """Подпись на одной строке, число на следующей — ошибкой это не считается."""
+    parsed = parse_message("КВ.41\nЭЛ.ЭНЕРГИЯ\n31560")
+    assert parsed.values == {"electricity": 31560.0}
+    assert parsed.errors == []

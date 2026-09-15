@@ -139,7 +139,27 @@ def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
     _check_hws_total(outcome, hws_total, values, available)
     _check_total(outcome, "ХВС", folded.get("cws"), values,
                  ("cws_kitchen", "cws_bathroom"))
+    _check_folded_alone(outcome, folded, values, apartment)
     return outcome
+
+
+def _check_folded_alone(outcome: SaveOutcome, folded: dict[str, float],
+                        values: dict[str, float], apartment: sqlite3.Row) -> None:
+    """Одна цифра там, где счётчиков два, — и раздельных показаний нет.
+
+    Такую строку мы считаем итогом для сверки и в приборы не пишем. Пока
+    рядом есть кухня и санузел, это верно. Но если их нет, житель просто
+    передал воду одной цифрой — и она пропадала молча, вместе с показанием.
+    """
+    for single, parts in (("cws", ("cws_kitchen", "cws_bathroom")),
+                          ("hws", ("hws_kitchen", "hws_bathroom"))):
+        if single not in folded or any(part in values for part in parts):
+            continue
+        outcome.errors.append(
+            f"«{METER_KINDS[single]}» передан одной цифрой "
+            f"({folded[single]:g}), а у {_display(apartment)} два счётчика — "
+            f"{METER_KINDS[parts[0]]} и {METER_KINDS[parts[1]]}. "
+            "Показание не записано: нужны цифры по каждому счётчику.")
 
 
 def _current_value(conn: sqlite3.Connection, apartment_id: int, kind: str,
