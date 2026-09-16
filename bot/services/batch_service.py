@@ -57,8 +57,14 @@ def import_batch(conn: sqlite3.Connection, blocks: list[str],
                                        source=source)
         result.saved += len(outcome.saved)
         mark = "✅" if outcome.anything_saved and not outcome.errors else "⚠️"
-        result.lines.append(f"{mark} {short_name(apartment)} — "
-                            f"{readings_word(len(outcome.saved))}")
+        # «1 показание» вместо пяти присланных выглядит как потеря. Пишем
+        # сразу, сколько из скольких, — тогда видно, что разобрано всё,
+        # а записано не всё, и ниже объяснено почему.
+        expected = len([k for k in parsed.values if not k.endswith("_total")])
+        count = readings_word(len(outcome.saved))
+        if expected > len(outcome.saved):
+            count += f" из {expected}"
+        result.lines.append(f"{mark} {short_name(apartment)} — {count}")
         result.problems += [f"{short_name(apartment)}: {p}"
                             for p in list(outcome.errors) + list(outcome.warnings)]
 

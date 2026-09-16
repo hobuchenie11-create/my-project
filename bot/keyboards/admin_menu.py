@@ -1,5 +1,6 @@
 """Клавиатура администратора (председателя)."""
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
+                           KeyboardButton, ReplyKeyboardMarkup)
 
 from bot.keyboards.tasks import BTN_TASKS
 
@@ -17,6 +18,7 @@ BTN_INVITE = "📣 Памятка жителям"
 BTN_CHAT_REMINDER = "🔔 Напоминание в чат"
 BTN_TEMPLATES = "📋 Шаблоны в чат"
 BTN_SPECIAL = "🏢 Нежилые и ОДПУ"
+BTN_METERS = "🔧 Счётчики квартиры"
 BTN_CORRECTION = "✏️ Исправить показание"
 BTN_BLANKS = "🖨 Бланки для печати"
 BTN_RSO_LETTER = "✉️ Письмо в Росводоканал"
@@ -33,6 +35,7 @@ def admin_menu() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=BTN_TASKS)],
             [KeyboardButton(text=BTN_REGISTRY), KeyboardButton(text=BTN_SPECIAL)],
+            [KeyboardButton(text=BTN_METERS)],
             [KeyboardButton(text=BTN_STATEMENT),
              KeyboardButton(text=BTN_CORRECTION)],
             [KeyboardButton(text=BTN_OEK), KeyboardButton(text=BTN_OEK_TEMPLATE)],
@@ -51,3 +54,17 @@ def admin_menu() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
     )
+
+
+def apartment_layouts(apartment_id: int) -> InlineKeyboardMarkup:
+    """Сколько счётчиков воды в квартире — выбор для правки реестра."""
+    labels = {
+        "1-1": "1 ХВС · 1 ГВС",
+        "2-2": "2 ХВС · 2 ГВС",
+        "2-1": "2 ХВС · 1 ГВС",
+        "1-2": "1 ХВС · 2 ГВС",
+    }
+    rows = [[InlineKeyboardButton(text=text,
+                                  callback_data=f"layout:{apartment_id}:{key}")]
+            for key, text in labels.items()]
+    return InlineKeyboardMarkup(inline_keyboard=rows)

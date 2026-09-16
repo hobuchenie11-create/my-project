@@ -1,26 +1,31 @@
 """Меню председателя: реестр, ведомость, статистика, пользователи, бэкап."""
 from aiogram import F, Router
 from aiogram.exceptions import TelegramAPIError
-from aiogram.types import FSInputFile, Message
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from bot.config import config
 from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTORS,
                                       BTN_BLANKS, BTN_CHAT_REMINDER,
                                       BTN_CORRECTION, BTN_DEBTORS_DOC,
-                                      BTN_FAQ_GAPS,
+                                      BTN_FAQ_GAPS, BTN_METERS,
                                       BTN_INVITE, BTN_REGISTRY,
                                       BTN_REMIND, BTN_RESIDENT_REPLY,
                                       BTN_RSO_LETTER, BTN_SETTINGS,
                                       BTN_STATEMENT,
                                       BTN_SPECIAL, BTN_STATS, BTN_TEMPLATES,
                                       BTN_USERS,
-                                      BTN_WORKBOOK, admin_menu)
+                                      BTN_WORKBOOK, admin_menu,
+                                      apartment_layouts)
 from bot.keyboards.menu import main_menu
 from bot.scheduler import send_reminders
+from bot.services import meters_service
 from bot.services.apartment_service import registry_summary
+from bot.services.parser import parse_message
 from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
+from bot.states.meters import ApartmentMeters
 from bot.texts import (collection_reminder_text, correction_text,
                        resident_reply_text, rso_letter_text,
                        special_readings_text, template_messages,
@@ -32,6 +37,7 @@ from reports.monthly_statement import generate_statement
 router = Router()
 router.message.filter(F.chat.type == "private",
                       F.from_user.id.in_(config.admin_ids))
+router.callback_query.filter(F.from_user.id.in_(config.admin_ids))
 
 
 @router.message(F.text == BTN_ADMIN)
@@ -225,6 +231,75 @@ async def show_special(message: Message) -> None:
 async def show_correction_help(message: Message) -> None:
     """Как переписать уже принятое показание, если в ведомость попала ошибка."""
     await message.answer(correction_text())
+
+
+@router.message(F.text == BTN_METERS)
+async def ask_apartment_for_meters(message: Message, state: FSMContext) -> None:
+    """Правка набора счётчиков квартиры прямо из бота.
+
+    Расхождение со справочником видно только по показаниям: житель шлёт
+    кухню и санузел отдельно, а в реестре у него один счётчик — бот не
+    знает, какое из двух записать, и показания в ведомость не попадают.
+    """
+    await state.set_state(ApartmentMeters.number)
+    await message.answer(
+        "🔧 <b>Счётчики квартиры</b>\n\n"
+        "Номер квартиры или помещения? Например: <code>37</code>, "
+        "<code>кв. 29</code>, <code>нежилое 1</code>.\n\n"
+        "Отправьте «отмена», чтобы выйти.")
+
+
+@router.message(ApartmentMeters.number)
+async def show_apartment_meters(message: Message, state: FSMContext) -> None:
+    text = (message.text or "").strip()
+    if text.lower() in ("отмена", "❌ отмена", "-"):
+        await state.clear()
+        await message.answer("Отменено.", reply_markup=admin_menu())
+        return
+
+    # Номер пишут как придётся — разбираем тем же кодом, что и показания
+    parsed = parse_message(text)
+    number = parsed.apartment_number or (text if text.isdigit() else None)
+
+    conn = repository.connect()
+    try:
+        apartment = (repository.get_apartment_by_number(conn, str(number))
+                     if number else None)
+        if apartment is None:
+            await message.answer(
+                f"Не нашла помещение «{text}». Пришлите номер ещё раз "
+                "или «отмена».")
+            return
+        summary = meters_service.describe(conn, apartment)
+    finally:
+        conn.close()
+
+    await state.clear()
+    await message.answer(
+        summary + "\n\nСколько счётчиков воды на самом деле?",
+        reply_markup=apartment_layouts(apartment["id"]))
+
+
+@router.callback_query(F.data.startswith("layout:"))
+async def apply_apartment_layout(callback: CallbackQuery) -> None:
+    """Переводит квартиру на другой набор приборов. История сохраняется."""
+    _, apartment_id_raw, key = callback.data.split(":")
+    cws, hws = meters_service.LAYOUTS[key]
+
+    conn = repository.connect()
+    try:
+        apartment = repository.get_apartment_by_id(conn, int(apartment_id_raw))
+        meters_service.apply_layout(conn, apartment["id"], cws, hws)
+        summary = meters_service.describe(conn, apartment)
+    finally:
+        conn.close()
+
+    await callback.message.answer(
+        "✅ Реестр обновлён.\n\n" + summary + "\n\n"
+        "Показания за прошлые месяцы сохранены — прежние счётчики просто "
+        "больше не опрашиваются. Попросите жителя прислать показания "
+        "заново, и они встанут на свои места.")
+    await callback.answer("Готово")
 
 
 @router.message(F.text == BTN_FAQ_GAPS)

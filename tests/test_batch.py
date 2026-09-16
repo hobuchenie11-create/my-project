@@ -353,3 +353,21 @@ def test_glued_flats_in_the_house_chat_are_refused(db):
     assert _values(db, "34") == {}
     said = " ".join(message.replies + message.dm)
     assert "нескольких квартир" in said
+
+
+def test_report_says_how_many_of_how_many(db):
+    """«1 показание» из пяти присланных выглядит как потеря — пишем «1 из 5»."""
+    conn = repository.connect(db)
+    try:
+        # кв. 5 в справочнике с одним ХВС/ГВС, а житель прислал кухню и санузел
+        result = import_batch(conn, split_messages(
+            "Кв. 5\nЭл.эн 100\nХвс кухня 10\nХвс сан.узел 20\n"
+            "Гвс кухня 30\nГвс ванна 40\n\nКв. 12\nЭл.эн 200"), tg_id=CHAIRMAN)
+    finally:
+        conn.close()
+
+    report = result.text()
+    assert "кв. 5 — 1 показание из 5" in report
+    assert "кв. 12 — 1 показание" in report          # всё записано, «из» не нужно
+    assert "кв. 12 — 1 показание из" not in report
+    assert "один счётчик" in report                  # и объяснение ниже

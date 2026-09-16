@@ -61,6 +61,13 @@ def upsert_apartment(conn: sqlite3.Connection, number: str, type_: str,
     ).fetchone()["id"]
 
 
+def update_apartment_layout(conn: sqlite3.Connection, apartment_id: int,
+                            layout: str) -> None:
+    """Подпись планировки в реестре — «ХВС×2 · ГВС×2»."""
+    conn.execute("UPDATE apartments SET layout = ? WHERE id = ?",
+                 (layout, apartment_id))
+
+
 # ---------- meters ----------
 
 def ensure_meter(conn: sqlite3.Connection, apartment_id: int, kind: str) -> None:
