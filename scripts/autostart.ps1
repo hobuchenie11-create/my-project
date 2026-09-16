@@ -20,6 +20,7 @@
     powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Install
     powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Status
     powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Restart
+    powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Log
     powershell -ExecutionPolicy Bypass -File scripts\autostart.ps1 -Remove
 #>
 [CmdletBinding(DefaultParameterSetName = 'Status')]
@@ -27,6 +28,8 @@ param(
     [Parameter(ParameterSetName = 'Install')][switch]$Install,
     [Parameter(ParameterSetName = 'Remove')][switch]$Remove,
     [Parameter(ParameterSetName = 'Restart')][switch]$Restart,
+    [Parameter(ParameterSetName = 'Log')][switch]$Log,
+    [Parameter(ParameterSetName = 'Log')][int]$Lines = 30,
     [Parameter(ParameterSetName = 'Status')][switch]$Status
 )
 
@@ -201,9 +204,26 @@ function Show-Status {
     }
 }
 
+function Show-Log {
+    <#
+        Журнал бота записан в UTF-8, а Get-Content в Windows PowerShell 5.1
+        читает файлы как ANSI: русские строки превращаются в «РЎРїСЂР°РІ...».
+        Читаем с явной кодировкой, чтобы журнал можно было просто прочесть.
+    #>
+    $logFile = Join-Path $ProjectDir 'logs\dhos.log'
+    if (-not (Test-Path $logFile)) {
+        Write-Host "Журнала пока нет: $logFile"
+        return
+    }
+    Write-Host "Последние $Lines строк журнала ($logFile):"
+    Write-Host ''
+    Get-Content $logFile -Tail $Lines -Encoding UTF8
+}
+
 switch ($PSCmdlet.ParameterSetName) {
     'Install' { Install-Autostart }
     'Remove'  { Remove-Autostart }
     'Restart' { Restart-Bot }
+    'Log'     { Show-Log }
     default   { Show-Status }
 }

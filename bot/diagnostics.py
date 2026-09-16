@@ -99,7 +99,46 @@ async def report_error(event: ErrorEvent) -> bool:
     return True                           # ошибка обработана, бот работает дальше
 
 
+# Через сколько неудачных попыток подряд писать подсказку про VPN. aiogram
+# ждёт около пяти секунд между попытками, так что это примерно минута.
+NETWORK_HINT_EVERY = 12
+
+NETWORK_HINT = (
+    "Нет связи с api.telegram.org. Чаще всего это выключенный VPN или "
+    "прокси-клиент: включите его — бот подключится сам, перезапускать "
+    "не нужно. Показания, присланные тем временем, Telegram хранит около "
+    "суток и отдаст боту, как только связь появится."
+)
+
+
+class NetworkHintFilter(logging.Filter):
+    """Объясняет по-русски, почему бот не может достучаться до Telegram.
+
+    В журнале это выглядит как стена английских строк «Failed to fetch
+    updates… tryings = 67», по которой непонятно, что делать. Раз в минуту
+    дописываем рядом человеческую подсказку.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.failures = 0
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        if "Failed to fetch updates" not in message:
+            if record.levelno < logging.WARNING:
+                self.failures = 0     # связь восстановилась
+            return True
+
+        self.failures += 1
+        if self.failures % NETWORK_HINT_EVERY == 1:
+            logger.warning("%s (попыток подряд: %s)", NETWORK_HINT,
+                           self.failures)
+        return True
+
+
 def setup(dp: Dispatcher) -> None:
-    """Подключает оба сторожа к диспетчеру."""
+    """Подключает сторожа к диспетчеру и к журналу."""
     dp.message.outer_middleware(IncomingLogMiddleware())
     dp.errors.register(report_error)
+    logging.getLogger("aiogram.dispatcher").addFilter(NetworkHintFilter())

@@ -130,3 +130,42 @@ def test_failure_answer_that_itself_fails_does_not_break_the_bot(caplog):
 
     assert handled is True
     assert "Не удалось даже сообщить об ошибке" in caplog.text
+
+
+def test_network_failures_get_a_hint_in_russian(caplog):
+    """Стена «Failed to fetch updates» ничего не объясняет — дописываем почему."""
+    hint = diagnostics.NetworkHintFilter()
+    dispatcher = logging.getLogger("aiogram.dispatcher")
+
+    with caplog.at_level(logging.WARNING):
+        for _ in range(diagnostics.NETWORK_HINT_EVERY + 1):
+            hint.filter(dispatcher.makeRecord(
+                "aiogram.dispatcher", logging.ERROR, __file__, 1,
+                "Failed to fetch updates - TelegramNetworkError", (), None))
+
+    hints = [r for r in caplog.records if "api.telegram.org" in r.getMessage()]
+    assert len(hints) == 2, "подсказка раз в минуту, а не на каждую попытку"
+    assert "VPN" in hints[0].getMessage()
+    assert "перезапускать" in hints[0].getMessage()
+
+
+def test_counter_resets_once_the_connection_is_back():
+    """Связь вернулась — счётчик обнуляется, и следующий обрыв снова объяснён."""
+    hint = diagnostics.NetworkHintFilter()
+    for _ in range(5):
+        hint.filter(logging.LogRecord("aiogram.dispatcher", logging.ERROR,
+                                      __file__, 1,
+                                      "Failed to fetch updates", (), None))
+    assert hint.failures == 5
+
+    hint.filter(logging.LogRecord("aiogram.dispatcher", logging.INFO,
+                                  __file__, 1, "Update id=1 is handled",
+                                  (), None))
+    assert hint.failures == 0
+
+
+def test_other_log_lines_pass_through_untouched():
+    hint = diagnostics.NetworkHintFilter()
+    record = logging.LogRecord("aiogram.dispatcher", logging.INFO, __file__, 1,
+                               "Start polling", (), None)
+    assert hint.filter(record) is True
