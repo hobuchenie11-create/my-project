@@ -20,7 +20,8 @@ from aiogram.types import Message, ReactionTypeEmoji
 
 from bot.config import config
 from bot.services.batch_service import import_batch
-from bot.services.parser import parse_message, split_messages
+from bot.services.parser import (mentioned_flats, parse_message,
+                                 split_messages)
 from bot.services.reading_service import (current_period, is_late, receipt_text,
                                           save_parsed_readings)
 from bot.texts import late_submission_text
@@ -97,6 +98,18 @@ async def handle_group_message(message: Message) -> None:
     parsed = parse_message(message.text)
     if parsed.is_empty and not parsed.apartment_number:
         return  # обычное сообщение в чате — не мешаем
+
+    # Квартир названо несколько, а поделить на сообщения не вышло: записать
+    # такое в первую — значит увести показания соседей в чужую строку
+    flats = mentioned_flats(message.text)
+    if len(flats) > 1:
+        await _guidance(
+            message,
+            "В одном сообщении показания нескольких квартир (" +
+            ", ".join(flats[:6]) + "). Показания не записаны.\n\n"
+            "Пришлите, пожалуйста, каждую квартиру отдельным сообщением — "
+            "или начните каждую с новой строки «Кв. 34».")
+        return
 
     conn = repository.connect()
     try:

@@ -36,6 +36,11 @@ APARTMENT_RE = re.compile(r"кв[а-яё]*[\s.,;:№()-]*(\d{1,4})", re.IGNORECA
 
 # Слово «квартира» в тексте — чтобы отличить «номер не разобрали»
 # от «номер вообще не указан»
+# Номер впереди подписи: «34 кв.», «34-я квартира». Ищем только в начале
+# строки, иначе «Хвс 34 кв.м» превратится в номер квартиры.
+APARTMENT_TAIL_RE = re.compile(r"^\s*(\d{1,4})\s*[-–—]?\s*кв[а-яё]*\b",
+                               re.IGNORECASE | re.MULTILINE)
+
 APARTMENT_WORD_RE = re.compile(r"\bкв", re.IGNORECASE)
 NONRESIDENTIAL_RE = re.compile(r"нежило\w*\s*(?:помещение)?\s*№?\s*(\d+)", re.IGNORECASE)
 
@@ -86,9 +91,16 @@ CORRECTION_RE = re.compile(
     r"\b(?:исправ\w*|правка|поправ\w*|корректир\w*|замен\w*\s+показан\w*)\b[\s:.,–—-]*",
     re.IGNORECASE)
 
-# Начало нового сообщения в пачке: строка называет квартиру или помещение
+# Начало нового сообщения в пачке: строка называет квартиру или помещение.
+# Форм записи много и все настоящие: «Кв 34», «КВ.37», «Кв. 29», «Кв№12»,
+# «Квартира 8», а ещё номер впереди — «34 кв.» — и просто «№34».
 _BLOCK_START_RE = re.compile(
-    r"^\s*(?:кв[а-яё]*[\s.,;:№()-]*\d{1,4}|нежило|общедом|одпу|общ\w*\s+прибор)",
+    r"^\s*(?:"
+    r"кв[а-яё]*[\s.,;:№()-]*\d{1,4}"        # Кв. 34, Квартира 34, Кв№34
+    r"|\d{1,4}\s*[-–—]?\s*кв[а-яё]*\b"      # 34 кв., 34-я квартира
+    r"|№\s*\d{1,4}\s*$"                     # просто «№34» отдельной строкой
+    r"|нежило|общедом|одпу|общ\w*\s+прибор"
+    r")",
     re.IGNORECASE)
 
 
@@ -124,6 +136,27 @@ def split_messages(text: str) -> list[str]:
             current.append(line)
 
     return ["\n".join(block) for block in blocks]
+
+
+def mentioned_flats(text: str) -> list[str]:
+    """Номера помещений, названные в тексте, — по порядку и без повторов.
+
+    Нужен как сторож: если в одном сообщении названы две квартиры, а на
+    отдельные сообщения текст не поделился, записывать его в первую
+    квартиру нельзя — показания соседей ушли бы в чужую строку.
+    """
+    found: list[str] = []
+    for match in NONRESIDENTIAL_RE.finditer(text):
+        number = f"Нежилое помещение №{match.group(1)}"
+        if number not in found:
+            found.append(number)
+    if COMMON_RE.search(text) and COMMON_NUMBER not in found:
+        found.append(COMMON_NUMBER)
+    for pattern in (APARTMENT_RE, APARTMENT_TAIL_RE):
+        for match in pattern.finditer(text):
+            if match.group(1) not in found:
+                found.append(match.group(1))
+    return found
 
 
 def _normalize(label: str) -> str:
@@ -188,7 +221,7 @@ def parse_message(text: str) -> ParsedReadings:
         result.apartment_number = COMMON_NUMBER
     else:
         result.mentions_apartment = bool(APARTMENT_WORD_RE.search(text))
-        m = APARTMENT_RE.search(text)
+        m = APARTMENT_RE.search(text) or APARTMENT_TAIL_RE.search(text)
         if m:
             result.apartment_number = m.group(1)
 

@@ -7,7 +7,8 @@ import pytest
 
 from bot.handlers import group, manual
 from bot.services.batch_service import import_batch
-from bot.services.parser import split_messages, strip_chat_meta
+from bot.services.parser import (mentioned_flats, parse_message,
+                                 split_messages, strip_chat_meta)
 from database import repository
 from database.init_db import init_db
 
@@ -252,3 +253,103 @@ def test_pasted_readings_in_the_dialog_need_a_flat_number(db, monkeypatch):
     assert _values(db, "1") == {}                  # ничего не записали
     assert "нет номера квартиры" in message.answers[0]
     assert not state.cleared                       # диалог не закрыт
+
+
+# ---------------------------------------------------------------------------
+# Несколько квартир в одном сообщении
+# ---------------------------------------------------------------------------
+
+REAL_PASTE = """Кв 34
+Эл, эн 16553
+Хвс 267
+Гвс 215
+
+КВ.37
+Эл.эн.14161
+Х.в.кух.204
+Х.в.ван.968
+Г.в.кух.130
+Г.в.ван.472
+Общ.гвс.602
+
+Кв. 29
+Электро. 12322
+Хв.кух.37
+Сан.узел.229
+Гв.кух.115
+Ванная.179
+Сумма.гв.294"""
+
+
+def test_real_paste_splits_into_three_messages():
+    """Пачка из чата дома: подписи точками, «КВ.» заглавными, итог «Общ.гвс»."""
+    blocks = split_messages(REAL_PASTE)
+    assert [parse_message(b).apartment_number for b in blocks] == ["34", "37", "29"]
+
+    thirty_seven = parse_message(blocks[1])
+    assert thirty_seven.values == {
+        "electricity": 14161.0, "cws_kitchen": 204.0, "cws_bathroom": 968.0,
+        "hws_kitchen": 130.0, "hws_bathroom": 472.0, "hws_total": 602.0}
+    assert thirty_seven.errors == []
+
+
+@pytest.mark.parametrize("head", [
+    "Кв 34", "КВ.34", "Кв. 34", "Кв№34", "Квартира 34", "34 кв.", "34 кв",
+])
+def test_apartment_line_forms_start_a_new_message(head):
+    """Номер пишут по-разному — делиться пачка должна при любой записи."""
+    blocks = split_messages(f"{head}\nХвс 267\n\nКв 37\nХвс 204")
+    assert len(blocks) == 2
+    assert parse_message(blocks[0]).apartment_number == "34"
+
+
+def test_square_meters_are_not_an_apartment_number():
+    """«34 кв.м» в строке показаний — это площадь, а не квартира."""
+    assert parse_message("Кв 5\nХвс 34 кв.м").apartment_number == "5"
+    assert mentioned_flats("Хвс 34 кв.м") == []
+
+
+def test_mentioned_flats_lists_every_premise_once():
+    assert mentioned_flats("Кв 34\nХвс 1\n\nКв 37\nХвс 2\n\nКв. 34 ещё") == ["34", "37"]
+    assert mentioned_flats("Нежилое 1\nЭл 5\n\nОбщедомовой\nЭл 9") == [
+        "Нежилое помещение №1", "Общедомовой прибор учета"]
+
+
+# ---------------------------------------------------------------------------
+# Несколько квартир слиплись в одно сообщение
+# ---------------------------------------------------------------------------
+
+GLUED = "Кв 34 Хвс 267 Гвс 215 Кв 37 Хвс 204 Гвс 130"
+
+
+def test_glued_flats_are_refused_not_written_to_the_first(db):
+    """Без переносов строк пачку не поделить — но и записывать её нельзя."""
+    message = Msg(GLUED)
+    asyncio.run(manual.manual_readings(message))
+
+    assert _values(db, "34") == {}, "показания соседей не должны попасть в кв. 34"
+    assert _values(db, "37") == {}
+    answer = message.answers[0]
+    assert "несколько помещений" in answer
+    assert "34" in answer and "37" in answer
+    assert "не записаны" in answer
+
+
+def test_resident_gets_a_short_explanation(db):
+    """Жителю незачем шаблон для пачки — ему нужна своя квартира."""
+    message = Msg(GLUED, tg_id=RESIDENT)
+    asyncio.run(manual.manual_readings(message))
+
+    answer = message.answers[0]
+    assert "своей квартиры" in answer
+    assert "Кв. 34" not in answer            # шаблон пачки — только председателю
+
+
+def test_glued_flats_in_the_house_chat_are_refused(db):
+    """В чате дома то же самое: молча в первую квартиру не пишем."""
+    message = Msg(GLUED, tg_id=RESIDENT, chat_type="supergroup")
+    asyncio.run(group.handle_group_message(message))
+
+    assert _values(db, "34") == {}
+    said = " ".join(message.replies + message.dm)
+    assert "нескольких квартир" in said

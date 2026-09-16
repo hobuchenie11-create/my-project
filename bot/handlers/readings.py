@@ -5,7 +5,7 @@ from aiogram.types import Message
 
 from bot.config import config
 from bot.keyboards.menu import BTN_SUBMIT, cancel_keyboard, main_menu
-from bot.services.parser import parse_message
+from bot.services.parser import mentioned_flats, parse_message, split_messages
 from bot.services.reading_service import (current_period, is_late, receipt_text,
                                           save_parsed_readings, save_reading,
                                           unit_for)
@@ -127,6 +127,20 @@ async def _try_whole_message(message: Message, state: FSMContext) -> bool:
 
     data = await state.get_data()
     is_admin = message.from_user.id in config.admin_ids
+
+    # В диалог вставили показания сразу нескольких квартир. Раньше они молча
+    # уходили в ту квартиру, по которой открыт ввод, — точнее, доезжала
+    # только первая, а остальные терялись как повторы приборов.
+    text = message.text or ""
+    if len(mentioned_flats(text)) > 1 or len(split_messages(text)) > 1:
+        await state.clear()
+        await message.answer(
+            "Здесь показания нескольких квартир, а сейчас был открыт ввод "
+            "по одной. Ввод отменён, ничего не записано.\n\n"
+            "Пришлите этот же текст обычным сообщением (не через кнопку) — "
+            "бот разнесёт квартиры сам.",
+            reply_markup=main_menu(is_admin))
+        return True
     conn = repository.connect()
     try:
         apartment = repository.get_apartment_by_id(conn, data["apartment_id"])

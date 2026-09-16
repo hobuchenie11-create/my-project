@@ -16,7 +16,8 @@ from aiogram.types import Message
 
 from bot.config import config
 from bot.services.batch_service import import_batch
-from bot.services.parser import parse_message, split_messages
+from bot.services.parser import (mentioned_flats, parse_message,
+                                 split_messages)
 from bot.services.reading_service import (current_period, is_late, receipt_text,
                                           save_parsed_readings)
 from bot.texts import late_submission_text
@@ -33,11 +34,18 @@ async def manual_readings(message: Message) -> None:
     is_admin = message.from_user.id in config.admin_ids
 
     # Председатель вставил пачку сообщений из чата WhatsApp — разносим все
-    if is_admin:
-        blocks = split_messages(message.text)
-        if len(blocks) > 1:
-            await _import_batch(message, blocks)
-            return
+    blocks = split_messages(message.text)
+    if is_admin and len(blocks) > 1:
+        await _import_batch(message, blocks)
+        return
+
+    # Квартир названо несколько, а на сообщения текст не поделился. Записать
+    # такое в первую квартиру — значит увести показания соседей в чужую
+    # строку, поэтому не записываем ничего и говорим об этом прямо.
+    flats = mentioned_flats(message.text)
+    if len(flats) > 1 and len(blocks) <= 1:
+        await message.answer(_several_flats_text(flats, is_admin))
+        return
 
     parsed = parse_message(message.text)
 
@@ -96,6 +104,22 @@ async def manual_readings(message: Message) -> None:
     if outcome.anything_saved and is_late() and not correction:
         text += "\n\n" + late_submission_text()
     await message.answer(text)
+
+
+def _several_flats_text(flats: list[str], is_admin: bool) -> str:
+    """Объяснение, почему пачка не разобралась, и как переписать сообщение."""
+    listed = ", ".join(flats[:6]) + ("…" if len(flats) > 6 else "")
+    text = ("В одном сообщении вижу несколько помещений: " + listed + ".\n\n"
+            "Показания <b>не записаны</b> — иначе цифры соседей попали бы "
+            "в одну квартиру.")
+    if is_admin:
+        text += ("\n\nНачните каждое с номера отдельной строкой — тогда бот "
+                 "разнесёт их сам:\n\n"
+                 "<code>Кв. 34\nЭл.эн 16553\nХвс 267\n\n"
+                 "Кв. 37\nЭл.эн 14161\nХвс кухня 204</code>")
+    else:
+        text += "\n\nПришлите показания своей квартиры отдельным сообщением."
+    return text
 
 
 async def _import_batch(message: Message, blocks: list[str]) -> None:
