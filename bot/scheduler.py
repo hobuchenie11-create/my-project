@@ -224,7 +224,13 @@ async def announce_collection_closed(bot: Bot) -> bool:
 
 
 async def send_task_reminders(bot: Bot) -> int:
-    """Напоминания председателю по задачам: пора начинать, срок, просрочка."""
+    """Напоминания председателю по задачам: пора начинать, срок, просрочка.
+
+    Каждая задача уходит своим сообщением с кнопками: одним списком
+    напоминание читается, но отметить выполненное в нём невозможно —
+    кнопки живут при конкретной задаче.
+    """
+    from bot.keyboards.tasks import task_actions
     from bot.services import task_service, verification_service
 
     conn = repository.connect()
@@ -232,18 +238,24 @@ async def send_task_reminders(bot: Bot) -> int:
         task_service.generate_tasks(conn)      # цикл всегда заполнен вперёд
         verification_service.ensure_house_meters(conn)
         verification_service.sync_verification_tasks(conn)
-        messages = task_service.reminders_for_today(conn)
+        reminders = task_service.reminders_with_rows(conn)
+        # sqlite3.Row живёт вместе с соединением — забираем нужное сразу
+        reminders = [(row["id"], row["status"], text)
+                     for row, text in reminders]
     finally:
         conn.close()
 
-    if not messages:
+    if not reminders:
         return 0
 
-    text = "🗂 <b>Задачи на сегодня</b>\n\n" + "\n\n".join(messages)
     sent = 0
     for admin_id in config.admin_ids:
         try:
-            await bot.send_message(admin_id, text)
+            await bot.send_message(
+                admin_id, f"🗂 <b>Задачи на сегодня: {len(reminders)}</b>")
+            for task_id, status, text in reminders:
+                await bot.send_message(admin_id, text,
+                                       reply_markup=task_actions(task_id, status))
             sent += 1
         except TelegramAPIError as exc:
             logger.warning("Не удалось отправить напоминание по задачам %s: %s",

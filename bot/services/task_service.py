@@ -213,11 +213,19 @@ def period_title(period: str) -> str:
     return f"{MONTHS_RU[int(month) - 1]} {year}"
 
 
-def _fmt_date(value: str) -> str:
+def _fmt_date(value: str, today: date | None = None) -> str:
+    """«2026-09-30» -> «30.09», а для другого года — «30.09.2026».
+
+    Год в списке лишний, пока речь про текущий. Но если он другой, его
+    видно обязательно: иначе описка в вводе («30.09.26» вместо 2026)
+    выглядит как обычная строка плана и замечается только по счётчику
+    «просрочено на 730471 дн.».
+    """
     if not value:
         return ""
     y, m, d = value.split("-")
-    return f"{d}.{m}"
+    this_year = (today or date.today()).year
+    return f"{d}.{m}" if int(y) == this_year else f"{d}.{m}.{y}"
 
 
 def task_line(row: sqlite3.Row, today: date | None = None) -> str:
@@ -377,27 +385,38 @@ def _digest_text(today: date, in_work: list, waiting: list,
 def reminders_for_today(conn: sqlite3.Connection,
                         today: date | None = None) -> list[str]:
     """Тексты напоминаний председателю на сегодня."""
+    return [text for _, text in reminders_with_rows(conn, today)]
+
+
+def reminders_with_rows(conn: sqlite3.Connection, today: date | None = None
+                        ) -> list[tuple[sqlite3.Row, str]]:
+    """Напоминания вместе с задачами — чтобы к каждой дать свои кнопки.
+
+    Одним сообщением напоминание читается, но не работает: отметить
+    выполнение можно только у задачи, отправленной отдельно, со своей
+    клавиатурой.
+    """
     today = today or date.today()
     messages = []
     for row in repository.open_tasks(conn):
         v = view(row, today)
         if v.is_overdue:
-            messages.append(
+            messages.append((row,
                 f"🔴 <b>Просрочено:</b> {row['title']}\n"
-                f"Срок был {_fmt_date(row['due_date'])} "
-                f"({abs(v.days_left)} дн. назад).")
+                f"Срок был {_fmt_date(row['due_date'], today)} "
+                f"({abs(v.days_left)} дн. назад)."))
         elif v.start == today:
-            messages.append(
+            messages.append((row,
                 f"🟡 <b>Пора начинать:</b> {row['title']}\n"
-                f"Срок — до {_fmt_date(row['due_date'])}.")
+                f"Срок — до {_fmt_date(row['due_date'], today)}."))
         elif v.is_soon:
             when = ("сегодня последний день" if v.days_left == 0
                     else "завтра" if v.days_left == 1
                     else f"осталось {v.days_left} дн.")
             urgent = "❗ " if row["priority"] == "high" else ""
-            messages.append(
+            messages.append((row,
                 f"🟠 {urgent}<b>Скоро срок:</b> {row['title']} — {when} "
-                f"(до {_fmt_date(row['due_date'])}).")
+                f"(до {_fmt_date(row['due_date'], today)})."))
     return messages
 
 

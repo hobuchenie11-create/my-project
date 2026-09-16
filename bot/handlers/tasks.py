@@ -20,6 +20,7 @@ from bot.services import task_service, verification_service
 from bot.services.validation import money, parse_amount
 from bot.states.tasks import (CompleteTask, CouncilDigest, MeterInterval,
                               NewTask, Verification)
+from bot.utils.dates import parse_user_date
 from database import repository
 from database.models import TASK_CATEGORIES
 
@@ -265,14 +266,8 @@ async def meter_interval(message: Message, state: FSMContext) -> None:
 
 
 def _parse_date(text: str | None) -> date | None:
-    value = (text or "").strip().lower()
-    if value in ("сегодня", "today"):
-        return date.today()
-    try:
-        day, month, year = value.replace("/", ".").split(".")
-        return date(int(year), int(month), int(day))
-    except (ValueError, TypeError):
-        return None
+    """Дата поверки — она уже проведена, поэтому год без года ищем назад."""
+    return parse_user_date(text, prefer="past")
 
 
 @router.message(F.text == BTN_COUNCIL)
@@ -582,17 +577,12 @@ async def process_amount(message: Message, state: FSMContext) -> None:
 
 @router.message(CompleteTask.paid_at)
 async def process_paid_at(message: Message, state: FSMContext) -> None:
-    text = (message.text or "").strip().lower()
-    if text in ("сегодня", "today"):
-        paid = date.today()
-    else:
-        try:
-            day, month, year = text.replace("/", ".").split(".")
-            paid = date(int(year), int(month), int(day))
-        except (ValueError, TypeError):
-            await message.answer("Не разобрал дату. Пример: 15.09.2026 "
-                                 "или напишите «сегодня».")
-            return
+    # Оплата уже прошла, поэтому «15.09» без года — это ближайшее прошедшее
+    paid = parse_user_date(message.text, prefer="past")
+    if paid is None:
+        await message.answer("Не разобрал дату. Пример: 15.09.2026 "
+                             "или напишите «сегодня».")
+        return
 
     data = await state.get_data()
     await state.clear()
@@ -654,13 +644,13 @@ async def new_task_due(message: Message, state: FSMContext) -> None:
     text = (message.text or "").strip().lower()
     due = ""
     if text not in ("без срока", "нет", "-"):
-        try:
-            day, month, year = text.replace("/", ".").split(".")
-            due = date(int(year), int(month), int(day)).isoformat()
-        except (ValueError, TypeError):
+        # Срок задачи смотрит вперёд: «30.09» без года — ближайшее будущее
+        parsed = parse_user_date(text, prefer="future")
+        if parsed is None:
             await message.answer("Не разобрал дату. Пример: 30.09.2026 "
                                  "или напишите «без срока».")
             return
+        due = parsed.isoformat()
 
     data = await state.get_data()
     await state.clear()

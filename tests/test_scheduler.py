@@ -134,3 +134,56 @@ def test_statement_does_not_announce_by_itself(db, bot, monkeypatch):
 
     assert generated == [True]
     assert bot.sent == []
+
+
+class KeyboardBot:
+    """Запоминает не только текст, но и клавиатуру каждого сообщения."""
+
+    def __init__(self):
+        self.sent: list[tuple[int, str, object]] = []
+
+    async def send_message(self, chat_id, text, reply_markup=None, **kwargs):
+        self.sent.append((chat_id, text, reply_markup))
+
+
+def test_task_reminders_come_one_per_task_with_buttons(db, monkeypatch):
+    """Ранее всё слипалось в одно сообщение — отметить выполненное было нечем."""
+    monkeypatch.setattr(scheduler, "config",
+                        replace(config, admin_ids=(777,)))
+    conn = repository.connect(db)
+    try:
+        overdue = repository.create_task(conn, "найти машину погрузчик",
+                                         due_date="2026-08-30", source="chairman")
+        repository.create_task(conn, "Оплатить абонентскую плату за GSM-модуль",
+                               due_date="2026-09-07", source="chairman")
+        conn.commit()
+    finally:
+        conn.close()
+
+    bot = KeyboardBot()
+    sent = asyncio.run(scheduler.send_task_reminders(bot))
+
+    assert sent == 1
+    header, *tasks = bot.sent
+    assert "Задачи на сегодня" in header[1]
+    assert len(tasks) >= 2, "каждая задача должна прийти отдельным сообщением"
+    assert all(markup is not None for _, _, markup in tasks), \
+        "у задачи должны быть свои кнопки"
+
+    # Кнопки ведут именно к этой задаче, а не к первой попавшейся
+    buttons = [b.callback_data
+               for _, _, markup in tasks
+               for row in markup.inline_keyboard for b in row]
+    assert any(str(overdue) in data for data in buttons)
+
+
+def test_no_reminders_means_no_messages(db, monkeypatch):
+    """Пустой день — бот молчит, а не присылает пустой заголовок."""
+    from bot.services import task_service
+
+    monkeypatch.setattr(scheduler, "config", replace(config, admin_ids=(777,)))
+    monkeypatch.setattr(task_service, "reminders_with_rows",
+                        lambda conn, today=None: [])
+    bot = KeyboardBot()
+    assert asyncio.run(scheduler.send_task_reminders(bot)) == 0
+    assert bot.sent == []

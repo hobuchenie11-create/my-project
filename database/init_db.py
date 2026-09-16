@@ -13,6 +13,7 @@ from pathlib import Path
 
 from bot.config import config
 from database import repository
+from database.repair import repair_broken_years
 from database.models import (COMMON_METERS, COMMON_NUMBER, DEFAULT_CWS_COUNT,
                              DEFAULT_HWS_COUNT, NONRESIDENTIAL_METER_SETS,
                              NONRESIDENTIAL_METERS, apartment_meters,
@@ -34,6 +35,7 @@ def init_db(db_path: Path | str | None = None,
         _seed_nonresidential(conn, apartments_count, nonresidential_count)
         _seed_common(conn, apartments_count, nonresidential_count)
         conn.commit()
+        repair_broken_years(conn)
     finally:
         conn.close()
 
