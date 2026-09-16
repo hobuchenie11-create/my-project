@@ -156,12 +156,23 @@ def test_layout_label_follows_the_registry(db):
     conn = repository.connect(db)
     try:
         flat = repository.get_apartment_by_number(conn, "29")
-        meters_service.apply_layout(conn, flat["id"], 2, 1)
-        assert meters_service.layout_of(conn, flat["id"]) == (2, 1)
+        meters_service.apply_layout(conn, flat["id"], 2, 2)
+        assert meters_service.layout_of(conn, flat["id"]) == (2, 2)
         assert repository.get_apartment_by_number(
-            conn, "29")["layout"] == "ХВС×2 · ГВС×1"
+            conn, "29")["layout"] == "ХВС×2 · ГВС×2"
     finally:
         conn.close()
+
+
+def test_only_the_two_real_layouts_are_offered():
+    """В доме либо два счётчика воды, либо четыре — смешанных не бывает."""
+    from bot.keyboards.admin_menu import apartment_layouts
+
+    assert set(meters_service.LAYOUTS) == {"1-1", "2-2"}
+    buttons = [b for row in apartment_layouts(7).inline_keyboard for b in row]
+    assert len(buttons) == 2
+    assert [b.text for b in buttons] == ["2 счётчика воды · ХВС и ГВС",
+                                         "4 счётчика воды · кухня и санузел"]
 
 
 def test_unknown_flat_asks_again_without_losing_the_dialog(db):
