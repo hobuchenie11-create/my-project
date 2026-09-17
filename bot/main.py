@@ -109,6 +109,41 @@ def _log_chats() -> None:
                        "в чат показаний. Укажите ID чата Совета (/chatid в нём).")
 
 
+def build_dispatcher() -> Dispatcher:
+    """Собирает диспетчер со всеми обработчиками.
+
+    Вынесено из main(), чтобы тест мог проверить сборку целиком: модуль
+    обработчиков легко написать и забыть подключить — тогда бот просто
+    молчит в ответ, и понять это по коду невозможно (см. tests/test_routers).
+    """
+    dp = Dispatcher()
+
+    # Журнал входящих и ответ при внутренней ошибке. Подключаем до роутеров:
+    # молчание в ответ на показания — худшее, что может случиться, житель
+    # считает их переданными, а в ведомости их нет.
+    diagnostics.setup(dp)
+
+    # Порядок важен: FSM-сценарии раньше общих обработчиков меню
+    dp.include_router(common.router)
+    # Раньше tasks: тот забирает любой присланный документ как правки годового
+    # плана, а .xls от ресурсника — это шаблон реестра ОЭК
+    dp.include_router(oek.router)
+    # Тоже раньше tasks: фотография, отправленная файлом, приходит документом
+    dp.include_router(photos.router)
+    dp.include_router(tasks.router)
+    dp.include_router(admin.router)
+    dp.include_router(registration.router)
+    dp.include_router(readings.router)
+    dp.include_router(reports.router)
+    dp.include_router(faq.router)
+    dp.include_router(start.router)
+    dp.include_router(group.router)
+    # Последним: ручной ввод показаний председателем в личке —
+    # сюда попадает только текст, который не разобрали остальные
+    dp.include_router(manual.router)
+    return dp
+
+
 async def main() -> None:
     setup_logging()
 
@@ -141,29 +176,7 @@ async def main() -> None:
 
     bot = Bot(token=config.bot_token, session=session,
               default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp = Dispatcher()
-
-    # Журнал входящих и ответ при внутренней ошибке. Подключаем до роутеров:
-    # молчание в ответ на показания — худшее, что может случиться, житель
-    # считает их переданными, а в ведомости их нет.
-    diagnostics.setup(dp)
-
-    # Порядок важен: FSM-сценарии раньше общих обработчиков меню
-    dp.include_router(common.router)
-    # Раньше tasks: тот забирает любой присланный документ как правки годового
-    # плана, а .xls от ресурсника — это шаблон реестра ОЭК
-    dp.include_router(oek.router)
-    dp.include_router(tasks.router)
-    dp.include_router(admin.router)
-    dp.include_router(registration.router)
-    dp.include_router(readings.router)
-    dp.include_router(reports.router)
-    dp.include_router(faq.router)
-    dp.include_router(start.router)
-    dp.include_router(group.router)
-    # Последним: ручной ввод показаний председателем в личке —
-    # сюда попадает только текст, который не разобрали остальные
-    dp.include_router(manual.router)
+    dp = build_dispatcher()
 
     await _check_connection(bot, session)
 
