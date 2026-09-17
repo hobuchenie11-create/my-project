@@ -76,3 +76,48 @@ def form_text(conn: sqlite3.Connection, apartment: sqlite3.Row) -> str:
         text += ("\n\nПрошлых показаний по этой квартире нет — сверять не с чем, "
                  "поэтому цифры проверьте внимательно.")
     return text
+
+
+def history_text(conn: sqlite3.Connection, apartment: sqlite3.Row,
+                 months: int = 4) -> str:
+    """Карточка помещения: приборы и показания по месяцам.
+
+    Нужна, когда бот отвечает «показание меньше предыдущего». Решить, чья
+    цифра неверна — сегодняшняя с бланка или прошлая в базе, — можно только
+    увидев обе. Отдельно видно и расход: если в прошлом месяце кухню и
+    санузел записали местами, в таблице это бросается в глаза.
+    """
+    meters = repository.meters_for_apartment(conn, apartment["id"])
+    if not meters:
+        return f"У {display(apartment)} в реестре нет приборов."
+
+    rows = repository.readings_history_for_apartment(conn, apartment["id"],
+                                                     limit=200)
+    # period -> kind -> значение. Записи идут от новых к старым, поэтому
+    # первая встреченная по паре и есть действующая (правки лежат сверху)
+    by_period: dict[str, dict[str, float]] = {}
+    for row in rows:
+        by_period.setdefault(row["period"], {}).setdefault(row["kind"],
+                                                           row["value"])
+
+    periods = sorted(by_period, reverse=True)[:months]
+    if not periods:
+        return (f"📋 <b>{display(apartment)}</b>\n\n"
+                "Показаний по этому помещению ещё не было.")
+
+    lines = [f"📋 <b>{display(apartment)}</b>", ""]
+    for meter in meters:
+        kind = meter["kind"]
+        label = FORM_LABELS.get(kind, METER_KINDS[kind])
+        parts = []
+        for period in periods:
+            value = by_period[period].get(kind)
+            month = f"{period[5:7]}.{period[:4]}"
+            parts.append(f"{month} — {value:g}" if value is not None
+                         else f"{month} — нет")
+        lines.append(f"<b>{label}</b>: " + " · ".join(parts))
+
+    lines.append("")
+    lines.append("Чтобы переписать принятую цифру, пришлите показание заново "
+                 "со словом «Исправить» первой строкой.")
+    return "\n".join(lines)

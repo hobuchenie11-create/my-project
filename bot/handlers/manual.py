@@ -15,6 +15,7 @@ from aiogram import F, Router
 from aiogram.types import Message
 
 from bot.config import config
+from bot.services import blank_service
 from bot.services.batch_service import import_batch
 from bot.services.parser import (mentioned_flats, parse_message,
                                  split_messages)
@@ -64,6 +65,13 @@ async def manual_readings(message: Message) -> None:
             return
 
         if parsed.is_empty:
+            # Председателю один номер квартиры — это просьба показать карточку:
+            # чем ещё решить, чья цифра неверна, когда бот отвечает
+            # «показание меньше предыдущего»
+            if is_admin:
+                await message.answer(
+                    blank_service.history_text(conn, apartment))
+                return
             await message.answer(
                 "Помещение понял, а показания — нет. Напишите прибор и число: "
                 "«Эл.эн 12345», «Хвс 56».")

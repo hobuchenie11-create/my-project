@@ -224,3 +224,75 @@ def test_readings_instead_of_a_number_are_recorded(db, monkeypatch):
     finally:
         conn.close()
     assert 16553.0 in values, "показания с переписанного бланка должны записаться"
+
+
+# ---------------------------------------------------------------------------
+# Карточка помещения: один номер без цифр
+# ---------------------------------------------------------------------------
+
+def test_history_card_shows_every_meter_by_month(db, monkeypatch):
+    """«Показание меньше предыдущего» — решить, чья цифра неверна, можно
+    только увидев обе."""
+    from bot.handlers import manual
+    from bot.services import blank_service
+
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "54")
+        save_parsed_readings(conn, flat,
+                             parse_message("Кв 54\nЭл.эн 16553\nХвс 267\nГвс 215"),
+                             None, period="2026-09")
+        conn.commit()
+        card = blank_service.history_text(conn, flat)
+    finally:
+        conn.close()
+
+    assert "кв. 54" in card
+    assert "09.2026 — 16553" in card and "08.2026 — 16000" in card
+    assert "09.2026 — 267" in card and "08.2026 — 250" in card
+    assert "Исправить" in card
+
+
+def test_chairman_sees_the_card_for_a_bare_number(db, monkeypatch):
+    from bot.handlers import manual
+    monkeypatch.setattr(manual, "config",
+                        replace(manual.config, admin_ids=(CHAIRMAN,)))
+
+    message = Msg("Кв. 54", tg_id=CHAIRMAN)
+    asyncio.run(manual.manual_readings(message))
+
+    assert "кв. 54" in message.answers[0]
+    assert "08.2026 — 16000" in message.answers[0]
+
+
+def test_resident_still_gets_the_old_hint(db, monkeypatch):
+    """Жителю карточка соседа ни к чему — ему нужна подсказка про формат."""
+    from bot.handlers import manual
+    monkeypatch.setattr(manual, "config",
+                        replace(manual.config, admin_ids=(CHAIRMAN,)))
+
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "54")
+        repository.create_user(conn, RESIDENT, "Житель", flat["id"])
+        conn.commit()
+    finally:
+        conn.close()
+
+    message = Msg("Кв. 54", tg_id=RESIDENT)
+    asyncio.run(manual.manual_readings(message))
+
+    assert "Напишите прибор и число" in message.answers[0]
+
+
+def test_card_for_a_flat_without_readings(db):
+    from bot.services import blank_service
+
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "9")
+        card = blank_service.history_text(conn, flat)
+    finally:
+        conn.close()
+
+    assert "показаний по этому помещению ещё не было" in card.lower()
