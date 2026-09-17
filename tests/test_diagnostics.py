@@ -1,9 +1,11 @@
 """Бот не должен молчать: журнал входящих и ответ при внутренней ошибке."""
 import asyncio
 import logging
+from dataclasses import replace
 from datetime import datetime
 from types import SimpleNamespace
 
+import pytest
 from aiogram.types import Chat, Message, User
 
 from bot import diagnostics
@@ -19,19 +21,42 @@ def real_message(text: str) -> Message:
         text=text)
 
 
+CHAIRMAN = 555
+RESIDENT = 777
+
+
+class FakeBot:
+    """Личка: что и кому бот отправил помимо ответа на сообщение."""
+
+    def __init__(self):
+        self.dm: list[tuple[int, str]] = []
+
+    async def send_message(self, chat_id, text, **kwargs):
+        self.dm.append((chat_id, text))
+
+
 class FakeMessage:
     """Сообщение, пришедшее боту. Ответы складываем в список."""
 
-    def __init__(self, text="Кв 31\nЭлект. 29814", chat_type="private"):
+    def __init__(self, text="Кв 31\nЭлект. 29814", chat_type="private",
+                 tg_id=CHAIRMAN):
         self.text = text
         self.caption = None
         self.content_type = "text"
-        self.chat = SimpleNamespace(id=-100123, type=chat_type)
-        self.from_user = SimpleNamespace(id=777, full_name="Елена Викторовна")
+        self.chat = SimpleNamespace(id=-100123, type=chat_type, title="Дом")
+        self.from_user = SimpleNamespace(id=tg_id, full_name="Елена Викторовна")
         self.replies: list[str] = []
+        self.bot = FakeBot()
 
     async def answer(self, text, **kwargs):
         self.replies.append(text)
+
+
+@pytest.fixture(autouse=True)
+def chairman_is_admin(monkeypatch):
+    """Config заморожен — подменяем копию целиком, а не отдельное поле."""
+    monkeypatch.setattr(diagnostics, "config",
+                        replace(diagnostics.config, admin_ids=(CHAIRMAN,)))
 
 
 def _update(message=None):
@@ -90,9 +115,9 @@ def test_non_message_events_pass_through():
     assert asyncio.run(middleware(handler, callback, {})) == "готово"
 
 
-def test_handler_failure_answers_instead_of_silence(caplog):
-    """Обработчик упал — человек получает ответ, а не тишину."""
-    message = FakeMessage()
+def test_chairman_gets_the_technical_answer(caplog):
+    """Обработчик упал — председатель получает ответ, а не тишину."""
+    message = FakeMessage(tg_id=CHAIRMAN)
 
     with caplog.at_level(logging.ERROR, logger="bot.diagnostics"):
         handled = asyncio.run(diagnostics.report_error(_error(message)))
@@ -100,10 +125,41 @@ def test_handler_failure_answers_instead_of_silence(caplog):
     assert handled is True
     assert message.replies, "бот промолчал в ответ на ошибку"
     assert "не записаны" in message.replies[0]
-    assert "ещё раз" in message.replies[0]
+    assert "logs/dhos.log" in message.replies[0]
     assert "Кв 31" in caplog.text                 # видно, на чём упало
     assert "что-то пошло не так" in caplog.text   # и сама ошибка
     assert "ValueError" in caplog.text            # вместе со стеком
+
+
+def test_resident_gets_a_plain_answer_without_the_technical_part():
+    """Жителя «внутренняя ошибка бота» и журнал только путают."""
+    message = FakeMessage(tg_id=RESIDENT)
+
+    asyncio.run(diagnostics.report_error(_error(message)))
+
+    answer = message.replies[0]
+    assert "не приняты" in answer
+    assert "ещё раз" in answer
+    assert "ошибка" not in answer.lower()
+    assert "dhos.log" not in answer
+    # а председателю при этом ушёл разбор
+    assert message.bot.dm and message.bot.dm[0][0] == CHAIRMAN
+    assert "Кв 31" in message.bot.dm[0][1]
+
+
+def test_house_chat_hears_nothing_at_all():
+    """В чат дома при ошибке не пишем ничего — жителей это пугает."""
+    message = FakeMessage(chat_type="supergroup", tg_id=RESIDENT)
+
+    asyncio.run(diagnostics.report_error(_error(message)))
+
+    assert message.replies == [], "в общем чате бот должен промолчать"
+    assert message.bot.dm, "но председателю сообщить обязан"
+    chat_id, text = message.bot.dm[0]
+    assert chat_id == CHAIRMAN
+    assert "в чате «Дом»" in text
+    assert "Елена Викторовна" in text
+    assert "ValueError" in text
 
 
 def test_failure_without_message_is_only_logged(caplog):
