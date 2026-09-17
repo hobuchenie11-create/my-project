@@ -56,13 +56,26 @@ def form_text(conn: sqlite3.Connection, apartment: sqlite3.Row) -> str:
     number = (f"Кв. {apartment['number']}" if apartment["type"] == "residential"
               else apartment["number"])
 
-    form = "\n".join([number] + [FORM_LABELS.get(m["kind"], METER_KINDS[m["kind"]])
-                                 for m in meters])
+    kinds = [m["kind"] for m in meters]
+    lines = [number] + [FORM_LABELS.get(k, METER_KINDS[k]) for k in kinds]
+
+    # На бумажном бланке жители пишут итог по горячей воде. В приборы он не
+    # идёт — сумму бот складывает сам, — но как контрольная цифра он ценен:
+    # переставленные местами цифры в кухне или санузле всплывают сразу.
+    split_hws = "hws_kitchen" in kinds and "hws_bathroom" in kinds
+    if split_hws:
+        lines.append("Сумма гвс")
 
     text = (f"🖨 <b>Бланк · {display(apartment)}</b>\n\n"
             "Перепишите цифры с бланка в эту форму и отправьте одним "
             "сообщением — нажмите на неё, чтобы скопировать:\n\n"
-            f"<code>{form}</code>")
+            f"<code>{chr(10).join(lines)}</code>")
+
+    if split_hws:
+        text += ("\n\n«Сумма гвс» — строка для проверки: в ведомость она не "
+                 "записывается, сумму бот считает сам. Но если она не сойдётся "
+                 "с кухней и санузлом, он предупредит. Нет её на бланке — "
+                 "просто удалите строку.")
 
     if previous:
         was = " · ".join(

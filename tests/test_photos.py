@@ -296,3 +296,47 @@ def test_card_for_a_flat_without_readings(db):
         conn.close()
 
     assert "показаний по этому помещению ещё не было" in card.lower()
+
+
+def test_form_asks_for_the_hot_water_total_as_a_check(db):
+    """На бланке житель пишет итог по ГВС — пусть служит контрольной цифрой."""
+    from bot.services import blank_service
+
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "9")   # четыре счётчика
+        form = blank_service.form_text(conn, flat)
+    finally:
+        conn.close()
+
+    assert "Сумма гвс" in form
+    assert "в ведомость она не записывается" in form
+
+
+def test_no_total_line_when_hot_water_is_one_meter(db):
+    """Один ГВС — складывать нечего, лишняя строка только запутает."""
+    from bot.services import blank_service
+
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "54")
+        form = blank_service.form_text(conn, flat)
+    finally:
+        conn.close()
+
+    assert "Сумма гвс" not in form
+
+
+def test_the_total_is_checked_not_stored(db):
+    """Итог в приборы не идёт, но расхождение бот называет."""
+    conn = repository.connect(db)
+    try:
+        flat = repository.get_apartment_by_number(conn, "9")
+        outcome = save_parsed_readings(conn, flat, parse_message(
+            "Кв 9\nГвс кухня 435\nГвс санузел 300\nСумма гвс 999"),
+            None, period="2026-09")
+    finally:
+        conn.close()
+
+    assert outcome.saved == {"hws_kitchen": 435.0, "hws_bathroom": 300.0}
+    assert any("не сходится" in w for w in outcome.warnings)
