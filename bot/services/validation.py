@@ -1,7 +1,8 @@
 """Проверка вводимых показаний."""
 from dataclasses import dataclass
 
-from database.models import DELTA_WARN_DEFAULT, DELTA_WARN_LIMITS
+from database.models import (DELTA_WARN_DEFAULT, DELTA_WARN_LIMITS,
+                             MONTHS_RU, period_title)
 
 
 def parse_value(text: str) -> float | None:
@@ -72,20 +73,31 @@ class CheckResult:
     warning: str = ""
 
 
-def check_reading(kind: str, new_value: float, last_value: float | None) -> CheckResult:
+def check_reading(kind: str, new_value: float, last_value: float | None,
+                  last_period: str | None = None) -> CheckResult:
     """Сверяет новое показание с предыдущим.
 
     Меньше предыдущего — ошибка (замену счетчика оформляет председатель).
     Аномально большой расход — принимается, но с предупреждением.
+
+    `last_period` — месяц той цифры, с которой сравниваем. Без него ответ
+    «меньше предыдущего (197)» заводит в тупик: непонятно, где лежит эта
+    197 и как до неё добраться, если неверна как раз она.
     """
     if last_value is None:
         return CheckResult(ok=True)
 
     if new_value < last_value:
+        whose = (f"показания за {period_title(last_period)}" if last_period
+                 else "предыдущего")
+        fix = (f"\nЕсли неверна как раз цифра за {period_title(last_period)} — "
+               f"пришлите «Исправить за {MONTHS_RU[int(last_period[5:7]) - 1]}» "
+               "и правильное показание." if last_period else "")
         return CheckResult(
             ok=False,
-            error=(f"Показание {new_value:g} меньше предыдущего ({last_value:g}). "
-                   "Проверьте цифры. Если счетчик заменили — сообщите председателю."),
+            error=(f"Показание {new_value:g} меньше {whose} ({last_value:g}). "
+                   "Проверьте цифры. Если счетчик заменили — сообщите "
+                   f"председателю.{fix}"),
         )
 
     delta = new_value - last_value

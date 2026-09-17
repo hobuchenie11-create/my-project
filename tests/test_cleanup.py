@@ -71,7 +71,7 @@ def test_real_reading_is_accepted_after_cleanup(conn):
     apartment = repository.get_apartment_by_number(conn, "1")
 
     rejected = save_reading(conn, apartment["id"], "cws", 119, None, source="chat")
-    assert not rejected.ok and "меньше предыдущего" in rejected.error
+    assert not rejected.ok and "меньше показания за август" in rejected.error
 
     doomed = repository.find_readings(conn, before="2026-08-15 00:00:00")
     repository.delete_readings(conn, [r["id"] for r in doomed])

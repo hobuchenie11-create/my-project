@@ -56,7 +56,7 @@ def test_correction_may_lower_the_value(conn, flat):
     save_reading(conn, flat["id"], "electricity", 99999, None)
 
     rejected = save_reading(conn, flat["id"], "electricity", 15230, None)
-    assert rejected.ok is False and "меньше предыдущего" in rejected.error
+    assert rejected.ok is False and "меньше показания за" in rejected.error
 
     fixed = save_reading(conn, flat["id"], "electricity", 15230, None,
                          correction=True)
@@ -71,7 +71,7 @@ def test_correction_still_checked_against_previous_month(conn, flat):
     result = save_reading(conn, flat["id"], "electricity", 14000, None,
                           period="2026-07", correction=True)
     assert result.ok is False
-    assert "меньше предыдущего" in result.error
+    assert "меньше показания за" in result.error
 
 
 def test_correction_keeps_next_month_consumption_right(conn, flat):
@@ -160,7 +160,7 @@ def test_previous_month_can_be_fixed_and_unblocks_the_current(conn, flat):
     blocked = save_parsed_readings(conn, flat, parse_message("Кв 1\nХвс 150"),
                                    None, period="2026-09")
     assert blocked.saved == {}
-    assert any("меньше предыдущего" in e for e in blocked.errors)
+    assert any("меньше показания за август" in e for e in blocked.errors)
 
     # правка за август
     parsed = parse_message("Исправить за август\nКв 1\nХвс 147")

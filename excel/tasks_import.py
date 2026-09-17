@@ -26,7 +26,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from bot.services import task_service, verification_service
-from bot.services.task_service import MONTHS_RU
+from database.models import MONTHS_RU
 from database import repository
 from database.models import TASK_CATEGORIES, TASK_STATUSES
 from excel.tasks_export import (COL_ID_TITLE, HINT_MARK, SHEET_ONE_OFF,

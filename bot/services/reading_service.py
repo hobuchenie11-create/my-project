@@ -6,7 +6,8 @@ from datetime import date, datetime
 from bot.services.parser import ParsedReadings
 from bot.services.validation import CheckResult, check_reading
 from database import repository
-from database.models import DEFAULT_UNIT, METER_KINDS, METER_UNITS
+from database.models import (DEFAULT_UNIT, METER_KINDS, METER_UNITS,
+                             period_title)
 
 
 def current_period(today: date | None = None) -> str:
@@ -33,11 +34,7 @@ def is_late(moment: date | datetime | None = None) -> bool:
     return hour >= config.statement_hour
 
 
-def period_title(period: str) -> str:
-    months = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль",
-              "август", "сентябрь", "октябрь", "ноябрь", "декабрь"]
-    year, month = period.split("-")
-    return f"{months[int(month) - 1]} {year}"
+
 
 
 def unit_for(kind: str) -> str:
@@ -64,7 +61,8 @@ def save_reading(conn: sqlite3.Connection, apartment_id: int, kind: str, value: 
     previous = repository.reading_for_period(conn, meter["id"], period)
     last = (repository.last_reading_before_period(conn, meter["id"], period)
             if correction else repository.last_reading(conn, meter["id"]))
-    result = check_reading(kind, value, last["value"] if last else None)
+    result = check_reading(kind, value, last["value"] if last else None,
+                           last["period"] if last else None)
     if result.ok:
         if late is None:
             # Правка не делает показание опоздавшим: пометку наследуем от той

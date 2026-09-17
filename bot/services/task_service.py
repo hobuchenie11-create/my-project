@@ -13,13 +13,10 @@ from datetime import date, timedelta
 from database import repository
 from database.models import (DEFAULT_TASK_TEMPLATES, TASK_CATEGORIES,
                              TASK_OPEN_STATUSES, TASK_PRIORITIES, TASK_SOON_DAYS,
-                             TASK_STATUSES)
+                             TASK_STATUSES, period_title)
 
 # На сколько месяцев вперёд держим созданные задачи
 MONTHS_AHEAD = 3
-
-MONTHS_RU = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль",
-             "август", "сентябрь", "октябрь", "ноябрь", "декабрь"]
 
 
 def ensure_templates(conn: sqlite3.Connection) -> None:
@@ -206,11 +203,6 @@ def category_label(category: str) -> str:
 
 def priority_label(priority: str) -> str:
     return TASK_PRIORITIES.get(priority, priority)
-
-
-def period_title(period: str) -> str:
-    year, month = period.split("-")
-    return f"{MONTHS_RU[int(month) - 1]} {year}"
 
 
 def _fmt_date(value: str, today: date | None = None) -> str:

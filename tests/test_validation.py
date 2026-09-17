@@ -49,3 +49,20 @@ def test_question_detection_during_readings():
     assert not is_question("12345")
     assert not is_question("56,78")
     assert not is_question("0000076")
+
+
+def test_rejection_names_the_month_and_the_way_out():
+    """«меньше предыдущего (197)» заводило в тупик: где эта 197 и что с ней делать."""
+    result = check_reading("cws_kitchen", 147, 197, "2026-08")
+
+    assert not result.ok
+    assert "за август 2026" in result.error
+    assert "Исправить за август" in result.error
+
+
+def test_without_a_known_month_the_wording_stays_general():
+    result = check_reading("cws_kitchen", 147, 197)
+
+    assert not result.ok
+    assert "меньше предыдущего" in result.error
+    assert "Исправить" not in result.error
