@@ -118,3 +118,76 @@ def test_correction_touches_only_named_meters(conn, flat):
     row = next(r for r in statement.rows if r.number == "1")
     assert row.electricity == 15230
     assert row.cws_kitchen == 120
+
+
+# ---------------------------------------------------------------------------
+# Правка за прошлый месяц
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("line, period", [
+    ("Исправить за август", "2026-08"),
+    ("Исправить за Август", "2026-08"),
+    ("Исправить 08.2026", "2026-08"),
+    ("Исправить за август 2026", "2026-08"),
+    ("Исправить за сентябрь", "2026-09"),
+    ("Исправить за декабрь", "2025-12"),      # декабря 2026 ещё не было
+])
+def test_correction_names_the_month(line, period):
+    parsed = parse_message(f"{line}\nКв 68\nХвс кухня 147")
+    assert parsed.is_correction
+    assert parsed.period == period
+    assert parsed.values == {"cws_kitchen": 147.0}
+
+
+def test_correction_without_a_month_stays_in_the_current_period():
+    parsed = parse_message("Исправить\nКв 68\nХвс кухня 147")
+    assert parsed.is_correction and parsed.period is None
+
+
+def test_month_is_looked_for_only_in_corrections():
+    """«Гвс 05.2026» в обычном сообщении — описка, а не период."""
+    parsed = parse_message("Кв 68\nГвс 05.2026")
+    assert parsed.period is None
+
+
+def test_previous_month_can_be_fixed_and_unblocks_the_current(conn, flat):
+    """Из-за неверного августа сентябрь не принимался — правка это снимает."""
+    # август записан с ошибкой: 197 вместо 147
+    save_parsed_readings(conn, flat, parse_message("Кв 1\nХвс 197"),
+                         None, period="2026-08")
+
+    # сентябрьское показание бот отклоняет
+    blocked = save_parsed_readings(conn, flat, parse_message("Кв 1\nХвс 150"),
+                                   None, period="2026-09")
+    assert blocked.saved == {}
+    assert any("меньше предыдущего" in e for e in blocked.errors)
+
+    # правка за август
+    parsed = parse_message("Исправить за август\nКв 1\nХвс 147")
+    assert parsed.period == "2026-08"
+    fixed = save_parsed_readings(conn, flat, parsed, None,
+                                 correction=True, period=parsed.period)
+    assert fixed.saved == {"cws": 147.0}
+
+    # теперь сентябрь принимается
+    again = save_parsed_readings(conn, flat, parse_message("Кв 1\nХвс 150"),
+                                 None, period="2026-09")
+    assert again.saved == {"cws": 150.0}
+    assert again.errors == []
+
+    meter = repository.get_meter(conn, flat["id"], "cws")
+    august = repository.reading_for_period(conn, meter["id"], "2026-08")
+    assert august["value"] == 147.0, "в ведомость за август идёт правка"
+
+
+def test_the_wrong_august_figure_stays_in_history(conn, flat):
+    """Прежняя цифра не стирается — по журналу видно, что и когда поправили."""
+    save_parsed_readings(conn, flat, parse_message("Кв 1\nХвс 197"),
+                         None, period="2026-08")
+    parsed = parse_message("Исправить за август\nКв 1\nХвс 147")
+    save_parsed_readings(conn, flat, parsed, None, correction=True,
+                         period=parsed.period)
+
+    rows = repository.readings_history_for_apartment(conn, flat["id"])
+    august = [r["value"] for r in rows if r["period"] == "2026-08"]
+    assert sorted(august) == [147.0, 197.0]

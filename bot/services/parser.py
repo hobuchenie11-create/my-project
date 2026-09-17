@@ -22,6 +22,7 @@
 решает reading_service по набору приборов квартиры.
 """
 import re
+from datetime import date
 from dataclasses import dataclass, field
 
 from bot.services.validation import parse_value
@@ -89,6 +90,15 @@ CHAT_META_RE = re.compile(
 # Слово убираем из текста до разбора, иначе оно приклеится к подписи прибора.
 CORRECTION_RE = re.compile(
     r"\b(?:исправ\w*|правка|поправ\w*|корректир\w*|замен\w*\s+показан\w*)\b[\s:.,–—-]*",
+    re.IGNORECASE)
+
+# Месяц у правки: «Исправить за август», «Исправить 08.2026». Без месяца
+# правка идёт в текущий период — так было и раньше.
+MONTH_NAMES = ("январ", "феврал", "март", "апрел", "ма", "июн", "июл",
+               "август", "сентябр", "октябр", "ноябр", "декабр")
+CORRECTION_MONTH_RE = re.compile(
+    r"\bза\s+(?P<name>[а-яё]{3,9})(?:\s+(?P<name_year>\d{4}))?"
+    r"|\b(?:за\s+)?(?P<month>0?[1-9]|1[0-2])[./](?P<year>\d{4})\b",
     re.IGNORECASE)
 
 # Начало нового сообщения в пачке: строка называет квартиру или помещение.
@@ -197,6 +207,7 @@ class ParsedReadings:
     errors: list[str] = field(default_factory=list)
     mentions_apartment: bool = False   # в тексте есть «кв», номер мог не читаться
     is_correction: bool = False        # помечено «Исправить» — переписать принятое
+    period: str | None = None          # «Исправить за август» — правка не за текущий месяц
 
     @property
     def is_empty(self) -> bool:
@@ -208,11 +219,42 @@ class ParsedReadings:
         return self.mentions_apartment and self.apartment_number is None
 
 
+def correction_period(text: str, today: date | None = None) -> tuple[str, str | None]:
+    """Вынимает месяц правки: «за август» -> «2026-08». Возвращает текст без него.
+
+    Месяц без года — ближайший прошедший: правят обычно только что сданное,
+    а будущих показаний не бывает.
+    """
+    today = today or date.today()
+    match = CORRECTION_MONTH_RE.search(text)
+    if match is None:
+        return text, None
+
+    if match.group("month"):
+        month, year = int(match.group("month")), int(match.group("year"))
+    else:
+        name = match.group("name").lower()
+        month = next((i + 1 for i, stem in enumerate(MONTH_NAMES)
+                      if name.startswith(stem)), None)
+        if month is None:
+            return text, None
+        year = (int(match.group("name_year")) if match.group("name_year")
+                else today.year - (1 if month > today.month else 0))
+
+    if not 2000 <= year <= today.year:
+        return text, None
+    return text[:match.start()] + text[match.end():], f"{year:04d}-{month:02d}"
+
+
 def parse_message(text: str) -> ParsedReadings:
     result = ParsedReadings()
 
     text, marks = CORRECTION_RE.subn("", text)
     result.is_correction = bool(marks)
+    if result.is_correction:
+        # Месяц ищем только у правки: «Гвс 05.2026» в обычном сообщении —
+        # это не период, а описка, и трогать её здесь нельзя
+        text, result.period = correction_period(text)
 
     m = NONRESIDENTIAL_RE.search(text)
     if m:

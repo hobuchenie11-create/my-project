@@ -88,13 +88,17 @@ async def manual_readings(message: Message) -> None:
             return
 
         source = "admin" if is_admin else "bot"
+        # «Исправить за август» — правка уходит в тот месяц, а не в текущий:
+        # иначе неверную цифру прошлого периода переписать нечем
         outcome = save_parsed_readings(conn, apartment, parsed,
                                        user["id"] if user else None,
-                                       source=source, correction=correction)
+                                       source=source, correction=correction,
+                                       period=parsed.period if correction else None)
         repository.log_event(conn, message.from_user.id,
                              "reading_correction" if correction else f"reading_{source}",
                              f"{apartment['number']}: принято "
-                             f"{len(outcome.saved)} за {current_period()}")
+                             f"{len(outcome.saved)} за "
+                             f"{parsed.period or current_period()}")
         text = (receipt_text(conn, apartment, outcome.saved,
                              replaced=outcome.replaced)
                 if outcome.anything_saved else "Показания не записаны.")
