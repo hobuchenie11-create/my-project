@@ -1,5 +1,6 @@
 """Приём показаний из общего чата: в чью квартиру они попадают."""
 import asyncio
+import logging
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -194,3 +195,55 @@ def test_accepted_readings_are_logged(db, caplog):
         asyncio.run(group.handle_group_message(message))
 
     assert "записано показаний 2" in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# Сообщение жителя исчезло, пока бот его разбирал
+# ---------------------------------------------------------------------------
+
+class VanishedMessage(FakeMessage):
+    """Сообщение удалили: reply падает, обычная отправка в чат работает."""
+
+    def __init__(self, text, tg_id=555):
+        super().__init__(text, tg_id=tg_id)
+        self.chat_messages: list[str] = []
+
+        async def send_message(chat_id, text, **kwargs):
+            if chat_id == self.chat.id:
+                self.chat_messages.append(text)
+            else:
+                self.bot.dm.append((chat_id, text))
+
+        self.bot.send_message = send_message
+
+    async def reply(self, text, **kwargs):
+        from aiogram.exceptions import TelegramBadRequest
+        raise TelegramBadRequest(
+            method=SimpleNamespace(),
+            message="Bad Request: message to be replied not found")
+
+
+def test_deleted_message_does_not_break_the_handler(db, monkeypatch):
+    """Житель удалил своё сообщение — бот не падает и показания записывает."""
+    monkeypatch.setattr(group, "config",
+                        replace(group.config, group_chat_id=-100123,
+                                chat_confirm="reply"))
+    message = VanishedMessage("Кв. 29\nЭл.эн 100\nХвс 5\nГвс 6")
+
+    asyncio.run(group.handle_group_message(message))      # не должно упасть
+
+    assert _readings(db, "29")["electricity"] == 100.0
+    assert any("показания приняты" in t for t in message.chat_messages), \
+        "подтверждение должно уйти обычным сообщением"
+
+
+def test_reply_failure_is_logged_with_the_reason(db, monkeypatch, caplog):
+    monkeypatch.setattr(group, "config",
+                        replace(group.config, group_chat_id=-100123,
+                                chat_confirm="reply"))
+    message = VanishedMessage("Кв. 29\nЭл.эн 100")
+
+    with caplog.at_level(logging.WARNING, logger="bot.handlers.group"):
+        asyncio.run(group.handle_group_message(message))
+
+    assert "message to be replied not found" in caplog.text

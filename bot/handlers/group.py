@@ -46,6 +46,32 @@ async def _dm(message: Message, text: str) -> bool:
         return False  # житель не запускал бота в личке — написать нельзя
 
 
+async def _reply(message: Message, text: str) -> bool:
+    """Отвечает на сообщение в чате. Ответ «в никуда» бота не роняет.
+
+    Сообщение жителя может исчезнуть, пока бот его разбирает: житель
+    удалил сам, удалил председатель, чат почистили. Telegram тогда
+    отвечает «message to be replied not found», и раньше это валило
+    обработчик — а в чат уходило пугающее сообщение про внутреннюю
+    ошибку. Пишем тот же текст обычным сообщением: показания приняты
+    (или не приняты) — жителю это нужно знать в любом случае.
+    """
+    try:
+        await message.reply(text)
+        return True
+    except TelegramAPIError as exc:
+        logger.warning("Не удалось ответить на сообщение в чате «%s»: %s. "
+                       "Пишу обычным сообщением.", message.chat.title, exc)
+
+    try:
+        await message.bot.send_message(message.chat.id, text)
+        return True
+    except TelegramAPIError as exc:
+        logger.warning("Не удалось написать в чат «%s»: %s",
+                       message.chat.title, exc)
+        return False
+
+
 async def _react_ok(message: Message) -> bool:
     """Тихая отметка в чате, что показание принято (без текстового сообщения)."""
     try:
@@ -192,7 +218,7 @@ async def handle_group_message(message: Message) -> None:
 
     # В чат пишем только если в личку не дошло И есть о чём предупредить
     if not delivered and problems:
-        await message.reply(problems_text + _START_HINT)
+        await _reply(message, problems_text + _START_HINT)
 
 
 async def _confirm_in_chat(message: Message, apartment) -> None:
@@ -211,7 +237,7 @@ async def _confirm_in_chat(message: Message, apartment) -> None:
     if mode == "reaction":
         return
 
-    await message.reply(f"✅ {apartment['number']}: показания приняты")
+    await _reply(message, f"✅ {apartment['number']}: показания приняты")
 
 
 async def _handle_batch(message: Message, blocks: list[str]) -> None:
@@ -238,10 +264,10 @@ async def _handle_batch(message: Message, blocks: list[str]) -> None:
     logger.info("Пачка из чата: сообщений %s, записано показаний %s",
                 result.messages, result.saved)
     if not await _dm(message, result.text()):
-        await message.reply(result.text())
+        await _reply(message, result.text())
 
 
 async def _guidance(message: Message, text: str) -> None:
     """Подсказку шлём в личку; если не дошла — отвечаем в чате (житель должен её увидеть)."""
     if not await _dm(message, text):
-        await message.reply(text + _START_HINT)
+        await _reply(message, text + _START_HINT)
