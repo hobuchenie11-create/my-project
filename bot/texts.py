@@ -70,20 +70,18 @@ def collection_reminder_text(today: date | None = None) -> str:
     в тексте единственное, что меняется: сколько дней осталось.
     """
     today = today or date.today()
-    last_day = config.readings_day_end
-    deadline = f"{last_day} {MONTHS_GENITIVE[today.month - 1]}"
+    # Срок называем тот, который решает дело: до него показания попадают
+    # в ведомость этого месяца. Окно сбора (15–19) — это когда их ждут,
+    # а 20 числа до полудня ещё принимают, и жителю честнее знать обе даты.
+    last_day = config.statement_day
+    hour = config.readings_deadline_hour
+    deadline = f"{last_day} {MONTHS_GENITIVE[today.month - 1]}, {hour}:00"
 
     left = last_day - today.day
     if left > 0:
         urgency = f"Остаётся {_days_word(left)}."
     elif left == 0:
-        urgency = "<b>Сегодня последний день.</b>"
-    elif today.day <= config.statement_day:
-        # Ведомость формируется STATEMENT_DAY в STATEMENT_HOUR, и до этого
-        # часа показания в неё ещё попадают. Говорить в 10 утра 20 числа,
-        # что срок завершён, — значит зря отпугнуть тех, кто ещё успевает.
-        urgency = (f"<b>Сегодня до {config.readings_deadline_hour}:00</b> — "
-                   "последняя возможность попасть в ведомость этого месяца.")
+        urgency = f"<b>Сегодня до {hour}:00 — последний срок.</b>"
     else:
         urgency = ("Срок сбора завершён — показания ещё примут, но учтут "
                    "в следующем расчётном периоде.")
@@ -92,7 +90,7 @@ def collection_reminder_text(today: date | None = None) -> str:
         "🔔 <b>Показания счётчиков</b>\n\n"
         "Здравствуйте! Напоминаю, что пора передать показания приборов "
         "учёта.\n\n"
-        f"🗓 Просьба передать <b>до {deadline}</b> включительно. {urgency}\n\n"
+        f"🗓 Просьба передать <b>до {deadline}</b>. {urgency}\n\n"
         "Своевременная передача показаний минимизирует начисления по ОДН.\n\n"
         "Передать можно сообщением в этот чат или в боте «Домовед» — "
         "кнопка «🏠 Передать показания». Шаблоны закреплены в чате.\n\n"

@@ -57,7 +57,7 @@ class Config:
     chat_reminder_hour: int = int(os.getenv("CHAT_REMINDER_HOUR", "10"))
     # Последний срок, когда показания ещё попадают в ведомость этого месяца:
     # ведомость формируется в STATEMENT_HOUR, и час до неё — запас на разбор
-    readings_deadline_hour: int = int(os.getenv("READINGS_DEADLINE_HOUR", "13"))
+    readings_deadline_hour: int = int(os.getenv("READINGS_DEADLINE_HOUR", "12"))
     # Реестр ОЭК: заполняется сразу после ведомости — 20 числа в 14:30.
     # Полчаса запаса на случай, если ведомость собиралась дольше обычного.
     oek_day: int = int(os.getenv("OEK_DAY", os.getenv("STATEMENT_DAY", "20")))

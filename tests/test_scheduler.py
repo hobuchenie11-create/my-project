@@ -220,7 +220,7 @@ def test_reminder_text_carries_the_chairman_wording():
     assert text.startswith("Здравствуйте!")
     assert "минимизирует начисления по ОДН" in text
     assert "Заранее благодарю" in text
-    assert "20 числа, 13:00" in text
+    assert "20 числа, 12:00" in text
 
 
 def test_deadline_follows_the_settings(monkeypatch):
@@ -334,7 +334,7 @@ def test_statement_day_morning_still_invites_to_submit():
     from bot.texts import collection_reminder_text
 
     text = collection_reminder_text(_date(2026, 9, 20))
-    assert "13:00" in text
+    assert "Сегодня до 12:00 — последний срок" in text
     assert "Срок сбора завершён" not in text
 
     later = collection_reminder_text(_date(2026, 9, 21))
@@ -349,7 +349,7 @@ def test_reminder_after_the_deadline_switches_the_wording():
 
     in_time = reminder_text("2026-09", _date(2026, 9, 19))
     assert "пора передать показания" in in_time
-    assert "до 20 числа, 13:00" in in_time
+    assert "до 20 числа, 12:00" in in_time
 
     late = reminder_text("2026-09", _date(2026, 9, 23))
     assert "уже переданы ресурсоснабжающим" in late
