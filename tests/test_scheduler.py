@@ -44,9 +44,9 @@ def bot(monkeypatch):
     async def noop(*args, **kwargs):
         return 0
 
-    for name in ("send_reminders", "send_debtors_statement",
-                 "send_monthly_statement", "send_oek_registry",
-                 "send_task_reminders"):
+    for name in ("send_reminders", "send_chat_reminder",
+                 "send_debtors_statement", "send_monthly_statement",
+                 "send_oek_registry", "send_task_reminders"):
         monkeypatch.setattr(scheduler, name, noop)
     # Config заморожен — подменяем целиком, а не отдельное поле
     monkeypatch.setattr(scheduler, "config",
@@ -267,3 +267,73 @@ def test_reminder_days_and_hour_come_from_settings():
     fresh = Config()
     assert fresh.reminder_days == (18, 19)
     assert fresh.reminder_hour == 20
+
+
+# ---------------------------------------------------------------------------
+# Напоминание в чат дома
+# ---------------------------------------------------------------------------
+
+def test_chat_reminder_goes_out_on_its_days_at_its_hour(db, bot, monkeypatch):
+    """17–20 числа в 10:00 — и ни ночью, ни в другие дни."""
+    sent = []
+
+    async def spy(_bot):
+        sent.append(True)
+        return True
+
+    monkeypatch.setattr(scheduler, "send_chat_reminder", spy)
+    monkeypatch.setattr(scheduler, "config",
+                        replace(config, group_chat_id=GROUP_CHAT,
+                                chat_reminder_days=(17, 18, 19, 20),
+                                chat_reminder_hour=10))
+
+    _tick(bot, datetime(2026, 9, 17, 3, 0))     # ночью — молчим
+    assert sent == []
+
+    _tick(bot, datetime(2026, 9, 17, 10, 0))
+    assert sent == [True]
+
+    _tick(bot, datetime(2026, 9, 17, 18, 0))    # второй раз за сутки — нет
+    assert sent == [True]
+
+    _tick(bot, datetime(2026, 9, 18, 10, 0))    # на следующий день — снова
+    assert sent == [True, True]
+
+    _tick(bot, datetime(2026, 9, 21, 10, 0))    # 21 числа уже не шлём
+    assert sent == [True, True]
+
+
+def test_chat_reminder_text_goes_to_the_house_chat(db, monkeypatch):
+    monkeypatch.setattr(scheduler, "config",
+                        replace(config, group_chat_id=GROUP_CHAT))
+    bot = FakeBot()
+
+    assert asyncio.run(scheduler.send_chat_reminder(bot)) is True
+    chat_id, text = bot.sent[0]
+    assert chat_id == GROUP_CHAT
+    assert "Показания счётчиков" in text
+    assert "Шаблон для 3-х комн" in text
+
+
+def test_chat_reminder_needs_a_chat(db, monkeypatch):
+    """Чат дома не подключён — писать некуда, но и падать не из-за чего."""
+    monkeypatch.setattr(scheduler, "config",
+                        replace(config, group_chat_id=None))
+    bot = FakeBot()
+
+    assert asyncio.run(scheduler.send_chat_reminder(bot)) is False
+    assert bot.sent == []
+
+
+def test_statement_day_morning_still_invites_to_submit():
+    """В 10 утра 20 числа показания ещё попадут в ведомость — так и пишем."""
+    from datetime import date as _date
+
+    from bot.texts import collection_reminder_text
+
+    text = collection_reminder_text(_date(2026, 9, 20))
+    assert "13:00" in text
+    assert "Срок сбора завершён" not in text
+
+    later = collection_reminder_text(_date(2026, 9, 21))
+    assert "Срок сбора завершён" in later

@@ -74,6 +74,12 @@ def collection_reminder_text(today: date | None = None) -> str:
         urgency = f"Остаётся {_days_word(left)}."
     elif left == 0:
         urgency = "<b>Сегодня последний день.</b>"
+    elif today.day <= config.statement_day:
+        # Ведомость формируется STATEMENT_DAY в STATEMENT_HOUR, и до этого
+        # часа показания в неё ещё попадают. Говорить в 10 утра 20 числа,
+        # что срок завершён, — значит зря отпугнуть тех, кто ещё успевает.
+        urgency = (f"<b>Сегодня до {config.readings_deadline_hour}:00</b> — "
+                   "последняя возможность попасть в ведомость этого месяца.")
     else:
         urgency = ("Срок сбора завершён — показания ещё примут, но учтут "
                    "в следующем расчётном периоде.")

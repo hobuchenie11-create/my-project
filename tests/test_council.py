@@ -151,8 +151,11 @@ def test_chat_reminder_names_the_deadline():
 
     assert "Сегодня последний день" in collection_reminder_text(
         date(2026, 8, last))
+    # 20 числа до 13:00 показания ещё попадают в ведомость — об этом и пишем
+    assert "13:00" in collection_reminder_text(
+        date(2026, 8, config.statement_day))
     assert "Срок сбора завершён" in collection_reminder_text(
-        date(2026, 8, last + 1))
+        date(2026, 8, config.statement_day + 1))
     assert "1 день" in collection_reminder_text(date(2026, 8, last - 1))
     assert f"<b>до {last} сентября</b>" in collection_reminder_text(
         date(2026, 9, last - 4))

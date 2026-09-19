@@ -3,6 +3,8 @@
 Отвечает за автоматические действия по календарю:
   • напоминания жителям, не сдавшим показания, — в дни из REMINDER_DAYS
     в REMINDER_HOUR часов (по умолчанию 15, 17 и 19 числа в 10:00);
+  • напоминание в чат дома — в дни CHAT_REMINDER_DAYS в CHAT_REMINDER_HOUR
+    (17–20 числа в 10:00): для жителей, не зарегистрированных в боте;
   • ведомость непередавших — в DEBTORS_DAY в DEBTORS_HOUR часов
     (по умолчанию 20 числа в 09:00) отправляется председателю;
   • итоговая ведомость — в STATEMENT_DAY в STATEMENT_HOUR (20 числа в 14:00),
@@ -29,7 +31,7 @@ from bot.config import config
 from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import (REMINDER_TEXT, deadline_text,
                                            pending_targets)
-from bot.texts import collection_closed_text
+from bot.texts import collection_closed_text, collection_reminder_text
 from database import repository
 
 logger = logging.getLogger(__name__)
@@ -73,6 +75,12 @@ async def _tick(bot: Bot, now: datetime) -> None:
     if (now.day in config.reminder_days and now.hour >= config.reminder_hour
             and _claim(f"reminders:{today}")):
         await send_reminders(bot)
+
+    # Напоминание в чат дома: жителям без бота иначе не сказать
+    if (now.day in config.chat_reminder_days
+            and now.hour >= config.chat_reminder_hour
+            and _claim(f"chat_reminder:{today}")):
+        await send_chat_reminder(bot)
 
     if (now.day == config.debtors_day and now.hour >= config.debtors_hour
             and _claim(f"debtors:{today}")):
@@ -124,6 +132,24 @@ async def send_reminders(bot: Bot) -> list[str]:
     logger.info("Напоминания за %s отправлены: %s",
                 period, ", ".join(f"кв. {n}" for n in sent) or "некому")
     return sent
+
+
+async def send_chat_reminder(bot: Bot) -> bool:
+    """Напоминание о сборе показаний в чат дома.
+
+    Зарегистрированным жителям бот пишет лично, но их пока единицы —
+    остальные восемьдесят квартир читают только общий чат.
+    """
+    if not config.group_chat_id:
+        logger.info("Чат дома не подключён — напоминание в чат не отправлено")
+        return False
+    try:
+        await bot.send_message(config.group_chat_id, collection_reminder_text())
+    except TelegramAPIError as exc:
+        logger.warning("Не удалось отправить напоминание в чат дома: %s", exc)
+        return False
+    logger.info("Напоминание о сборе показаний отправлено в чат дома")
+    return True
 
 
 async def send_debtors_statement(bot: Bot) -> int:
