@@ -187,3 +187,47 @@ def test_no_reminders_means_no_messages(db, monkeypatch):
     bot = KeyboardBot()
     assert asyncio.run(scheduler.send_task_reminders(bot)) == 0
     assert bot.sent == []
+
+
+# ---------------------------------------------------------------------------
+# Напоминания жителям
+# ---------------------------------------------------------------------------
+
+def test_reminders_wait_for_their_hour(db, bot, monkeypatch):
+    """Ночью жителей не будим: до REMINDER_HOUR напоминание не уходит."""
+    calls = []
+
+    async def spy(_bot):
+        calls.append(True)
+        return 1
+
+    monkeypatch.setattr(scheduler, "send_reminders", spy)
+    monkeypatch.setattr(scheduler, "config",
+                        replace(config, reminder_days=(15,), reminder_hour=10))
+
+    _tick(bot, datetime(2026, 9, 15, 0, 5))
+    assert calls == [], "в 00:05 напоминание уходить не должно"
+
+    _tick(bot, datetime(2026, 9, 15, 10, 0))
+    assert calls == [True]
+
+
+def test_reminder_text_carries_the_chairman_wording():
+    from bot.services.reminder_service import REMINDER_TEXT, deadline_text
+
+    text = REMINDER_TEXT.format(period="сентябрь 2026", deadline=deadline_text())
+
+    assert text.startswith("Здравствуйте!")
+    assert "минимизирует начисления по ОДН" in text
+    assert "Заранее благодарю" in text
+    assert "20 числа, 13:00" in text
+
+
+def test_deadline_follows_the_settings(monkeypatch):
+    """Срок в тексте берётся из настроек, а не вписан в него намертво."""
+    from bot.services import reminder_service
+
+    monkeypatch.setattr(reminder_service, "config",
+                        replace(config, statement_day=21,
+                                readings_deadline_hour=12))
+    assert reminder_service.deadline_text() == "21 числа, 12:00"

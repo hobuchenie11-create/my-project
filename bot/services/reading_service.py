@@ -284,6 +284,13 @@ def receipt_text(conn: sqlite3.Connection, apartment: sqlite3.Row,
     lines.append("")
     lines.append(f"{'Исправлено' if replaced else 'Передано'}: "
                  f"{when.strftime('%d.%m.%Y %H:%M')}")
+    # Благодарность тому, кто уложился в срок: показания попадут в ведомость
+    # этого месяца, и жителю стоит знать, что его аккуратность замечена.
+    # Правку не благодарим — это работа председателя, а не жителя.
+    if not replaced and not is_late(when):
+        lines.append("")
+        lines.append("Спасибо, что передали вовремя — показания попадут "
+                     "в ведомость этого месяца.")
     return "\n".join(lines)
 
 

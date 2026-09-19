@@ -4,7 +4,8 @@ from datetime import date, datetime
 import pytest
 
 from bot.services.parser import parse_message
-from bot.services.reading_service import is_late, save_parsed_readings, save_reading
+from bot.services.reading_service import (is_late, receipt_text,
+                                          save_parsed_readings, save_reading)
 from bot.services.report_service import build_statement
 from database import repository
 from database.init_db import init_db
@@ -119,3 +120,30 @@ def test_closing_message_invites_to_keep_sending():
     # Когда следующий сбор — срок берётся из .env, а не вписан в тест числом
     assert (f"с {config.readings_day_start} по {config.readings_day_end} число"
             in text)
+
+
+def test_receipt_thanks_for_being_in_time(conn):
+    """Передал вовремя — бот благодарит: аккуратность стоит отметить."""
+    flat = repository.get_apartment_by_number(conn, "1")
+    text = receipt_text(conn, flat, {"cws": 120.0},
+                        when=datetime(2026, 9, 17, 12, 0))
+
+    assert "Спасибо, что передали вовремя" in text
+
+
+def test_no_thanks_after_the_deadline(conn):
+    """После срока благодарить не за что — там своё сообщение про опоздание."""
+    flat = repository.get_apartment_by_number(conn, "1")
+    text = receipt_text(conn, flat, {"cws": 120.0},
+                        when=datetime(2026, 9, 20, 15, 0))
+
+    assert "Спасибо" not in text
+
+
+def test_no_thanks_for_a_correction(conn):
+    """Правку вносит председатель — благодарить жителя не за что."""
+    flat = repository.get_apartment_by_number(conn, "1")
+    text = receipt_text(conn, flat, {"cws": 120.0}, replaced={"cws": 110.0},
+                        when=datetime(2026, 9, 17, 12, 0))
+
+    assert "Спасибо" not in text

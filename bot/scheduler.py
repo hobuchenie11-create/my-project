@@ -1,7 +1,8 @@
 """Фоновый планировщик DH OS.
 
 Отвечает за автоматические действия по календарю:
-  • напоминания должникам в дни из REMINDER_DAYS (по умолчанию 17, 23, 25);
+  • напоминания жителям, не сдавшим показания, — в дни из REMINDER_DAYS
+    в REMINDER_HOUR часов (по умолчанию 15, 17 и 19 числа в 10:00);
   • ведомость непередавших — в DEBTORS_DAY в DEBTORS_HOUR часов
     (по умолчанию 20 числа в 09:00) отправляется председателю;
   • итоговая ведомость — в STATEMENT_DAY в STATEMENT_HOUR (20 числа в 14:00),
@@ -26,7 +27,8 @@ from aiogram.types import FSInputFile
 
 from bot.config import config
 from bot.services.reading_service import current_period, period_title
-from bot.services.reminder_service import REMINDER_TEXT, pending_targets
+from bot.services.reminder_service import (REMINDER_TEXT, deadline_text,
+                                           pending_targets)
 from bot.texts import collection_closed_text
 from database import repository
 
@@ -67,7 +69,9 @@ def _claim(key: str) -> bool:
 async def _tick(bot: Bot, now: datetime) -> None:
     today = now.date().isoformat()
 
-    if now.day in config.reminder_days and _claim(f"reminders:{today}"):
+    # Час важен: без него первое срабатывание в эти сутки будило жителей ночью
+    if (now.day in config.reminder_days and now.hour >= config.reminder_hour
+            and _claim(f"reminders:{today}")):
         sent = await send_reminders(bot)
         logger.info("Напоминания отправлены: %s жителям", sent)
 
@@ -98,7 +102,8 @@ async def _tick(bot: Bot, now: datetime) -> None:
 async def send_reminders(bot: Bot) -> int:
     """Разослать напоминания должникам за текущий период. Возвращает число отправленных."""
     period = current_period()
-    text = REMINDER_TEXT.format(period=period_title(period))
+    text = REMINDER_TEXT.format(period=period_title(period),
+                                deadline=deadline_text())
     conn = repository.connect()
     try:
         targets = pending_targets(conn, period)
