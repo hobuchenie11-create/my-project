@@ -22,6 +22,9 @@ class BatchResult:
     saved: int = 0
     lines: list[str] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
+    # Помещения, по которым хоть что-то записалось: по ним бот отмечается
+    # в чате, как отмечается на обычном сообщении жителя
+    flats: list[str] = field(default_factory=list)
 
     def text(self) -> str:
         report = (f"📥 <b>Разобрано сообщений: {self.messages}</b>\n"
@@ -65,6 +68,8 @@ def import_batch(conn: sqlite3.Connection, blocks: list[str],
         if expected > len(outcome.saved):
             count += f" из {expected}"
         result.lines.append(f"{mark} {short_name(apartment)} — {count}")
+        if outcome.anything_saved:
+            result.flats.append(short_name(apartment))
         result.problems += [f"{short_name(apartment)}: {p}"
                             for p in list(outcome.errors) + list(outcome.warnings)]
 

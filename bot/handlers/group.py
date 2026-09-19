@@ -227,6 +227,9 @@ async def _confirm_in_chat(message: Message, apartment) -> None:
     Реакции в группе можно запретить настройками, и тогда единственный
     видимый признак приёма пропадает. Поэтому по умолчанию (`auto`) при
     неудачной реакции бот отвечает короткой строкой.
+
+    `apartment` — строка реестра либо готовый список помещений: пачку из
+    нескольких квартир отмечаем тем же способом, что и одиночное сообщение.
     """
     mode = config.chat_confirm
     if mode == "off":
@@ -237,7 +240,8 @@ async def _confirm_in_chat(message: Message, apartment) -> None:
     if mode == "reaction":
         return
 
-    await _reply(message, f"✅ {apartment['number']}: показания приняты")
+    name = apartment if isinstance(apartment, str) else apartment["number"]
+    await _reply(message, f"✅ {name}: показания приняты")
 
 
 async def _handle_batch(message: Message, blocks: list[str]) -> None:
@@ -263,6 +267,13 @@ async def _handle_batch(message: Message, blocks: list[str]) -> None:
 
     logger.info("Пачка из чата: сообщений %s, записано показаний %s",
                 result.messages, result.saved)
+
+    # Отметка в чате — такая же, как на обычном сообщении жителя. Без неё
+    # со стороны кажется, что пачку бот не увидел: сводка уходит в личку,
+    # а в чате сообщение остаётся без единого признака, что его разобрали.
+    if result.flats:
+        await _confirm_in_chat(message, ", ".join(result.flats))
+
     if not await _dm(message, result.text()):
         await _reply(message, result.text())
 

@@ -143,12 +143,13 @@ class Msg:
             send_message=self._dm,
             set_message_reaction=self._reaction)
         self.dm: list[str] = []
+        self.reactions: list[int] = []
 
     async def _dm(self, chat_id, text, **kwargs):
         self.dm.append(text)
 
     async def _reaction(self, **kwargs):
-        pass
+        self.reactions.append(kwargs.get("message_id"))
 
     async def answer(self, text, **kwargs):
         self.answers.append(text)
@@ -371,3 +372,44 @@ def test_report_says_how_many_of_how_many(db):
     assert "кв. 12 — 1 показание" in report          # всё записано, «из» не нужно
     assert "кв. 12 — 1 показание из" not in report
     assert "один счётчик" in report                  # и объяснение ниже
+
+
+# ---------------------------------------------------------------------------
+# Отметка в чате на пачке
+# ---------------------------------------------------------------------------
+
+def test_batch_in_the_chat_is_marked_like_a_single_message(db):
+    """Сводка уходит в личку, но в чате пачка должна быть отмечена 👍."""
+    message = Msg(PASTE, chat_type="supergroup")
+    asyncio.run(group.handle_group_message(message))
+
+    assert message.reactions, "на пачке в чате должна появиться отметка"
+    assert message.dm, "сводка по-прежнему уходит в личку"
+    assert "Разобрано сообщений: 4" in message.dm[0]
+
+
+def test_batch_falls_back_to_a_line_when_reactions_are_off(db, monkeypatch):
+    """Реакции в чате запрещены — отмечаемся строкой, как и на одиночном."""
+    monkeypatch.setattr(group, "config",
+                        replace(group.config, admin_ids=(CHAIRMAN,),
+                                group_chat_id=-100123, chat_confirm="reply"))
+    message = Msg("Кв. 5\nЭл.эн 100\n\nКв. 12\nЭл.эн 200",
+                  chat_type="supergroup")
+    asyncio.run(group.handle_group_message(message))
+
+    said = " ".join(message.replies)
+    assert "показания приняты" in said
+    assert "кв. 5" in said and "кв. 12" in said
+
+
+def test_nothing_recorded_means_no_mark(db, monkeypatch):
+    """Ни одной записи — отмечать нечего."""
+    monkeypatch.setattr(group, "config",
+                        replace(group.config, admin_ids=(CHAIRMAN,),
+                                group_chat_id=-100123))
+    message = Msg("Кв. 98\nЭл.эн 100\n\nКв. 99\nЭл.эн 200",
+                  chat_type="supergroup")
+    asyncio.run(group.handle_group_message(message))
+
+    assert message.reactions == []
+    assert "помещение не найдено" in message.dm[0]
