@@ -235,14 +235,16 @@ async def send_oek_registry(bot: Bot) -> None:
         return
 
     for admin_id in config.admin_ids:
-        await deliver_oek_registry(bot, admin_id, result, period_title(period))
+        await deliver_oek_registry(bot, admin_id, result, period_title(period),
+                                   period)
     logger.info("Реестр ОЭК сформирован: %s (заполнено %s из %s)",
                 result.path, len(result.filled), result.rows_total)
 
 
 async def deliver_oek_registry(bot: Bot, chat_id: int, result,
-                               period_name: str) -> bool:
+                               period_name: str, period: str = "") -> bool:
     """Отправляет файл реестра с отчётом. Общая для планировщика и кнопки."""
+    period = period or current_period()
     summary = result.summary(period_name)
     # Подпись к документу в Telegram — не длиннее 1024 знаков. Если список
     # непередавших длинный, отправляем отчёт отдельным сообщением.
@@ -250,8 +252,15 @@ async def deliver_oek_registry(bot: Bot, chat_id: int, result,
         f"📨 <b>Реестр ОЭК</b> — {period_name}\n\n"
         f"Заполнено показаний: {len(result.filled)} из {result.rows_total}",
         summary)
+    from bot.keyboards.admin_menu import oek_send_mail
+    from bot.services import mail_service
+
+    # Кнопку показываем, только если почта настроена: иначе она обещает
+    # то, чего бот сделать не сможет
+    keyboard = oek_send_mail(period) if mail_service.is_configured() else None
     try:
-        await bot.send_document(chat_id, FSInputFile(result.path), caption=caption)
+        await bot.send_document(chat_id, FSInputFile(result.path),
+                                caption=caption, reply_markup=keyboard)
         if tail:
             await bot.send_message(chat_id, tail)
     except TelegramAPIError as exc:

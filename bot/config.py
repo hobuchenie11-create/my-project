@@ -81,6 +81,21 @@ class Config:
             x.strip() for x in os.getenv("SELF_REPORTING_FLATS", "2,3,42")
             .replace(";", ",").split(",") if x.strip()))
 
+    # Почта для отправки реестра ОЭК ресурснику. Пароль — «пароль
+    # приложения» почтового сервиса, не пароль от аккаунта. Живёт в .env
+    # рядом с токеном бота и в переписку не попадает.
+    smtp_host: str = os.getenv("SMTP_HOST", "smtp.mail.ru")
+    smtp_port: int = int(os.getenv("SMTP_PORT", "465"))
+    smtp_user: str = os.getenv("SMTP_USER", "")
+    smtp_password: str = os.getenv("SMTP_PASSWORD", "")
+    # От кого письмо. Обычно тот же адрес, что и логин
+    smtp_from: str = os.getenv("SMTP_FROM", "") or os.getenv("SMTP_USER", "")
+    # Кому уходит реестр ОЭК — можно несколько адресов через запятую
+    mail_to: tuple[str, ...] = field(
+        default_factory=lambda: tuple(
+            x.strip() for x in os.getenv("MAIL_TO", "")
+            .replace(";", ",").split(",") if x.strip()))
+
     base_dir: Path = BASE_DIR
     db_path: Path = BASE_DIR / "database" / "dhos.db"
     logs_dir: Path = BASE_DIR / "logs"

@@ -15,13 +15,14 @@ from pathlib import Path
 from aiogram import F, Router
 from aiogram.dispatcher.event.bases import SkipHandler
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, Message
 
 from bot.config import config
 from bot.keyboards.admin_menu import BTN_OEK, BTN_OEK_TEMPLATE, admin_menu
 from bot.scheduler import deliver_oek_registry
 from bot.services.reading_service import current_period, period_title
 from bot.states.oek import OekTemplate
+from bot.texts import HOUSE_ADDRESS, HOUSE_SHORT
 from excel.oek_registry import OekFormatError
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 router = Router()
 router.message.filter(F.chat.type == "private",
                       F.from_user.id.in_(config.admin_ids))
+router.callback_query.filter(F.from_user.id.in_(config.admin_ids))
 
 
 def _is_registry_file(name: str) -> bool:
@@ -75,7 +77,7 @@ async def send_registry(message: Message) -> None:
             f"а показания взяты за {period_title(period)}. "
             "Если ресурсник прислал новый файл — пришлите его сюда.")
     await deliver_oek_registry(message.bot, message.chat.id, result,
-                               period_title(period))
+                               period_title(period), period)
 
 
 @router.message(F.text == BTN_OEK_TEMPLATE)
@@ -160,3 +162,50 @@ async def _describe_template(message: Message, saved: Path, info,
               f"Реестр уйдёт {config.oek_day} числа в "
               f"{config.oek_hour:02d}:{config.oek_minute:02d}."]
     await message.answer("\n".join(lines), reply_markup=admin_menu())
+
+
+@router.callback_query(F.data.startswith("oekmail:"))
+async def mail_registry(callback: CallbackQuery) -> None:
+    """Отправляет готовый реестр ресурснику по электронной почте.
+
+    Файл собираем заново тем же кодом: в кнопке помещается только период,
+    а хранить путь между перезапусками бота негде. Показания за месяц уже
+    записаны, поэтому файл выходит тот же самый.
+    """
+    from reports.oek_registry import NoTemplateError, generate_oek_registry
+
+    from bot.services import mail_service
+
+    period = callback.data.split(":", 1)[1]
+    await callback.answer("Отправляю…")
+
+    try:
+        result = await asyncio.to_thread(generate_oek_registry, period)
+    except (NoTemplateError, OekFormatError) as exc:
+        await callback.message.answer(f"Письмо не отправлено: {exc}")
+        return
+
+    subject = f"Реестр показаний электроэнергии, {HOUSE_ADDRESS}, {period_title(period)}"
+    body = (f"Здравствуйте!\n\n"
+            f"Направляю реестр показаний приборов учёта электроэнергии "
+            f"за {period_title(period)} по адресу: {HOUSE_ADDRESS}.\n\n"
+            "С уважением,\n"
+            f"Председатель МКД {HOUSE_SHORT}")
+    try:
+        recipients = await asyncio.to_thread(
+            mail_service.send, subject, body, result.path)
+    except mail_service.MailNotConfigured as exc:
+        await callback.message.answer(f"📧 {exc}")
+        return
+    except Exception as exc:                       # noqa: BLE001 — покажем причину
+        logger.exception("Не удалось отправить реестр ОЭК почтой")
+        await callback.message.answer(
+            f"📧 Письмо не отправлено: {exc}\n\n"
+            "Проверьте в .env адрес, пароль приложения и доступ в интернет. "
+            "Файл в чате остался — его можно отправить почтой вручную.")
+        return
+
+    await callback.message.answer(
+        f"📧 Реестр за {period_title(period)} отправлен: "
+        f"{', '.join(recipients)}.\n"
+        f"Файл: <b>{result.path.name}</b>")

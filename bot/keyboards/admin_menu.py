@@ -71,3 +71,14 @@ def apartment_layouts(apartment_id: int) -> InlineKeyboardMarkup:
                                   callback_data=f"layout:{apartment_id}:{key}")]
             for key, text in labels.items()]
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def oek_send_mail(period: str) -> InlineKeyboardMarkup:
+    """Кнопка «отправить реестр в ОЭК» под готовым файлом.
+
+    Письмо ресурснику не отзовёшь, поэтому бот его не отправляет сам —
+    только после того, как председатель посмотрела файл и нажала кнопку.
+    """
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="📧 Отправить в ОЭК",
+                             callback_data=f"oekmail:{period}")]])
