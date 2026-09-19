@@ -45,3 +45,63 @@ def test_resident_texts_speak_as_domoved():
     assert "DH OS" not in start.HELP_TEXT
     assert "15230" not in start.HELP_TEXT      # шаблон без чисел-примеров
     assert str(config.readings_day_end) in start.HELP_TEXT
+
+
+# ---------------------------------------------------------------------------
+# Регистрация: спрашиваем только имя
+# ---------------------------------------------------------------------------
+
+def test_registration_asks_for_a_name_not_a_full_name():
+    """ФИО системе не нужны: показания привязаны к квартире, а не к человеку."""
+    import inspect
+
+    from bot.handlers import registration
+
+    source = inspect.getsource(registration)
+    assert "Фамилия Имя Отчество" not in source
+    assert "Как к вам обращаться" in source
+    assert "ФИО" not in source
+
+
+def test_one_word_name_is_enough():
+    """«Елена» — достаточно. Раньше требовалось не меньше трёх букв подряд."""
+    import asyncio
+    from types import SimpleNamespace
+
+    from bot.handlers import registration
+
+    class State:
+        def __init__(self):
+            self.data = {"apartment_number": "40", "apartment_id": 1}
+            self.state = None
+
+        async def get_data(self):
+            return dict(self.data)
+
+        async def update_data(self, **kwargs):
+            self.data.update(kwargs)
+
+        async def set_state(self, state):
+            self.state = state
+
+    class Msg:
+        def __init__(self, text):
+            self.text = text
+            self.from_user = SimpleNamespace(id=1, username="u")
+            self.chat = SimpleNamespace(id=1, type="private")
+            self.answers = []
+
+        async def answer(self, text, **kwargs):
+            self.answers.append(text)
+
+    state = State()
+    message = Msg("Ия")
+    asyncio.run(registration.process_name(message, state))
+
+    assert state.data["name"] == "Ия"
+    assert "Имя: Ия" in message.answers[0]
+    assert state.state == registration.Registration.confirm
+
+    short = Msg("Е")
+    asyncio.run(registration.process_name(short, State()))
+    assert "хотя бы две буквы" in short.answers[0]

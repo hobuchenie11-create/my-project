@@ -4,5 +4,5 @@ from aiogram.fsm.state import State, StatesGroup
 
 class Registration(StatesGroup):
     apartment = State()
-    full_name = State()
+    name = State()
     confirm = State()

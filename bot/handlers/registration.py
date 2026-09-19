@@ -1,4 +1,10 @@
-"""Сценарий регистрации жителя: квартира -> имя -> подтверждение."""
+"""Сценарий регистрации жителя: квартира -> имя -> подтверждение.
+
+Спрашиваем только имя. Фамилия и отчество для работы системы не нужны:
+показания привязаны к квартире, а имя служит лишь обращением в ответах
+председателю. Просить лишние персональные данные там, где они ни на что
+не влияют, значит собирать то, что придётся хранить и защищать.
+"""
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup, ReplyKeyboardRemove
@@ -35,21 +41,22 @@ async def process_apartment(message: Message, state: FSMContext) -> None:
         return
 
     await state.update_data(apartment_id=apartment["id"], apartment_number=apartment["number"])
-    await message.answer("Как вас зовут? (Фамилия Имя Отчество)")
-    await state.set_state(Registration.full_name)
+    await message.answer("Как к вам обращаться? Достаточно имени — "
+                         "например, «Елена».")
+    await state.set_state(Registration.name)
 
 
-@router.message(Registration.full_name)
+@router.message(Registration.name)
 async def process_name(message: Message, state: FSMContext) -> None:
-    full_name = (message.text or "").strip()
-    if len(full_name) < 3:
-        await message.answer("Пожалуйста, введите имя полностью.")
+    name = (message.text or "").strip()
+    if len(name) < 2:
+        await message.answer("Пожалуйста, напишите имя — хотя бы две буквы.")
         return
-    await state.update_data(full_name=full_name)
+    await state.update_data(name=name)
     data = await state.get_data()
     await message.answer(
         f"Проверьте данные:\n\nКвартира: {data['apartment_number']}\n"
-        f"Имя: {full_name}\n\nВсе верно?",
+        f"Имя: {name}\n\nВсе верно?",
         reply_markup=CONFIRM_KB,
     )
     await state.set_state(Registration.confirm)
@@ -61,12 +68,12 @@ async def confirm_registration(message: Message, state: FSMContext) -> None:
     is_admin = message.from_user.id in config.admin_ids
     conn = repository.connect()
     try:
-        repository.create_user(conn, message.from_user.id, data["full_name"],
+        repository.create_user(conn, message.from_user.id, data["name"],
                                data["apartment_id"],
                                role="admin" if is_admin else "resident",
                                username=message.from_user.username or "")
         repository.log_event(conn, message.from_user.id, "registration",
-                             f"кв. {data['apartment_number']}, {data['full_name']}")
+                             f"кв. {data['apartment_number']}, {data['name']}")
     finally:
         conn.close()
     await state.clear()
