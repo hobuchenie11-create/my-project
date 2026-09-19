@@ -366,3 +366,71 @@ def test_statement_day_itself_still_invites_to_submit():
     from bot.services.reminder_service import reminder_text
 
     assert "пора передать показания" in reminder_text("2026-09", _date(2026, 9, 20))
+
+
+# ---------------------------------------------------------------------------
+# День не должен «сгорать», если связи не было
+# ---------------------------------------------------------------------------
+
+def test_failed_reminder_is_retried_next_tick(db, monkeypatch):
+    """Связи нет — отметка снимается, и следующий круг пробует снова."""
+    attempts = []
+
+    async def always_fails(_bot):
+        attempts.append(True)
+        return []                       # адресаты были, но никому не дошло
+
+    monkeypatch.setattr(scheduler, "send_reminders", always_fails)
+    monkeypatch.setattr(scheduler, "config",
+                        replace(config, reminder_days=(19,), reminder_hour=20))
+    bot = KeyboardBot()
+
+    _tick(bot, datetime(2026, 9, 19, 20, 0))
+    _tick(bot, datetime(2026, 9, 19, 20, 1))
+    assert attempts == [True, True], "второй заход должен состояться"
+
+
+def test_successful_reminder_is_not_repeated(db, monkeypatch):
+    attempts = []
+
+    async def succeeds(_bot):
+        attempts.append(True)
+        return ["40"]
+
+    monkeypatch.setattr(scheduler, "send_reminders", succeeds)
+    monkeypatch.setattr(scheduler, "config",
+                        replace(config, reminder_days=(19,), reminder_hour=20))
+    bot = KeyboardBot()
+
+    _tick(bot, datetime(2026, 9, 19, 20, 0))
+    _tick(bot, datetime(2026, 9, 19, 21, 0))
+    assert attempts == [True]
+
+
+def test_nobody_to_remind_counts_as_done(db, monkeypatch):
+    """Все сдали показания — это сделанная работа, а не неудача."""
+    monkeypatch.setattr(scheduler, "config", replace(config, admin_ids=()))
+    bot = KeyboardBot()
+
+    result = asyncio.run(scheduler.send_reminders(bot))
+
+    assert result, "пустой ответ означал бы «не дошло» и повтор каждую минуту"
+    assert bot.sent == []
+
+
+def test_failed_chat_reminder_is_retried(db, monkeypatch):
+    attempts = []
+
+    async def always_fails(_bot):
+        attempts.append(True)
+        return False
+
+    monkeypatch.setattr(scheduler, "send_chat_reminder", always_fails)
+    monkeypatch.setattr(scheduler, "config",
+                        replace(config, chat_reminder_days=(19,),
+                                chat_reminder_hour=10, reminder_days=()))
+    bot = KeyboardBot()
+
+    _tick(bot, datetime(2026, 9, 19, 10, 0))
+    _tick(bot, datetime(2026, 9, 19, 10, 1))
+    assert attempts == [True, True]

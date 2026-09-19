@@ -53,6 +53,16 @@ async def run_scheduler(bot: Bot) -> None:
         await asyncio.sleep(CHECK_INTERVAL_SECONDS)
 
 
+def _release(key: str) -> None:
+    """Вернуть задачу дня в очередь: сделать её не вышло, попробуем ещё раз."""
+    conn = repository.connect()
+    try:
+        repository.release_scheduled_task(conn, key)
+    finally:
+        conn.close()
+    logger.warning("Задача «%s» не выполнена — попробую на следующем круге", key)
+
+
 def _claim(key: str) -> bool:
     """Занять задачу дня. False — её уже выполнили (в том числе до перезапуска).
 
@@ -73,13 +83,17 @@ async def _tick(bot: Bot, now: datetime) -> None:
     # Час важен: без него первое срабатывание в эти сутки будило жителей ночью
     if (now.day in config.reminder_days and now.hour >= config.reminder_hour
             and _claim(f"reminders:{today}")):
-        await send_reminders(bot)
+        if not await send_reminders(bot):
+            # Никому не дошло, хотя адресаты были, — связи нет. Отметку
+            # снимаем, иначе день сгорит: следующий тик попробует снова.
+            _release(f"reminders:{today}")
 
     # Напоминание в чат дома: жителям без бота иначе не сказать
     if (now.day in config.chat_reminder_days
             and now.hour >= config.chat_reminder_hour
             and _claim(f"chat_reminder:{today}")):
-        await send_chat_reminder(bot)
+        if not await send_chat_reminder(bot):
+            _release(f"chat_reminder:{today}")
 
     if (now.day == config.debtors_day and now.hour >= config.debtors_hour
             and _claim(f"debtors:{today}")):
@@ -119,6 +133,10 @@ async def send_reminders(bot: Bot) -> list[str]:
     finally:
         conn.close()
 
+    if not targets:
+        logger.info("Напоминания за %s: некому — все сдали показания", period)
+        return ["некому"]      # работа сделана, повторять на этих сутках нечего
+
     sent = []
     for target in targets:
         try:
@@ -127,8 +145,8 @@ async def send_reminders(bot: Bot) -> list[str]:
         except TelegramAPIError as exc:
             logger.warning("Не удалось отправить напоминание кв. %s: %s",
                            target.apartment_number, exc)
-    logger.info("Напоминания за %s отправлены: %s",
-                period, ", ".join(f"кв. {n}" for n in sent) or "некому")
+    logger.info("Напоминания за %s отправлены: %s", period,
+                ", ".join(f"кв. {n}" for n in sent) or "ни одного")
     return sent
 
 

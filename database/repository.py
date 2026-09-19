@@ -629,6 +629,18 @@ def claim_scheduled_task(conn: sqlite3.Connection, key: str) -> bool:
     return cur.rowcount > 0
 
 
+def release_scheduled_task(conn: sqlite3.Connection, key: str) -> None:
+    """Снимает отметку: задача не сделана, пусть следующий тик попробует снова.
+
+    Отметка ставится до работы, иначе перезапуск бота посреди рассылки
+    повторил бы её. Но если работа не удалась совсем — например, пропала
+    связь с Telegram, — день оказался бы «сгоревшим»: отметка стоит, а
+    жителям ничего не ушло.
+    """
+    conn.execute("DELETE FROM scheduler_log WHERE key = ?", (key,))
+    conn.commit()
+
+
 def log_event(conn: sqlite3.Connection, tg_id: int | None, action: str, details: str = "") -> None:
     conn.execute(
         "INSERT INTO events (tg_id, action, details) VALUES (?, ?, ?)",
