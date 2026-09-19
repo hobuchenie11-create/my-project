@@ -45,7 +45,7 @@ class Config:
                                       os.getenv("STATEMENT_DAY", "20")))
     announce_hour: int = int(os.getenv("ANNOUNCE_HOUR", "18"))
     reminder_days: tuple[int, ...] = field(
-        default_factory=lambda: _parse_int_list(os.getenv("REMINDER_DAYS", "18,19")))
+        default_factory=lambda: _parse_int_list(os.getenv("REMINDER_DAYS", "18,19,23,25")))
     # Во сколько уходят напоминания жителям. Без этого часа первое же
     # срабатывание планировщика в эти сутки слало напоминание среди ночи.
     reminder_hour: int = int(os.getenv("REMINDER_HOUR", "20"))

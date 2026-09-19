@@ -7,9 +7,10 @@
 """
 import sqlite3
 from dataclasses import dataclass
+from datetime import date
 
 from bot.config import config
-from bot.services.reading_service import current_period
+from bot.services.reading_service import current_period, period_title
 from database import repository
 
 
@@ -34,10 +35,42 @@ REMINDER_TEXT = (
 )
 
 
+# После 20 числа прежний текст обманывает: он зовёт успеть к сроку, которого
+# уже нет. Тем, кто не передал, важно другое — что сделать сейчас, чтобы
+# показания всё-таки попали в текущий расчёт.
+LATE_REMINDER_TEXT = (
+    "Здравствуйте! Показания за {period} уже переданы ресурсоснабжающим "
+    "организациям — ведомость по дому сформирована {statement_day} числа.\n\n"
+    "Если вы ещё не передали свои, пришлите их сейчас: бот примет, но "
+    "в расчёт они попадут <b>в следующем месяце</b>.\n\n"
+    "💡 Чтобы показания учли в текущем расчёте, передайте их напрямую "
+    "ресурсоснабжающей организации — там принимают <b>до 25 числа</b>:\n"
+    "• при оплате квитанции;\n"
+    "• через личный кабинет на сайте.\n\n"
+    "В следующем месяце передайте, пожалуйста, с {day_start} по {day_end} "
+    "число — так показания попадут в ведомость дома без хлопот. Спасибо!"
+)
+
+
 def deadline_text() -> str:
     """«20 числа, 13:00» — последний срок для ведомости этого месяца."""
     return (f"{config.statement_day} числа, "
             f"{config.readings_deadline_hour}:00")
+
+
+def reminder_text(period: str, today: date | None = None) -> str:
+    """Текст напоминания: до срока — зовём передать, после — объясняем, как быть.
+
+    Дни напоминаний идут и после 20 числа (23 и 25): показания к тому времени
+    уже ушли ресурсникам, и звать «успеть до 20 числа» поздно и неправдиво.
+    """
+    today = today or date.today()
+    if today.day <= config.statement_day:
+        return REMINDER_TEXT.format(period=period_title(period),
+                                    deadline=deadline_text())
+    return LATE_REMINDER_TEXT.format(
+        period=period_title(period), statement_day=config.statement_day,
+        day_start=config.readings_day_start, day_end=config.readings_day_end)
 
 
 def pending_targets(conn: sqlite3.Connection, period: str | None = None) -> list[ReminderTarget]:

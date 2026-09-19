@@ -29,8 +29,7 @@ from aiogram.types import FSInputFile
 
 from bot.config import config
 from bot.services.reading_service import current_period, period_title
-from bot.services.reminder_service import (REMINDER_TEXT, deadline_text,
-                                           pending_targets)
+from bot.services.reminder_service import pending_targets, reminder_text
 from bot.texts import collection_closed_text, collection_reminder_text
 from database import repository
 
@@ -113,8 +112,7 @@ async def send_reminders(bot: Bot) -> list[str]:
     зарегистрированных жителей пока единицы, и каждый на счету.
     """
     period = current_period()
-    text = REMINDER_TEXT.format(period=period_title(period),
-                                deadline=deadline_text())
+    text = reminder_text(period)
     conn = repository.connect()
     try:
         targets = pending_targets(conn, period)

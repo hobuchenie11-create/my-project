@@ -261,12 +261,14 @@ def test_reminder_goes_only_to_flats_that_have_not_submitted(db, monkeypatch):
 
 
 def test_reminder_days_and_hour_come_from_settings():
-    """Практика идёт 18 и 19 числа в 20:00 — это значения по умолчанию."""
+    """18 и 19 — зовём передать, 23 и 25 — объясняем опоздавшим. В 20:00."""
     from bot.config import Config
 
     fresh = Config()
-    assert fresh.reminder_days == (18, 19)
+    assert fresh.reminder_days == (18, 19, 23, 25)
     assert fresh.reminder_hour == 20
+    assert fresh.chat_reminder_days == (17, 18, 19, 20)
+    assert fresh.chat_reminder_hour == 10
 
 
 # ---------------------------------------------------------------------------
@@ -337,3 +339,30 @@ def test_statement_day_morning_still_invites_to_submit():
 
     later = collection_reminder_text(_date(2026, 9, 21))
     assert "Срок сбора завершён" in later
+
+
+def test_reminder_after_the_deadline_switches_the_wording():
+    """23 и 25 числа звать «успеть до 20-го» поздно и неправдиво."""
+    from datetime import date as _date
+
+    from bot.services.reminder_service import reminder_text
+
+    in_time = reminder_text("2026-09", _date(2026, 9, 19))
+    assert "пора передать показания" in in_time
+    assert "до 20 числа, 13:00" in in_time
+
+    late = reminder_text("2026-09", _date(2026, 9, 23))
+    assert "уже переданы ресурсоснабжающим" in late
+    assert "в следующем месяце" in late
+    assert "до 25 числа" in late            # как успеть в текущий расчёт
+    assert "с 15 по 19 число" in late       # и когда передавать впредь
+    assert "Заранее благодарю" not in late
+
+
+def test_statement_day_itself_still_invites_to_submit():
+    """20 числа ведомость уходит в 14:00 — утром ещё зовём передать."""
+    from datetime import date as _date
+
+    from bot.services.reminder_service import reminder_text
+
+    assert "пора передать показания" in reminder_text("2026-09", _date(2026, 9, 20))
