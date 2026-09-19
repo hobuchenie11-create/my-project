@@ -72,8 +72,7 @@ async def _tick(bot: Bot, now: datetime) -> None:
     # Час важен: без него первое срабатывание в эти сутки будило жителей ночью
     if (now.day in config.reminder_days and now.hour >= config.reminder_hour
             and _claim(f"reminders:{today}")):
-        sent = await send_reminders(bot)
-        logger.info("Напоминания отправлены: %s жителям", sent)
+        await send_reminders(bot)
 
     if (now.day == config.debtors_day and now.hour >= config.debtors_hour
             and _claim(f"debtors:{today}")):
@@ -99,8 +98,12 @@ async def _tick(bot: Bot, now: datetime) -> None:
         await send_task_reminders(bot)
 
 
-async def send_reminders(bot: Bot) -> int:
-    """Разослать напоминания должникам за текущий период. Возвращает число отправленных."""
+async def send_reminders(bot: Bot) -> list[str]:
+    """Напоминания жителям, не сдавшим показания. Возвращает номера квартир.
+
+    Не число, а список: председателю важно видеть, кому именно ушло —
+    зарегистрированных жителей пока единицы, и каждый на счету.
+    """
     period = current_period()
     text = REMINDER_TEXT.format(period=period_title(period),
                                 deadline=deadline_text())
@@ -110,14 +113,16 @@ async def send_reminders(bot: Bot) -> int:
     finally:
         conn.close()
 
-    sent = 0
+    sent = []
     for target in targets:
         try:
             await bot.send_message(target.tg_id, text)
-            sent += 1
+            sent.append(target.apartment_number)
         except TelegramAPIError as exc:
             logger.warning("Не удалось отправить напоминание кв. %s: %s",
                            target.apartment_number, exc)
+    logger.info("Напоминания за %s отправлены: %s",
+                period, ", ".join(f"кв. {n}" for n in sent) or "некому")
     return sent
 
 

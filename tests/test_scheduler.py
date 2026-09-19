@@ -231,3 +231,39 @@ def test_deadline_follows_the_settings(monkeypatch):
                         replace(config, statement_day=21,
                                 readings_deadline_hour=12))
     assert reminder_service.deadline_text() == "21 числа, 12:00"
+
+
+def test_reminder_goes_only_to_flats_that_have_not_submitted(db, monkeypatch):
+    """Передал показания — напоминание не приходит."""
+    from bot.services.parser import parse_message
+    from bot.services.reading_service import current_period, save_parsed_readings
+
+    monkeypatch.setattr(scheduler, "config", replace(config, admin_ids=()))
+    conn = repository.connect(db)
+    try:
+        # оба жителя зарегистрированы, показания передал только первый
+        first = repository.get_apartment_by_number(conn, "1")
+        second = repository.get_apartment_by_number(conn, "2")
+        repository.create_user(conn, 111, "Житель кв. 1", first["id"])
+        repository.create_user(conn, 222, "Житель кв. 2", second["id"])
+        save_parsed_readings(conn, first, parse_message("Кв 1\nЭл.эн 100"),
+                             None, period=current_period())
+        conn.commit()
+    finally:
+        conn.close()
+
+    bot = KeyboardBot()
+    sent = asyncio.run(scheduler.send_reminders(bot))
+
+    assert sent == ["2"], "напоминание — только не сдавшему"
+    assert [chat_id for chat_id, _, _ in bot.sent] == [222]
+    assert "минимизирует начисления по ОДН" in bot.sent[0][1]
+
+
+def test_reminder_days_and_hour_come_from_settings():
+    """Практика идёт 18 и 19 числа в 20:00 — это значения по умолчанию."""
+    from bot.config import Config
+
+    fresh = Config()
+    assert fresh.reminder_days == (18, 19)
+    assert fresh.reminder_hour == 20

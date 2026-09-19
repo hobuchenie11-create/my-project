@@ -153,7 +153,8 @@ async def send_debtors_doc(message: Message) -> None:
 async def remind_debtors(message: Message) -> None:
     sent = await send_reminders(message.bot)
     if sent:
-        await message.answer(f"🔔 Напоминания отправлены: {sent}.")
+        flats = ", ".join(f"кв. {n}" for n in sent)
+        await message.answer(f"🔔 Напоминания отправлены ({len(sent)}): {flats}.")
     else:
         await message.answer("Напоминать некому — либо все сдали, либо должники "
                              "не зарегистрированы в боте.")
