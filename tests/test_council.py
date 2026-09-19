@@ -145,9 +145,12 @@ def test_chat_reminder_names_the_deadline():
     assert f"<b>до {last} августа</b>" in text
     assert "Остаётся 3 дня" in text
     assert "Домовед" in text
-    assert "Хвс кухня" in text              # шаблон для 3-комнатных
-    assert "15230" not in text              # в шаблонах без чисел-примеров
-    assert "обходить квартиры" not in text
+    assert "ОДН" in text                    # главный довод для жителя
+    # Шаблоны закреплены в чате, про автосбор объявили однажды — в ежемесячном
+    # напоминании они только топят единственное, что меняется: сколько осталось
+    assert "Хвс кухня" not in text
+    assert "автоматическая система" not in text
+    assert len(text) < 500, "напоминание должно читаться с одного взгляда"
 
     assert "Сегодня последний день" in collection_reminder_text(
         date(2026, 8, last))
@@ -171,12 +174,17 @@ def test_invite_and_reminder_speak_the_same_way():
     assert "15230" not in invite and "Хвс кухня 120" not in invite
     assert "Хвс санузел" in invite            # шаблон остался
 
-    for text in (invite, collection_reminder_text(date(2026, 8, 16))):
+    assert "в первой строке" in invite
+    assert invite.rstrip().endswith("участие в процессе сбора показаний "
+                                    "по нашему дому. 🙏")
+
+    # Памятка знакомит с системой и несёт шаблоны, напоминание — короткое.
+    # Общее у них другое: имя бота и довод про ОДН.
+    reminder = collection_reminder_text(date(2026, 8, 16))
+    for text in (invite, reminder):
         assert "Домовед" in text
-        assert "в первой строке" in text
-        assert text.rstrip().endswith("участие в процессе сбора показаний "
-                                      "по нашему дому. 🙏")
-        assert "расход по ОДН" in text
+        assert "ОДН" in text
+    assert len(reminder) < len(invite) / 2
 
 
 def test_templates_are_separate_messages():

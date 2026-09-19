@@ -314,7 +314,7 @@ def test_chat_reminder_text_goes_to_the_house_chat(db, monkeypatch):
     chat_id, text = bot.sent[0]
     assert chat_id == GROUP_CHAT
     assert "Показания счётчиков" in text
-    assert "Шаблон для 3-х комн" in text
+    assert "минимизирует начисления по ОДН" in text
 
 
 def test_chat_reminder_needs_a_chat(db, monkeypatch):
