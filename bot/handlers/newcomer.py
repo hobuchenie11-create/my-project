@@ -22,9 +22,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot.config import config
-from bot.handlers.faq import send_memo
+from bot.handlers.faq import send_memo_by_code
 from bot.keyboards.menu import main_menu
-from bot.services import faq_service
 from bot.services.apartment_service import find_apartment
 from bot.states.newcomer import Newcomer
 from database import repository
@@ -92,7 +91,7 @@ async def _ask_contacts(message: Message, state: FSMContext) -> None:
         "открываются звонком, бесплатно.")
     # Про 10 ₽ на каждые ворота человек узнаёт до того, как назовёт номер:
     # иначе номер запишут, а ворота не откроются — и виноватым окажется бот
-    await _send_memo(message, "gsm-modul")
+    await send_memo_by_code(message, "gsm-modul")
 
 
 @router.message(Newcomer.contacts, F.text)
@@ -144,28 +143,7 @@ async def take_car(message: Message, state: FSMContext) -> None:
     # как попасть в него пешком. Искать эти памятки в меню он ещё не умеет
     await message.answer("Чтобы вы освоились, вот две памятки по дому 👇")
     for code in ("vorota", "dostup-vo-dvor"):
-        await _send_memo(message, code)
-
-
-async def _send_memo(message: Message, code: str) -> None:
-    """Отправляет памятку по ходу разговора — тем же видом, что и в меню.
-
-    Памятку могли переименовать или удалить: сценарий из-за этого прерываться
-    не должен, данные жителя важнее.
-    """
-    conn = repository.connect()
-    try:
-        memo = faq_service.by_code(conn, code)
-    finally:
-        conn.close()
-
-    if memo is None:
-        logger.warning("Памятка «%s» не найдена — пропускаю", code)
-        return
-    try:
-        await send_memo(message, memo)
-    except TelegramAPIError as exc:
-        logger.warning("Не удалось отправить памятку «%s»: %s", code, exc)
+        await send_memo_by_code(message, code)
 
 
 async def _cancel(message: Message, state: FSMContext) -> None:

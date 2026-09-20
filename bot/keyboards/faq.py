@@ -26,6 +26,7 @@ def faq_memos(memos, back: bool = False) -> InlineKeyboardMarkup:
 # в заголовке файла памятки, значение — подпись кнопки под ней.
 MEMO_ACTIONS = {
     "newcomer": "🔑 Оформиться — задать 3 вопроса",
+    "gatephone": "📱 Оставить заявку на смену номера",
 }
 
 

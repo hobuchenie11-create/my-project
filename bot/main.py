@@ -9,9 +9,9 @@ from aiogram.types import BotCommand
 
 from bot import diagnostics, single_instance
 from bot.config import config
-from bot.handlers import (admin, common, faq, group, manual, newcomer, oek,
-                          photos, readings, registration, reports, start,
-                          tasks)
+from bot.handlers import (admin, common, faq, gatephone, group, manual,
+                          newcomer, oek, photos, readings, registration,
+                          reports, start, tasks)
 from bot.keepawake import keep_awake
 from bot.proxy import make_session
 from bot.scheduler import run_scheduler
@@ -136,6 +136,8 @@ def build_dispatcher() -> Dispatcher:
     dp.include_router(registration.router)
     # Сценарий нового собственника: свои шаги, начинается кнопкой
     dp.include_router(newcomer.router)
+    # Заявка на смену номера в воротах — кнопка меню и шаги опроса
+    dp.include_router(gatephone.router)
     dp.include_router(readings.router)
     dp.include_router(reports.router)
     dp.include_router(faq.router)
