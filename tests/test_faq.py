@@ -276,6 +276,10 @@ def test_save_button_sends_the_poster_as_a_file(house, monkeypatch):
     assert "Как пользоваться воротами" in caption
     assert callback.message.photos == []             # именно файлом, не фото
 
+    # Памятка приходит в личку, а не висит на стене: писать про подъезд
+    # значит сбивать жителя с толку
+    assert "подъезд" not in caption.lower()
+
 
 def test_save_button_survives_a_missing_poster(house, monkeypatch):
     """Плакат удалили из папки — житель получит отказ, а бот не упадёт."""

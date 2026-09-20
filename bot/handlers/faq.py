@@ -111,8 +111,7 @@ async def send_poster(callback: CallbackQuery) -> None:
         await callback.message.answer_document(
             FSInputFile(image),
             caption=f"<b>{memo.title}</b>\n\n"
-                    "Это плакат из подъезда. Файл можно сохранить в телефон "
-                    "и открыть без интернета.")
+                    "Файл можно сохранить в телефон и открыть без интернета.")
     except TelegramAPIError as exc:
         logger.warning("Не удалось отправить плакат «%s»: %s", code, exc)
         await callback.answer("Не удалось отправить файл, попробуйте позже")
