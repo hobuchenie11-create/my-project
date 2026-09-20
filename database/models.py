@@ -91,6 +91,11 @@ MIGRATIONS = [
     ("tasks", "note", "TEXT NOT NULL DEFAULT ''"),
     # Во вкладке приборов появилось оборудование с гарантией (лифт): у него
     # свой вид записи и свой срок напоминания
+    # Водоснабжение по нежилому платится не каждый месяц, поэтому оно не
+    # отдельная задача (та висела бы просроченной в пустые месяцы), а вторая
+    # сумма в той же задаче об оплате коммунальных услуг
+    ("tasks", "water_amount", "REAL"),
+    ("tasks", "water_paid_at", "TEXT NOT NULL DEFAULT ''"),
     ("house_meters", "kind", "TEXT NOT NULL DEFAULT 'verification'"),
     ("house_meters", "lead_days", "INTEGER NOT NULL DEFAULT 180"),
 ]
@@ -366,7 +371,7 @@ CREATE TABLE IF NOT EXISTS task_templates (
     day_start    INTEGER NOT NULL DEFAULT 1,
     day_end      INTEGER NOT NULL DEFAULT 28,
     needs_amount INTEGER NOT NULL DEFAULT 0,
-    amount_field TEXT NOT NULL DEFAULT 'amount',  -- amount | utility_amount
+    amount_field TEXT NOT NULL DEFAULT 'amount',  -- amount | utility_amount | water_amount
     priority     TEXT NOT NULL DEFAULT 'normal',
     assignee     TEXT NOT NULL DEFAULT '',
     is_active    INTEGER NOT NULL DEFAULT 1,
@@ -389,6 +394,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     paid_at      TEXT NOT NULL DEFAULT '',        -- дата поступления аренды
     utility_amount REAL,                          -- сумма оплаты коммуналки
     utility_paid_at TEXT NOT NULL DEFAULT '',     -- дата оплаты коммуналки
+    water_amount REAL,                            -- оплата водоснабжения
+    water_paid_at TEXT NOT NULL DEFAULT '',       -- дата оплаты водоснабжения
     apartment_id INTEGER REFERENCES apartments (id),
     house_meter_id INTEGER REFERENCES house_meters (id),
     note         TEXT NOT NULL DEFAULT '',        -- комментарий председателя

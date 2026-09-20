@@ -37,6 +37,11 @@ def _find_row(ws, id_column: int, value: int) -> int:
     raise AssertionError(f"строка с ID={value} не найдена")
 
 
+def _plan_col(title: str) -> int:
+    """Номер столбца листа «План» по его заголовку."""
+    return COLUMNS.index(title) + 1
+
+
 def _by_title(conn, part: str):
     return next(r for r in repository.tasks_in_year(conn, YEAR)
                 if part.lower() in r["title"].lower())
@@ -49,10 +54,12 @@ def test_plan_edits_return_to_the_database(conn, tmp_path):
     wb = load_workbook(path)
     ws = wb[SHEET_PLAN]
     row = _find_row(ws, len(COLUMNS), rent["id"])
-    ws.cell(row=row, column=5, value="Выполнена")          # Статус
-    ws.cell(row=row, column=6, value=35000)                # Аренда, ₽
-    ws.cell(row=row, column=7, value="08.06.2026")         # Дата поступления
-    ws.cell(row=row, column=10, value="Оплатил с опозданием")  # Комментарий
+    # Столбцы ищем по заголовку: их порядок меняется, когда в план
+    # добавляется новая колонка (так появилось водоснабжение)
+    ws.cell(row=row, column=_plan_col("Статус"), value="Выполнена")
+    ws.cell(row=row, column=_plan_col("Аренда, ₽"), value=35000)
+    ws.cell(row=row, column=_plan_col("Дата поступления"), value="08.06.2026")
+    ws.cell(row=row, column=_plan_col("Комментарий"), value="Оплатил с опозданием")
     wb.save(path)
 
     result = import_year_plan(conn, path, tg_id=1)
@@ -262,3 +269,38 @@ def test_headers_survive_the_service_column(conn, tmp_path):
         assert ws.cell(row=2, column=len(columns)).value == "ID"
         letter = ws.cell(row=2, column=len(columns)).column_letter
         assert ws.column_dimensions[letter].hidden
+
+
+def test_water_has_its_own_columns_in_the_plan(conn, tmp_path):
+    """Вода платится не каждый месяц — ей своя пара столбцов, а не задача."""
+    utilities = _by_title(conn, "коммунальных услуг")
+    task_service.set_water_payment(conn, utilities["id"], tg_id=1,
+                                   amount=101.20, paid_at="2026-09-18")
+
+    path = export_year_plan(conn, YEAR, tmp_path / "plan.xlsx")
+    ws = load_workbook(path)[SHEET_PLAN]
+
+    assert "Водоснабжение, ₽" in COLUMNS
+    row = _find_row(ws, len(COLUMNS), utilities["id"])
+    assert ws.cell(row=row, column=_plan_col("Водоснабжение, ₽")).value == 101.20
+    assert ws.cell(row=row,
+                   column=_plan_col("Дата оплаты воды")).value == "18.09.2026"
+
+
+def test_water_edited_in_excel_returns_to_the_database(conn, tmp_path):
+    utilities = _by_title(conn, "коммунальных услуг")
+    path = export_year_plan(conn, YEAR, tmp_path / "plan.xlsx")
+
+    wb = load_workbook(path)
+    ws = wb[SHEET_PLAN]
+    row = _find_row(ws, len(COLUMNS), utilities["id"])
+    ws.cell(row=row, column=_plan_col("Водоснабжение, ₽"), value="101,20")
+    ws.cell(row=row, column=_plan_col("Дата оплаты воды"), value="18.09.2026")
+    wb.save(path)
+
+    result = import_year_plan(conn, path, tg_id=1)
+    assert not result.problems
+
+    updated = repository.get_task(conn, utilities["id"])
+    assert updated["water_amount"] == 101.20
+    assert updated["water_paid_at"] == "2026-09-18"

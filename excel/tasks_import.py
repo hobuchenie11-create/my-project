@@ -269,6 +269,7 @@ def _task_changes(task, values: dict, result: ImportResult, sheet: str,
     money = [
         ("аренда, ₽", "amount", "аренда"),
         ("оплата коммуналки, ₽", "utility_amount", "коммуналка"),
+        ("водоснабжение, ₽", "water_amount", "водоснабжение"),
     ]
     for title, column, label in money:
         amount = _parse_amount(values.get(title))
@@ -281,6 +282,7 @@ def _task_changes(task, values: dict, result: ImportResult, sheet: str,
     dates = [
         ("дата поступления", "paid_at", "дата поступления аренды"),
         ("дата оплаты", "utility_paid_at", "дата оплаты коммуналки"),
+        ("дата оплаты воды", "water_paid_at", "дата оплаты водоснабжения"),
         ("срок", "due_date", "срок"),
     ]
     for title, column, label in dates:

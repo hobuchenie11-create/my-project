@@ -49,13 +49,19 @@ ONE_OFF_COLUMNS = ["Задача", "Категория", "Срок", "Остал
                    "Создана", "Выполнена", "Примечание", COL_ID_TITLE]
 ONE_OFF_WIDTHS = [44, 24, 13, 16, 14, 13, 13, 34, 6]
 
+# Водоснабжение по нежилому платится не каждый месяц, поэтому оно не
+# отдельная задача (та висела бы просроченной в пустые месяцы), а своя пара
+# столбцов в той же строке, где коммуналка: пустой месяц ничего не значит.
 COLUMNS = ["Месяц", "Задача", "Категория", "Срок", "Статус",
            "Аренда, ₽", "Дата поступления",
-           "Оплата коммуналки, ₽", "Дата оплаты", "Комментарий", COL_ID_TITLE]
-WIDTHS = [14, 42, 20, 12, 14, 13, 17, 20, 14, 30, 6]
+           "Оплата коммуналки, ₽", "Дата оплаты",
+           "Водоснабжение, ₽", "Дата оплаты воды",
+           "Комментарий", COL_ID_TITLE]
+WIDTHS = [14, 42, 20, 12, 14, 13, 17, 20, 14, 18, 17, 30, 6]
 
 # Столбцы с суммами (для формата и итогов)
 COL_RENT, COL_RENT_DATE, COL_UTIL, COL_UTIL_DATE = 6, 7, 8, 9
+COL_WATER, COL_WATER_DATE = 10, 11
 
 def _list_validation(values) -> DataValidation:
     """Выпадающий список: правки в Excel возвращаются понятными значениями."""
@@ -132,6 +138,8 @@ def _sheet_plan(ws, conn: sqlite3.Connection, year: int) -> None:
                 _fmt(row["paid_at"]),
                 row["utility_amount"] if row["utility_amount"] is not None else "",
                 _fmt(row["utility_paid_at"]),
+                row["water_amount"] if row["water_amount"] is not None else "",
+                _fmt(row["water_paid_at"]),
                 row["note"],          # свободный комментарий, правится в Excel
                 row["id"],
             ]
@@ -142,11 +150,11 @@ def _sheet_plan(ws, conn: sqlite3.Connection, year: int) -> None:
             for col, value in enumerate(cells, start=1):
                 cell = ws.cell(row=r, column=col, value=value)
                 cell.border = style.BORDER
-                cell.alignment = (style.LEFT if col in (2, 3, 10) else style.CENTER)
+                cell.alignment = (style.LEFT if col in (2, 3, 12) else style.CENTER)
                 # Подсветкой отмечаем задачу целиком: срок, статус и суммы
-                if fill and col in (4, 5, COL_RENT, COL_UTIL):
+                if fill and col in (4, 5, COL_RENT, COL_UTIL, COL_WATER):
                     cell.fill = fill
-                if col in (COL_RENT, COL_UTIL):
+                if col in (COL_RENT, COL_UTIL, COL_WATER):
                     cell.number_format = "# ##0.00"
                 if row["priority"] == "high" and col == 2:
                     cell.font = style.FONT_BOLD
@@ -157,7 +165,7 @@ def _sheet_plan(ws, conn: sqlite3.Connection, year: int) -> None:
     # Итоги по суммам оплат за год
     r += 1
     ws.cell(row=r, column=2, value="Итого за год, ₽").font = style.FONT_BOLD
-    for col in (COL_RENT, COL_UTIL):
+    for col in (COL_RENT, COL_UTIL, COL_WATER):
         letter = get_column_letter(col)
         total = ws.cell(row=r, column=col, value=f"=SUM({letter}3:{letter}{r - 2})")
         total.font = style.FONT_BOLD

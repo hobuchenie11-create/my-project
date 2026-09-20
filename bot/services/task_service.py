@@ -238,6 +238,10 @@ def task_line(row: sqlite3.Row, today: date | None = None) -> str:
         parts.append(f"коммуналка {row['utility_amount']:g} ₽"
                      + (f" от {_fmt_date(row['utility_paid_at'])}"
                         if row["utility_paid_at"] else ""))
+    if row["water_amount"] is not None:
+        parts.append(f"вода {row['water_amount']:g} ₽"
+                     + (f" от {_fmt_date(row['water_paid_at'])}"
+                        if row["water_paid_at"] else ""))
     return " · ".join(parts)
 
 
@@ -412,6 +416,38 @@ def reminders_with_rows(conn: sqlite3.Connection, today: date | None = None
     return messages
 
 
+# Три суммы живут в одной задаче: аренда — своя задача, а коммуналка и
+# водоснабжение — в задаче об оплате по нежилому. Вода платится не каждый
+# месяц, отдельной задачей она висела бы просроченной в пустые месяцы.
+AMOUNT_DATE_FIELDS = {
+    "amount": "paid_at",
+    "utility_amount": "utility_paid_at",
+    "water_amount": "water_paid_at",
+}
+AMOUNT_LABELS = {
+    "amount": "аренда",
+    "utility_amount": "коммуналка",
+    "water_amount": "водоснабжение",
+}
+
+
+def set_water_payment(conn: sqlite3.Connection, task_id: int,
+                      tg_id: int | None, amount: float,
+                      paid_at: str = "") -> None:
+    """Записывает оплату водоснабжения в задачу об оплате по нежилому.
+
+    Статус задачи не трогаем: вода — вторая сумма в ней, а не отдельная
+    работа. Её вписывают и после того, как задача закрыта.
+    """
+    fields = {"water_amount": amount}
+    if paid_at:
+        fields["water_paid_at"] = paid_at
+    repository.update_task(conn, task_id, **fields)
+    repository.log_task_event(conn, task_id, tg_id, "amount",
+                              f"водоснабжение {amount:g} ₽"
+                              + (f", дата {paid_at}" if paid_at else ""))
+
+
 def complete_task(conn: sqlite3.Connection, task_id: int, tg_id: int | None,
                   amount: float | None = None, paid_at: str | None = None,
                   amount_field: str = "amount", note: str = "") -> None:
@@ -420,7 +456,7 @@ def complete_task(conn: sqlite3.Connection, task_id: int, tg_id: int | None,
     `note` — расшифровка суммы («Квитанции: 214,33 + 155 + 207»). Пишется
     только если передана, чтобы не затирать комментарий председателя.
     """
-    date_field = "paid_at" if amount_field == "amount" else "utility_paid_at"
+    date_field = AMOUNT_DATE_FIELDS.get(amount_field, "utility_paid_at")
     fields = {"status": "done", "done_at": date.today().isoformat()}
     if amount is not None:
         fields[amount_field] = amount
@@ -430,7 +466,7 @@ def complete_task(conn: sqlite3.Connection, task_id: int, tg_id: int | None,
         fields["note"] = note
     repository.update_task(conn, task_id, **fields)
 
-    kind = "аренда" if amount_field == "amount" else "коммуналка"
+    kind = AMOUNT_LABELS.get(amount_field, "коммуналка")
     details = "выполнена"
     if amount is not None:
         details += f", {kind} {amount:g} ₽"

@@ -289,3 +289,57 @@ def test_year_plan_export(conn, tmp_path):
     titles = [ws.cell(r, 2).value for r in range(3, 80)]
     assert any(t and "выписку из банка" in t.lower() for t in titles)
     assert any(t and "коммунальных услуг" in t.lower() for t in titles)
+
+
+# ---------------------------------------------------------------------------
+# Водоснабжение по нежилому: вторая сумма в той же задаче
+# ---------------------------------------------------------------------------
+
+@pytest.fixture()
+def utilities(conn):
+    """Задача «Оплата коммунальных услуг по нежилому» за сентябрь."""
+    task_service.generate_tasks(conn, date(2026, 9, 1), months_ahead=1)
+    return _by_title(conn, "2026-09", "коммунальных услуг")
+
+
+def test_water_is_a_second_amount_not_a_separate_task(conn, utilities):
+    """Платится не каждый месяц — отдельной задачей висело бы просроченным."""
+    task = utilities
+
+    task_service.set_water_payment(conn, task["id"], tg_id=1, amount=101.20,
+                                   paid_at="2026-09-18")
+
+    updated = repository.get_task(conn, task["id"])
+    assert updated["water_amount"] == 101.20
+    assert updated["water_paid_at"] == "2026-09-18"
+    # Статус задачи вода не меняет: это сумма, а не работа
+    assert updated["status"] == task["status"]
+
+
+def test_water_shows_up_in_the_task_line(conn, utilities):
+    task = utilities
+    task_service.set_water_payment(conn, task["id"], tg_id=1, amount=101.20,
+                                   paid_at="2026-09-18")
+
+    line = task_service.task_line(repository.get_task(conn, task["id"]),
+                                  date(2026, 9, 20))
+    assert "вода 101.2 ₽" in line
+    assert "от 18.09" in line
+
+
+def test_months_without_water_stay_empty(conn, utilities):
+    """Пустой месяц — это норма, а не пропущенная работа."""
+    task = _by_title(conn, "2026-10", "коммунальных услуг")
+
+    assert repository.get_task(conn, task["id"])["water_amount"] is None
+    line = task_service.task_line(repository.get_task(conn, task["id"]),
+                                  date(2026, 10, 15))
+    assert "вода" not in line
+
+
+def test_water_payment_is_written_into_history(conn, utilities):
+    task = utilities
+    task_service.set_water_payment(conn, task["id"], tg_id=1, amount=101.20)
+
+    history = repository.task_history(conn, task["id"])
+    assert any("водоснабжение 101.2 ₽" in e["details"] for e in history)

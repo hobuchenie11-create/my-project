@@ -585,11 +585,10 @@ async def process_paid_at(message: Message, state: FSMContext) -> None:
         return
 
     data = await state.get_data()
-    await state.clear()
+    field = data.get("amount_field", "amount")
 
     conn = repository.connect()
     try:
-        field = data.get("amount_field", "amount")
         note = data.get("note", "")
         task_service.complete_task(conn, data["task_id"], message.from_user.id,
                                    amount=data["amount"], paid_at=paid.isoformat(),
@@ -598,11 +597,56 @@ async def process_paid_at(message: Message, state: FSMContext) -> None:
         conn.close()
 
     label = "Аренда" if field == "amount" else "Оплата коммунальных услуг"
+    done = (f"✅ <b>{data['title']}</b> — выполнено.\n"
+            f"{label}: {money(data['amount'])} ₽\n"
+            f"Дата: {paid.strftime('%d.%m.%Y')}"
+            + (f"\nПримечание: {note}" if note else ""))
+
+    # Водоснабжение по нежилому платится не каждый месяц — спрашиваем, но
+    # не требуем. Задача уже закрыта, ответ «нет» ничего не отменяет.
+    if field == "utility_amount":
+        await state.update_data(done_text=done, paid_at=paid.isoformat())
+        await state.set_state(CompleteTask.water)
+        await message.answer(
+            done + "\n\n💧 Водоснабжение в этом месяце оплачивали? "
+            "Отправьте сумму (например, <code>101,20</code>) "
+            "или «нет», если не платили.")
+        return
+
+    await state.clear()
+    await message.answer(done, reply_markup=tasks_menu())
+
+
+@router.message(CompleteTask.water)
+async def process_water(message: Message, state: FSMContext) -> None:
+    """Сумма за водоснабжение — вторая сумма в той же задаче."""
+    text = (message.text or "").strip().lower()
+    data = await state.get_data()
+
+    if text in ("нет", "не платили", "пропустить", "-", "0"):
+        await state.clear()
+        await message.answer(data.get("done_text", "Готово."),
+                             reply_markup=tasks_menu())
+        return
+
+    amount = parse_amount(message.text or "")
+    if amount is None:
+        await message.answer("Не похоже на сумму. Введите число "
+                             "(например, 101,20) или «нет».")
+        return
+
+    await state.clear()
+    conn = repository.connect()
+    try:
+        task_service.set_water_payment(conn, data["task_id"],
+                                       message.from_user.id, amount.total,
+                                       data.get("paid_at", ""))
+    finally:
+        conn.close()
+
     await message.answer(
-        f"✅ <b>{data['title']}</b> — выполнено.\n"
-        f"{label}: {money(data['amount'])} ₽\n"
-        f"Дата: {paid.strftime('%d.%m.%Y')}"
-        + (f"\nПримечание: {note}" if note else ""),
+        data.get("done_text", "") +
+        f"\nВодоснабжение: <b>{money(amount.total)} ₽</b>",
         reply_markup=tasks_menu())
 
 
