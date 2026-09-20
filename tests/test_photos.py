@@ -30,6 +30,10 @@ class FakeState:
     async def set_state(self, state):
         self.state = state
 
+    async def get_state(self):
+        state = self.state
+        return getattr(state, "state", state)
+
     async def clear(self):
         self.cleared = True
         self.state = None

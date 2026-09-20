@@ -183,14 +183,10 @@ def test_full_flow_reaches_the_chairman(db):
 
     flat = Msg("15")
     _run(newcomer.take_apartment(flat, state))
-    assert state.state == newcomer.Newcomer.egrn
-    assert "кв. 15" in flat.answers[0]
-
-    egrn = Msg(message_id=42)
-    _run(newcomer.take_egrn(egrn, state))
     assert state.state == newcomer.Newcomer.contacts
+    assert "кв. 15" in flat.answers[0]
     # Вместе с вопросом про телефон уходит памятка про 10 ₽ на каждые ворота
-    assert any(GATE_HIMIKOV in text for text in egrn.answers)
+    assert any(GATE_HIMIKOV in text for text in flat.answers)
 
     contacts = Msg("Иванова Мария Петровна, +7 902 676-78-81")
     _run(newcomer.take_contacts(contacts, state))
@@ -203,12 +199,30 @@ def test_full_flow_reaches_the_chairman(db):
     assert chat_id == CHAIRMAN
     assert "15" in summary and "Иванова Мария Петровна" in summary
     assert "1234 АВ-55" in summary
-    assert car.bot.forwarded == [(CHAIRMAN, RESIDENT, 42)]
+    assert "ЕГРН" in summary                     # ждать выписку от жителя
 
     # Новосёл сразу получает памятки про ворота и калитку
     tail = "\n".join(car.answers)
     assert GATE_MAGISTRALNAYA in tail and "калитк" in tail.lower()
     assert state.state is None
+
+
+def test_egrn_goes_to_the_chairman_not_to_the_bot(db, conn):
+    """Документ с персональными данными в переписке с ботом не хранится."""
+    state = FakeState()
+    _run(newcomer.take_apartment(Msg("15"), state))
+    _run(newcomer.take_contacts(Msg("Пётр Сидоров, 89021234567"), state))
+
+    car = Msg("нет")
+    _run(newcomer.take_car(car, state))
+
+    final = "\n".join(car.answers).lower()
+    assert "председателю" in final and "егрн" in final
+    assert "присылать не нужно" in final
+    assert car.bot.forwarded == []               # бот ничего не пересылает
+
+    memo = faq_service.by_code(conn, "novyy-sobstvennik").body.lower()
+    assert "председателю" in memo and "присылать не нужно" in memo
 
 
 def test_flat_number_must_exist(db):
@@ -220,26 +234,30 @@ def test_flat_number_must_exist(db):
     assert "нет в реестре" in message.answers[0]
 
 
-def test_egrn_can_be_sent_later(db):
-    state = FakeState()
-    _run(newcomer.take_apartment(Msg("15"), state))
-    _run(newcomer.egrn_later(Msg("позже"), state))
-    assert state.state == newcomer.Newcomer.contacts
+def test_photo_during_the_flow_is_not_treated_as_readings(db, monkeypatch):
+    """Житель всё равно прислал выписку боту — ответ должен быть по делу."""
+    from dataclasses import replace as dc_replace
 
-    _run(newcomer.take_contacts(Msg("Пётр Сидоров, 89021234567"), state))
-    car = Msg("нет")
-    _run(newcomer.take_car(car, state))
+    from bot.handlers import photos
+    from tests.test_photos import FakeState as PhotoState, Msg as PhotoMsg
 
-    assert "обещал прислать позже" in car.bot.sent[0][1]
-    assert car.bot.forwarded == []
-    assert any("не забудьте прислать копию выписки" in text.lower()
-               for text in car.answers)
+    monkeypatch.setattr(photos, "config",
+                        dc_replace(photos.config, admin_ids=(CHAIRMAN,),
+                                   council_chat_id=0))
+    state = PhotoState()
+    state.state = newcomer.Newcomer.contacts
+
+    message = PhotoMsg(tg_id=RESIDENT)
+    message.photo = [SimpleNamespace(file_id="x")]
+    _run(photos.handle_photo(message, state))
+
+    assert "ЕГРН" in message.answers[0]
+    assert "показани" not in message.answers[0].lower()
 
 
 def test_contacts_without_phone_are_refused(db):
     state = FakeState()
     _run(newcomer.take_apartment(Msg("15"), state))
-    _run(newcomer.egrn_later(Msg("позже"), state))
 
     message = Msg("Иванова Мария")
     _run(newcomer.take_contacts(message, state))
@@ -252,7 +270,7 @@ def test_cancel_stops_the_flow(db):
     _run(newcomer.take_apartment(Msg("15"), state))
 
     message = Msg("отмена")
-    _run(newcomer.egrn_later(message, state))
+    _run(newcomer.take_contacts(message, state))
     assert state.state is None
     assert "остановились" in message.answers[0]
 
@@ -261,7 +279,6 @@ def test_data_is_logged_even_if_chairman_is_offline(db):
     """Личка председателя недоступна — данные жителя не должны пропасть."""
     state = FakeState()
     _run(newcomer.take_apartment(Msg("15"), state))
-    _run(newcomer.egrn_later(Msg("позже"), state))
     _run(newcomer.take_contacts(Msg("Пётр Сидоров, 89021234567"), state))
 
     car = Msg("нет")

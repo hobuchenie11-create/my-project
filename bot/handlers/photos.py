@@ -54,6 +54,12 @@ RESIDENT_TEXT = (
     "«Хвс санузел», «Гвс кухня», «Гвс санузел»."
 )
 
+NEWCOMER_TEXT = (
+    "📷 Сюда документ присылать не нужно — копию выписки из ЕГРН отправьте "
+    "председателю напрямую.\n\n"
+    "А мы продолжим: допишите ответ на мой вопрос текстом."
+)
+
 CHAT_TEXT = (
     "📷 Фото я не читаю — показания с него не записаны. "
     "Пришлите, пожалуйста, цифры текстом: «Кв. 34 / Эл.эн 16553 / "
@@ -115,6 +121,12 @@ async def handle_photo(message: Message, state: FSMContext) -> None:
         return
 
     if not is_admin:
+        # Житель оформляется как новый собственник и по привычке шлёт
+        # выписку боту: про показания ему отвечать не о чем
+        current = await state.get_state()
+        if current and current.startswith("Newcomer:"):
+            await message.answer(NEWCOMER_TEXT)
+            return
         await message.answer(RESIDENT_TEXT)
         return
 
