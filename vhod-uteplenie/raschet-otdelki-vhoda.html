@@ -206,6 +206,46 @@
   .big { font-family: "PT Mono", monospace; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .muted { color: var(--ink-faint); font-size: 14px; }
 
+  /* --- примерочная --- */
+  .fitting {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #scene {
+    --fit-brick:  #5E3A2C;
+    --fit-mortar: #BEB4A5;
+    --fit-base:   #6B4A34;
+    --fit-seam:   #553A28;
+    --fit-steps:  #232529;
+    --fit-door:   #463124;
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+    background: var(--surface-2);
+  }
+  .fit-bar { display: flex; flex-direction: column; gap: 3px; }
+  .fit-name { font-weight: 700; font-size: 17px; }
+  .fit-note { font-size: 14.5px; color: var(--ink-soft); }
+  .fit-controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14.5px; }
+  .fit-controls label { display: inline-flex; align-items: center; gap: 7px; }
+  .fit-controls input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); }
+  select {
+    font: inherit;
+    font-size: 14.5px;
+    padding: 6px 8px;
+    background: var(--surface-2);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+  select:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
   /* --- цвета --- */
   #swatches { display: flex; flex-direction: column; gap: 12px; }
   .grp-head { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; border-left: 3px solid var(--accent); padding-left: 11px; }
@@ -215,7 +255,25 @@
   .swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   @media (max-width: 760px) { .swatches { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 440px) { .swatches { grid-template-columns: 1fr; } }
-  .sw { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
+  .sw {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .sw:hover { border-color: var(--line); }
+  .sw.is-on { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+  .sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sw .sw-pick { font-family: "PT Sans Narrow", sans-serif; text-transform: uppercase; letter-spacing: .07em; font-size: 11.5px; color: var(--accent); font-weight: 700; visibility: hidden; }
+  .sw.is-on .sw-pick { visibility: visible; }
   .sw svg { width: 100%; height: 88px; display: block; }
   .sw-body { padding: 11px 13px 14px; display: flex; flex-direction: column; gap: 5px; }
   .sw-name { font-weight: 700; font-size: 15px; }
@@ -574,6 +632,86 @@
       <strong>Что уже известно:</strong> дом из красного кирпича, дверь тёмно-коричневая. Это и есть две точки отсчёта — новая отделка должна ужиться с ними обеими. И держите в голове, что навес у вас из зелёного поликарбоната: под ним любой цвет будет казаться зеленее и темнее, чем в магазине под лампами.
     </div>
 
+    <h3>Примерочная</h3>
+    <p>Это ваш вход: угол из двух стен, дверь, ступени, навес сверху. Нажимайте на любой образец ниже — ниша перекрашивается целиком, и сразу видно, темнеет вход или светлеет и спорит ли цвет с дверью.</p>
+
+    <div class="fitting">
+      <svg id="scene" viewBox="0 0 520 470" role="img" aria-label="Схематичный вид входной ниши в выбранном цвете отделки">
+        <!-- навес -->
+        <rect x="0" y="0" width="520" height="30" fill="#7FB24A" opacity="0.55"/>
+        <rect x="0" y="27" width="520" height="5" fill="#000" opacity="0.18"/>
+        <rect x="0" y="6"  width="520" height="3" fill="#5C7F38" opacity="0.7"/>
+        <rect x="0" y="18" width="520" height="3" fill="#5C7F38" opacity="0.7"/>
+        <rect x="150" y="0" width="4" height="30" fill="#4A5750" opacity="0.8"/>
+        <rect x="330" y="0" width="4" height="30" fill="#4A5750" opacity="0.8"/>
+
+        <!-- стены: кладка / обшивка (строятся скриптом) -->
+        <g id="fit-brick"></g>
+        <g id="fit-board"></g>
+        <g id="fit-shade"></g>
+
+        <!-- дверь -->
+        <g id="fit-door">
+          <rect x="236" y="99" width="134" height="277" fill="#000" opacity="0.22"/>
+          <rect x="240" y="103" width="126" height="273" fill="var(--fit-door)"/>
+          <rect x="248" y="111" width="110" height="257" fill="none" stroke="#000" stroke-opacity="0.28" stroke-width="2"/>
+          <rect x="236" y="140" width="7" height="20" rx="2" fill="#2F2018"/>
+          <rect x="236" y="320" width="7" height="20" rx="2" fill="#2F2018"/>
+          <rect x="347" y="231" width="7" height="28" rx="3" fill="#B9BEC1"/>
+          <rect x="374" y="88" width="13" height="17" rx="2" fill="#6E7477"/>
+        </g>
+
+        <!-- щиток на левой стене и светильник -->
+        <g id="fit-details">
+          <path d="M62,168 L112,176 L112,232 L62,222 Z" fill="#9AA0A3" fill-opacity="0.55" stroke="#2F3438" stroke-opacity="0.6" stroke-width="1.5"/>
+          <path d="M70,222 C64,252 60,272 58,300" fill="none" stroke="#2F3438" stroke-opacity="0.45" stroke-width="1.6"/>
+          <path d="M96,232 C98,258 96,278 92,300" fill="none" stroke="#2F3438" stroke-opacity="0.45" stroke-width="1.6"/>
+          <rect x="424" y="128" width="5" height="12" fill="#4A4F52"/>
+          <path d="M429,122 L446,132 L446,146 L429,140 Z" fill="#E8D9A8" fill-opacity="0.85" stroke="#4A4F52" stroke-width="1.2"/>
+        </g>
+
+        <!-- ступени: покрытие из резиновой крошки -->
+        <defs>
+          <pattern id="crumb" width="7" height="7" patternUnits="userSpaceOnUse">
+            <circle cx="1.6" cy="1.6" r="1.1" fill="#FFF" fill-opacity="0.14"/>
+            <circle cx="5.2" cy="4.4" r="0.9" fill="#FFF" fill-opacity="0.09"/>
+            <circle cx="3.4" cy="6.0" r="0.8" fill="#000" fill-opacity="0.30"/>
+            <circle cx="6.2" cy="1.2" r="0.6" fill="#000" fill-opacity="0.22"/>
+          </pattern>
+        </defs>
+        <g id="fit-steps">
+          <path d="M40,372 Q260,382 470,372 L470,394 Q260,406 40,394 Z" fill="var(--fit-steps)"/>
+          <path d="M20,394 Q260,406 496,394 L496,418 Q260,432 20,418 Z" fill="var(--fit-steps)" opacity="0.9"/>
+          <path d="M0,418 Q260,432 520,418 L520,442 Q260,458 0,442 Z" fill="var(--fit-steps)" opacity="0.8"/>
+          <path d="M40,372 Q260,382 470,372 L470,394 Q260,406 40,394 Z" fill="url(#crumb)"/>
+          <path d="M20,394 Q260,406 496,394 L496,418 Q260,432 20,418 Z" fill="url(#crumb)"/>
+          <path d="M0,418 Q260,432 520,418 L520,442 Q260,458 0,442 Z" fill="url(#crumb)"/>
+        </g>
+
+        <!-- «как под зелёным навесом» -->
+        <rect id="fit-green" x="0" y="0" width="520" height="470" fill="#3F9E2E" opacity="0.34" hidden/>
+      </svg>
+
+      <div class="fit-bar">
+        <div class="fit-name" id="fit-name">Тёмный орех</div>
+        <div class="fit-note" id="fit-note"></div>
+      </div>
+
+      <div class="fit-controls">
+        <label class="chk"><input type="checkbox" id="fit-green-toggle"> Показать как под зелёным навесом</label>
+        <label class="sel">Ступени:
+          <select id="fit-steps-color">
+            <option value="#232529" selected>чёрная резиновая крошка</option>
+            <option value="#3E4146">тёмно-серая крошка</option>
+            <option value="#8E8C86">серый бетон</option>
+            <option value="#7A5340">коричневая плитка</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="muted">Рисунок схематичный: это не фотография, теней и бликов нет. Ширина двери взята условно — <strong>0,95 м</strong>, высота 2,05 м. Скажете настоящие размеры — поправлю, и пропорции станут вашими. Ступени показаны чёрной резиновой крошкой, как у вас.</p>
+    </div>
+
     <p>Три направления, по три оттенка в каждом — от тёмного к светлому. Коричневое и моховое показаны как гладкая обшивка (панель или сайдинг), кирпичное — как кладка.</p>
 
     <div id="swatches"></div>
@@ -818,7 +956,108 @@
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="образец обшивки">' + out + '</svg>';
   }
 
+  // ---- примерочная: геометрия ниши ----
+  // Квадраты стен заданы углами [левый верх, правый верх, правый низ, левый низ].
+  // Левая и правая стены — трапеции: они уходят от зрителя вглубь.
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var WALLS = [
+    { q: [[10, 0],   [200, 30], [200, 376], [10, 410]],  cols: 7, shade: 0.16 },
+    { q: [[200, 30], [446, 30], [446, 376], [200, 376]], cols: 6, shade: 0    },
+    { q: [[446, 30], [520, 8],  [520, 398], [446, 376]], cols: 2, shade: 0.08 }
+  ];
+  var BRICK_ROWS = 30, BOARD_ROWS = 13;
+
+  var scene    = document.getElementById("scene");
+  var brickG   = document.getElementById("fit-brick");
+  var boardG   = document.getElementById("fit-board");
+  var shadeG   = document.getElementById("fit-shade");
+  var greenEl  = document.getElementById("fit-green");
+  var fitName  = document.getElementById("fit-name");
+  var fitNote  = document.getElementById("fit-note");
+
+  function svgEl(name, attrs) {
+    var e = document.createElementNS(SVGNS, name);
+    for (var k in attrs) { if (attrs.hasOwnProperty(k)) e.setAttribute(k, attrs[k]); }
+    return e;
+  }
+  // точка внутри четырёхугольника: u — слева направо, v — сверху вниз
+  function pt(q, u, v) {
+    var tx = q[0][0] + (q[1][0] - q[0][0]) * u, ty = q[0][1] + (q[1][1] - q[0][1]) * u;
+    var bx = q[3][0] + (q[2][0] - q[3][0]) * u, by = q[3][1] + (q[2][1] - q[3][1]) * u;
+    return [tx + (bx - tx) * v, ty + (by - ty) * v];
+  }
+  function quadPath(q, u0, v0, u1, v1) {
+    var a = pt(q, u0, v0), b = pt(q, u1, v0), c = pt(q, u1, v1), d = pt(q, u0, v1);
+    return "M" + a[0].toFixed(1) + "," + a[1].toFixed(1) +
+           "L" + b[0].toFixed(1) + "," + b[1].toFixed(1) +
+           "L" + c[0].toFixed(1) + "," + c[1].toFixed(1) +
+           "L" + d[0].toFixed(1) + "," + d[1].toFixed(1) + "Z";
+  }
+
+  function buildScene() {
+    WALLS.forEach(function (w) {
+      var q = w.q, cols = w.cols;
+
+      // кладка: фон раствора и кирпичи со смещением через ряд
+      brickG.appendChild(svgEl("path", { d: quadPath(q, 0, 0, 1, 1), fill: "var(--fit-mortar)" }));
+      var gu = 0.13 / cols, gv = 0.17 / BRICK_ROWS;
+      for (var r = 0; r < BRICK_ROWS; r++) {
+        var off = (r % 2) ? -0.5 : 0;
+        for (var c = -1; c <= cols; c++) {
+          var u0 = Math.max(0, (c + off) / cols);
+          var u1 = Math.min(1, (c + 1 + off) / cols);
+          if (u1 - u0 <= gu * 2) continue;
+          brickG.appendChild(svgEl("path", {
+            d: quadPath(q, u0 + gu, r / BRICK_ROWS + gv, u1 - gu, (r + 1) / BRICK_ROWS - gv),
+            fill: "var(--fit-brick)"
+          }));
+        }
+      }
+
+      // гладкая обшивка: заливка и швы между полосами
+      boardG.appendChild(svgEl("path", { d: quadPath(q, 0, 0, 1, 1), fill: "var(--fit-base)" }));
+      for (var b = 1; b < BOARD_ROWS; b++) {
+        var p1 = pt(q, 0, b / BOARD_ROWS), p2 = pt(q, 1, b / BOARD_ROWS);
+        boardG.appendChild(svgEl("line", {
+          x1: p1[0].toFixed(1), y1: p1[1].toFixed(1),
+          x2: p2[0].toFixed(1), y2: p2[1].toFixed(1),
+          stroke: "var(--fit-seam)", "stroke-width": "1.6"
+        }));
+      }
+
+      // боковые плоскости темнее фронтальной — иначе угол не читается
+      if (w.shade > 0) {
+        shadeG.appendChild(svgEl("path", {
+          d: quadPath(q, 0, 0, 1, 1), fill: "#000", opacity: String(w.shade)
+        }));
+      }
+    });
+  }
+
+  function show(el, visible) {
+    if (visible) el.removeAttribute("hidden");
+    else el.setAttribute("hidden", "");
+  }
+
+  function applyFinish(p) {
+    if (p.type === "brick") {
+      scene.style.setProperty("--fit-brick", p.base);
+      scene.style.setProperty("--fit-mortar", p.seam);
+    } else {
+      scene.style.setProperty("--fit-base", p.base);
+      scene.style.setProperty("--fit-seam", p.seam);
+    }
+    show(brickG, p.type === "brick");
+    show(boardG, p.type !== "brick");
+    fitName.textContent = p.name;
+    fitNote.textContent = p.note;
+  }
+
+  // ---- образцы как кнопки выбора ----
   var box = document.getElementById("swatches");
+  var buttons = [];
+  var flat = [];
+
   groups.forEach(function (g) {
     var head = document.createElement("div");
     head.className = "grp-head";
@@ -830,17 +1069,74 @@
     var row = document.createElement("div");
     row.className = "swatches";
     g.items.forEach(function (p) {
-      var el = document.createElement("div");
+      var idx = flat.length;
+      flat.push(p);
+
+      var el = document.createElement("button");
       el.className = "sw";
+      el.type = "button";
+      el.setAttribute("aria-pressed", "false");
       el.innerHTML = (p.type === "brick" ? brickSVG(p.base, p.seam) : boardSVG(p.base, p.seam)) +
-        '<div class="sw-body"><div class="sw-name"></div><div class="sw-hex"></div><div class="sw-note"></div></div>';
+        '<div class="sw-body"><div class="sw-pick">Показано выше</div><div class="sw-name"></div>' +
+        '<div class="sw-hex"></div><div class="sw-note"></div></div>';
       el.querySelector(".sw-name").textContent = p.name;
       el.querySelector(".sw-hex").textContent = p.type === "brick" ? "кладка " + p.base : p.base;
       el.querySelector(".sw-note").textContent = p.note;
+      el.addEventListener("click", function () { select(idx); saveFit(); });
+
+      buttons.push(el);
       row.appendChild(el);
     });
     box.appendChild(row);
   });
+
+  var current = 1; // «Тёмный орех» — с красным кирпичом самый естественный вариант
+
+  function select(i) {
+    current = i;
+    buttons.forEach(function (b, j) {
+      b.classList.toggle("is-on", j === i);
+      b.setAttribute("aria-pressed", j === i ? "true" : "false");
+    });
+    applyFinish(flat[i]);
+  }
+
+  var greenToggle = document.getElementById("fit-green-toggle");
+  var stepsSelect = document.getElementById("fit-steps-color");
+
+  greenToggle.addEventListener("change", function () {
+    show(greenEl, greenToggle.checked);
+    saveFit();
+  });
+  stepsSelect.addEventListener("change", function () {
+    scene.style.setProperty("--fit-steps", stepsSelect.value);
+    saveFit();
+  });
+
+  function saveFit() {
+    try {
+      localStorage.setItem(STORE_KEY + "-fit", JSON.stringify({
+        c: current, g: greenToggle.checked, s: stepsSelect.value
+      }));
+    } catch (e) { /* хранение недоступно — просто не сохраняем */ }
+  }
+
+  function loadFit() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY + "-fit");
+      if (!raw) return;
+      var d = JSON.parse(raw);
+      if (typeof d.c === "number" && flat[d.c]) current = d.c;
+      if (typeof d.s === "string") stepsSelect.value = d.s;
+      greenToggle.checked = !!d.g;
+    } catch (e) { /* читать нечего — остаются значения по умолчанию */ }
+  }
+
+  buildScene();
+  loadFit();
+  select(current);
+  scene.style.setProperty("--fit-steps", stepsSelect.value);
+  show(greenEl, greenToggle.checked);
 
   load();
   renderAll();
