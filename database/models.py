@@ -94,6 +94,9 @@ MIGRATIONS = [
     # Водоснабжение по нежилому платится не каждый месяц, поэтому оно не
     # отдельная задача (та висела бы просроченной в пустые месяцы), а вторая
     # сумма в той же задаче об оплате коммунальных услуг
+    # Памятка может предлагать действие: под ней появляется кнопка. Так
+    # «Новому собственнику» ведёт к сбору документов, не трогая код faq.py
+    ("faq", "action", "TEXT NOT NULL DEFAULT ''"),
     ("tasks", "water_amount", "REAL"),
     ("tasks", "water_paid_at", "TEXT NOT NULL DEFAULT ''"),
     ("house_meters", "kind", "TEXT NOT NULL DEFAULT 'verification'"),
@@ -446,6 +449,7 @@ CREATE TABLE IF NOT EXISTS faq (
     keywords    TEXT NOT NULL DEFAULT '',      -- через запятую, для поиска
     body        TEXT NOT NULL DEFAULT '',
     image       TEXT NOT NULL DEFAULT '',      -- файл в content/faq/images/
+    action      TEXT NOT NULL DEFAULT '',      -- сценарий под памяткой (кнопка)
     sort_order  INTEGER NOT NULL DEFAULT 0,
     is_active   INTEGER NOT NULL DEFAULT 1,
     updated_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))

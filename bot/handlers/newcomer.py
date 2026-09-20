@@ -1,0 +1,260 @@
+"""Сценарий «Новый собственник»: три шага из памятки, по одному вопросу.
+
+Список из трёх пунктов человек выполняет наполовину — присылает выписку
+и забывает про телефон. Поэтому бот спрашивает по очереди и в конце
+одним сообщением передаёт всё председателю: квартиру, ФИО с телефоном,
+номер авто, а следом пересылает саму выписку из ЕГРН.
+
+Сценарий начинается кнопкой под памяткой «Новому собственнику». Памятку
+житель находит обычным вопросом («купил квартиру», «как оформиться»),
+так что отдельной кнопки в меню не нужно.
+"""
+import logging
+
+from aiogram import Bot, F, Router
+from aiogram.exceptions import TelegramAPIError
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message
+
+from bot.config import config
+from bot.handlers.faq import send_memo
+from bot.keyboards.menu import main_menu
+from bot.services import faq_service
+from bot.services.apartment_service import find_apartment
+from bot.states.newcomer import Newcomer
+from database import repository
+
+logger = logging.getLogger(__name__)
+
+router = Router()
+router.message.filter(F.chat.type == "private")
+
+CANCEL_WORDS = ("отмена", "стоп", "позже", "не сейчас")
+NO_CAR_WORDS = ("нет", "нету", "без авто", "без машины", "не нужно", "-")
+# Выписку можно прислать и позже — но бот об этом прямо предупреждает:
+# без неё доступ к воротам не оформляется
+LATER_WORDS = ("позже", "потом", "пришлю позже", "нет под рукой")
+
+
+def _is_image_document(message: Message) -> bool:
+    document = message.document
+    if document is None:
+        return False
+    mime = (document.mime_type or "").lower()
+    return mime.startswith("image/") or mime == "application/pdf"
+
+
+@router.callback_query(F.data == "start:newcomer")
+async def start(callback: CallbackQuery, state: FSMContext) -> None:
+    """Кнопка под памяткой «Новому собственнику»."""
+    await state.set_state(Newcomer.apartment)
+    await callback.message.answer(
+        "🔑 <b>Оформление нового собственника</b>\n\n"
+        "Задам три вопроса по очереди. Прервётесь — начнём заново, "
+        "ничего страшного.\n\n"
+        "<b>Вопрос 1 из 4.</b> Какая у вас квартира? Напишите номер: "
+        "<code>15</code>.\n\n"
+        "Чтобы выйти, отправьте «отмена».")
+    await callback.answer()
+
+
+@router.message(Newcomer.apartment, F.text)
+async def take_apartment(message: Message, state: FSMContext) -> None:
+    text = (message.text or "").strip()
+    if text.lower() in CANCEL_WORDS:
+        await _cancel(message, state)
+        return
+
+    conn = repository.connect()
+    try:
+        apartment = find_apartment(conn, text)
+    finally:
+        conn.close()
+
+    if apartment is None:
+        await message.answer(
+            "Такой квартиры нет в реестре дома. Напишите номер цифрами — "
+            "например, <code>15</code>.")
+        return
+
+    await state.update_data(apartment=apartment["number"])
+    await state.set_state(Newcomer.egrn)
+    await message.answer(
+        f"Записала: <b>кв. {apartment['number']}</b>.\n\n"
+        "<b>Вопрос 2 из 4.</b> Пришлите копию выписки из ЕГРН — "
+        "фото или файл PDF.\n\n"
+        "Оригинал не нужен, достаточно снимка. Без выписки доступ "
+        "к воротам не оформляется: так никто не получит въезд "
+        "по чужой квартире.\n\n"
+        "Нет под рукой — напишите «позже», продолжим без неё.")
+
+
+@router.message(Newcomer.egrn, F.photo)
+@router.message(Newcomer.egrn, F.document, _is_image_document)
+async def take_egrn(message: Message, state: FSMContext) -> None:
+    """Выписку не разбираем, а пересылаем председателю как есть."""
+    await state.update_data(egrn_message_id=message.message_id,
+                            egrn_chat_id=message.chat.id)
+    await _ask_contacts(message, state)
+
+
+@router.message(Newcomer.egrn, F.text)
+async def egrn_later(message: Message, state: FSMContext) -> None:
+    text = (message.text or "").strip().lower()
+    if text in CANCEL_WORDS and text not in LATER_WORDS:
+        await _cancel(message, state)
+        return
+    if text in LATER_WORDS:
+        await state.update_data(egrn_later=True)
+        await _ask_contacts(message, state)
+        return
+    await message.answer(
+        "Жду фото или файл выписки из ЕГРН. Если её сейчас нет — "
+        "напишите «позже», а прислать можно будет отдельным сообщением.")
+
+
+async def _ask_contacts(message: Message, state: FSMContext) -> None:
+    await state.set_state(Newcomer.contacts)
+    await message.answer(
+        "<b>Вопрос 3 из 4.</b> ФИО собственника и контактный телефон — "
+        "одним сообщением.\n\n"
+        "Например:\n<code>Иванова Мария Петровна, +7 902 676-78-81</code>\n\n"
+        "Телефон программируется в GSM-модуль ворот: с него ворота "
+        "открываются звонком, бесплатно.")
+    # Про 10 ₽ на каждые ворота человек узнаёт до того, как назовёт номер:
+    # иначе номер запишут, а ворота не откроются — и виноватым окажется бот
+    await _send_memo(message, "gsm-modul")
+
+
+@router.message(Newcomer.contacts, F.text)
+async def take_contacts(message: Message, state: FSMContext) -> None:
+    text = (message.text or "").strip()
+    if text.lower() in CANCEL_WORDS:
+        await _cancel(message, state)
+        return
+    if len(text) < 6 or not any(ch.isdigit() for ch in text):
+        await message.answer(
+            "Нужны и ФИО, и телефон — иначе номер не записать в ворота. "
+            "Пример: <code>Иванова Мария Петровна, +375 29 123-45-67</code>")
+        return
+
+    await state.update_data(contacts=text)
+    await state.set_state(Newcomer.car)
+    await message.answer(
+        "<b>Вопрос 4 из 4.</b> Номер автомобиля — например "
+        "<code>1234 AB-7</code>.\n\n"
+        "Машины нет — напишите «нет».")
+
+
+@router.message(Newcomer.car, F.text)
+async def take_car(message: Message, state: FSMContext) -> None:
+    text = (message.text or "").strip()
+    if text.lower() in CANCEL_WORDS and text.lower() not in NO_CAR_WORDS:
+        await _cancel(message, state)
+        return
+
+    car = "" if text.lower() in NO_CAR_WORDS else text
+    data = await state.get_data()
+    await state.clear()
+
+    await _hand_over(message, data, car)
+
+    is_admin = message.from_user.id in config.admin_ids
+    waiting = ("\n\n❗ Не забудьте прислать копию выписки из ЕГРН — "
+               "без неё доступ к воротам не оформляется."
+               if data.get("egrn_later") else "")
+    await message.answer(
+        "✅ <b>Готово, данные переданы председателю.</b>\n\n"
+        f"Квартира: {data.get('apartment', '—')}\n"
+        f"Собственник: {data.get('contacts', '—')}\n"
+        f"Автомобиль: {car or 'нет'}\n\n"
+        "Председатель запишет ваш номер в модуль ворот и свяжется с вами, "
+        "если что-то понадобится уточнить." + waiting,
+        reply_markup=main_menu(is_admin))
+
+    # То, что новосёлу понадобится в первый же день: как заехать во двор и
+    # как попасть в него пешком. Искать эти памятки в меню он ещё не умеет
+    await message.answer("Чтобы вы освоились, вот две памятки по дому 👇")
+    for code in ("vorota", "dostup-vo-dvor"):
+        await _send_memo(message, code)
+
+
+async def _send_memo(message: Message, code: str) -> None:
+    """Отправляет памятку по ходу разговора — тем же видом, что и в меню.
+
+    Памятку могли переименовать или удалить: сценарий из-за этого прерываться
+    не должен, данные жителя важнее.
+    """
+    conn = repository.connect()
+    try:
+        memo = faq_service.by_code(conn, code)
+    finally:
+        conn.close()
+
+    if memo is None:
+        logger.warning("Памятка «%s» не найдена — пропускаю", code)
+        return
+    try:
+        await send_memo(message, memo)
+    except TelegramAPIError as exc:
+        logger.warning("Не удалось отправить памятку «%s»: %s", code, exc)
+
+
+async def _cancel(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    is_admin = message.from_user.id in config.admin_ids
+    await message.answer(
+        "Хорошо, остановились. Вернуться можно в любой момент — "
+        "напишите «новый собственник».", reply_markup=main_menu(is_admin))
+
+
+async def _hand_over(message: Message, data: dict, car: str) -> None:
+    """Передаёт собранное председателю: сводка, следом — сама выписка.
+
+    Пишем в журнал в любом случае: если в личку председателю сообщение не
+    дошло (бот у неё не запущен, нет связи), данные жителя не должны
+    пропасть бесследно.
+    """
+    user = message.from_user
+    summary = (
+        "🔑 <b>Новый собственник</b>\n\n"
+        f"Квартира: <b>{data.get('apartment', '—')}</b>\n"
+        f"Собственник: {data.get('contacts', '—')}\n"
+        f"Автомобиль: {car or 'нет'}\n"
+        f"Выписка ЕГРН: {'обещал прислать позже' if data.get('egrn_later') else 'приложена ниже'}\n\n"
+        f"Telegram: {user.full_name}"
+        + (f" (@{user.username})" if user.username else "")
+    )
+
+    conn = repository.connect()
+    try:
+        repository.log_event(
+            conn, user.id, "newcomer",
+            f"кв. {data.get('apartment', '?')}: {data.get('contacts', '')}; "
+            f"авто: {car or 'нет'}")
+    finally:
+        conn.close()
+    logger.info("Новый собственник: кв. %s", data.get("apartment"))
+
+    for admin_id in config.admin_ids:
+        if not await _send(message.bot, admin_id, summary):
+            continue
+        if data.get("egrn_message_id"):
+            try:
+                await message.bot.forward_message(
+                    admin_id, data["egrn_chat_id"], data["egrn_message_id"])
+            except TelegramAPIError as exc:
+                logger.warning("Не удалось переслать выписку ЕГРН: %s", exc)
+                await _send(message.bot, admin_id,
+                            "⚠️ Выписку переслать не удалось — "
+                            "попросите жителя прислать её ещё раз.")
+
+
+async def _send(bot: Bot, chat_id: int, text: str) -> bool:
+    try:
+        await bot.send_message(chat_id, text)
+        return True
+    except TelegramAPIError as exc:
+        logger.warning("Не удалось сообщить председателю %s о новом "
+                       "собственнике: %s", chat_id, exc)
+        return False

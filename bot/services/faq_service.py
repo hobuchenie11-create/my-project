@@ -39,6 +39,8 @@ class Memo:
     category: str
     body: str
     image: str = ""
+    # Сценарий, который памятка предлагает начать: под ней появится кнопка
+    action: str = ""
 
     @property
     def image_path(self) -> Path | None:
@@ -75,6 +77,7 @@ def parse_memo_file(path: Path) -> dict:
         "category": header.get("category", "other"),
         "keywords": header.get("keywords", ""),
         "image": header.get("image", ""),
+        "action": header.get("action", ""),
         "sort_order": int(header.get("order") or 0),
         "body": body.strip(),
     }
@@ -159,7 +162,8 @@ def categories(conn: sqlite3.Connection) -> list[str]:
 
 def _memo(row: sqlite3.Row) -> Memo:
     return Memo(code=row["code"], title=row["title"], category=row["category"],
-                body=row["body"], image=row["image"])
+                body=row["body"], image=row["image"],
+                action=row["action"] if "action" in row.keys() else "")
 
 
 # ---------------------------------------------------------------------------

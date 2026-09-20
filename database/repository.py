@@ -553,17 +553,18 @@ def verification_task(conn: sqlite3.Connection, house_meter_id: int,
 # ---------- памятки Домоведа ----------
 
 def upsert_memo(conn: sqlite3.Connection, code: str, title: str, category: str,
-                keywords: str, body: str, image: str, sort_order: int) -> None:
+                keywords: str, body: str, image: str, sort_order: int,
+                action: str = "") -> None:
     conn.execute(
         """INSERT INTO faq (code, title, category, keywords, body, image,
-                            sort_order, is_active)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                            sort_order, action, is_active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
            ON CONFLICT(code) DO UPDATE SET title = excluded.title,
                category = excluded.category, keywords = excluded.keywords,
                body = excluded.body, image = excluded.image,
-               sort_order = excluded.sort_order, is_active = 1,
-               updated_at = datetime('now', 'localtime')""",
-        (code, title, category, keywords, body, image, sort_order),
+               sort_order = excluded.sort_order, action = excluded.action,
+               is_active = 1, updated_at = datetime('now', 'localtime')""",
+        (code, title, category, keywords, body, image, sort_order, action),
     )
     conn.commit()
 

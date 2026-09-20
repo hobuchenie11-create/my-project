@@ -4,7 +4,7 @@ import logging
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, FSInputFile, Message
 
-from bot.keyboards.faq import faq_categories, faq_memos
+from bot.keyboards.faq import faq_categories, faq_memos, memo_action
 from bot.keyboards.menu import BTN_FAQ
 from bot.services import faq_service
 from database import repository
@@ -83,16 +83,22 @@ async def show_memo(callback: CallbackQuery) -> None:
 
 
 async def send_memo(message: Message, memo: faq_service.Memo) -> None:
-    """Отправляет памятку — с картинкой, если она к ней приложена."""
+    """Отправляет памятку — с картинкой и кнопкой действия, если они есть.
+
+    Памятка объясняет, что нужно сделать, а кнопка сразу это начинает:
+    прочитать и тут же оформиться удобнее, чем искать нужный пункт меню.
+    """
+    keyboard = memo_action(memo.action)
     image = memo.image_path
     if image is None:
-        await message.answer(memo.text())
+        await message.answer(memo.text(), reply_markup=keyboard)
         return
     try:
-        await message.answer_photo(FSInputFile(image), caption=memo.text())
+        await message.answer_photo(FSInputFile(image), caption=memo.text(),
+                                   reply_markup=keyboard)
     except Exception:                       # noqa: BLE001 — картинка не критична
         logger.warning("Не удалось отправить картинку %s", image)
-        await message.answer(memo.text())
+        await message.answer(memo.text(), reply_markup=keyboard)
 
 
 async def answer_question(message: Message, tg_id: int | None,
