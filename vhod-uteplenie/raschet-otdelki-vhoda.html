@@ -1,0 +1,843 @@
+<title>Утепление входной ниши</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400&family=PT+Sans+Narrow:wght@400;700&family=PT+Mono&display=swap">
+
+<style>
+  :root {
+    color-scheme: light;
+    --paper:      #EEF1F4;
+    --surface:    #FFFFFF;
+    --surface-2:  #F6F8FA;
+    --ink:        #1A222C;
+    --ink-soft:   #55626F;
+    --ink-faint:  #8593A1;
+    --line:       #C8D0D8;
+    --line-soft:  #E1E6EB;
+    --accent:     #2C6699;
+    --accent-bg:  #E4EDF5;
+    --warm:       #B87A25;
+    --warm-bg:    #F7EEDD;
+    --alert:      #A63D2F;
+    --alert-bg:   #F8E7E3;
+    --ok:         #3C7A52;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper:      #131820;
+      --surface:    #1B222C;
+      --surface-2:  #212A35;
+      --ink:        #E7ECF1;
+      --ink-soft:   #A9B6C3;
+      --ink-faint:  #7A8794;
+      --line:       #38434F;
+      --line-soft:  #2A333E;
+      --accent:     #74A9D8;
+      --accent-bg:  #1E2C3A;
+      --warm:       #DFAB56;
+      --warm-bg:    #302718;
+      --alert:      #E08B7C;
+      --alert-bg:   #35201C;
+      --ok:         #7CBB93;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper:      #131820;
+    --surface:    #1B222C;
+    --surface-2:  #212A35;
+    --ink:        #E7ECF1;
+    --ink-soft:   #A9B6C3;
+    --ink-faint:  #7A8794;
+    --line:       #38434F;
+    --line-soft:  #2A333E;
+    --accent:     #74A9D8;
+    --accent-bg:  #1E2C3A;
+    --warm:       #DFAB56;
+    --warm-bg:    #302718;
+    --alert:      #E08B7C;
+    --alert-bg:   #35201C;
+    --ok:         #7CBB93;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "PT Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-inline: 18px;
+    padding-block: 28px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 34px;
+  }
+
+  .eyebrow {
+    font-family: "PT Sans Narrow", "PT Sans", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .13em;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  h1 {
+    font-size: clamp(27px, 6vw, 38px);
+    line-height: 1.12;
+    font-weight: 700;
+    text-wrap: balance;
+    margin-block: 6px 10px;
+  }
+  h2 {
+    font-size: clamp(20px, 3.6vw, 25px);
+    line-height: 1.2;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  h3 { font-size: 17px; line-height: 1.3; font-weight: 700; }
+  p  { max-width: 68ch; }
+  .lede { color: var(--ink-soft); font-size: 17px; max-width: 64ch; }
+
+  section { display: flex; flex-direction: column; gap: 14px; }
+  .sec-head { display: flex; flex-direction: column; gap: 3px; border-top: 2px solid var(--ink); padding-top: 12px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .note {
+    border-left: 3px solid var(--warm);
+    background: var(--warm-bg);
+    padding: 12px 14px;
+    border-radius: 0 5px 5px 0;
+    font-size: 15px;
+  }
+  .note strong { color: var(--ink); }
+  .note.blue { border-left-color: var(--accent); background: var(--accent-bg); }
+  .note.red  { border-left-color: var(--alert); background: var(--alert-bg); }
+
+  /* --- чертежи --- */
+  .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .figs { grid-template-columns: 1fr; } }
+  figure {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  figure svg { width: 100%; height: auto; max-width: 100%; display: block; }
+  figcaption {
+    font-family: "PT Sans Narrow", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-faint);
+  }
+  .dim      { fill: var(--ink-soft); font-family: "PT Mono", monospace; font-size: 11px; }
+  .dim-hi   { fill: var(--alert); font-family: "PT Mono", monospace; font-size: 11px; font-weight: 700; }
+  .lbl      { fill: var(--ink); font-family: "PT Sans Narrow", sans-serif; font-size: 12px; }
+  .lbl-s    { fill: var(--ink-faint); font-family: "PT Sans Narrow", sans-serif; font-size: 11px; }
+  .dimline  { stroke: var(--ink-soft); stroke-width: 1; }
+  .wallline { stroke: var(--ink); stroke-width: 1.6; fill: none; }
+
+  /* --- таблицы --- */
+  .tbl-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 460px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  thead th {
+    font-family: "PT Sans Narrow", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    border-bottom: 1.5px solid var(--line);
+  }
+  td.num, th.num { text-align: right; font-family: "PT Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.total td { border-top: 1.5px solid var(--ink); border-bottom: none; font-weight: 700; padding-top: 11px; }
+
+  /* --- варианты отделки --- */
+  .opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 760px) { .opts { grid-template-columns: 1fr; } }
+  .opt { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 6px; padding: 15px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .opt h3 { border-bottom: 1px solid var(--line-soft); padding-bottom: 8px; }
+  .opt ul { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; font-size: 14.5px; }
+  .opt li { display: grid; grid-template-columns: 16px 1fr; gap: 7px; align-items: start; }
+  .mark { font-weight: 700; line-height: 1.4; }
+  .plus  { color: var(--ok); }
+  .minus { color: var(--alert); }
+
+  /* --- калькулятор --- */
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 13.5px; color: var(--ink-soft); font-family: "PT Sans Narrow", sans-serif; text-transform: uppercase; letter-spacing: .05em; }
+  input[type="number"] {
+    font-family: "PT Mono", monospace;
+    font-size: 15px;
+    padding: 8px 9px;
+    width: 100%;
+    background: var(--surface-2);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+  input[type="number"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  table input[type="number"] { min-width: 88px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .row2 { grid-template-columns: 1fr; } }
+  .big { font-family: "PT Mono", monospace; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .muted { color: var(--ink-faint); font-size: 14px; }
+
+  /* --- цвета --- */
+  #swatches { display: flex; flex-direction: column; gap: 12px; }
+  .grp-head { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; border-left: 3px solid var(--accent); padding-left: 11px; }
+  .grp-head h3 { font-size: 18px; }
+  .grp-head p { font-size: 14px; }
+  .sw-hex { font-family: "PT Mono", monospace; font-size: 12px; color: var(--ink-faint); letter-spacing: .02em; }
+  .swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 760px) { .swatches { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 440px) { .swatches { grid-template-columns: 1fr; } }
+  .sw { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
+  .sw svg { width: 100%; height: 88px; display: block; }
+  .sw-body { padding: 11px 13px 14px; display: flex; flex-direction: column; gap: 5px; }
+  .sw-name { font-weight: 700; font-size: 15px; }
+  .sw-note { font-size: 13.5px; color: var(--ink-soft); }
+
+  ol.q { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 9px; }
+  ol.q li { padding-left: 4px; }
+  ul.plain { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; }
+
+  .foot { font-size: 14px; color: var(--ink-faint); border-top: 1px solid var(--line-soft); padding-top: 14px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Частный дом · входная ниша под навесом</div>
+    <h1>Утепление и зашивка двух стен у входной двери</h1>
+    <p class="lede">Замеры ваши, геометрия и площади посчитаны точно. Цены не проставлены — я не знаю, почём материалы у вас в Омске, и выдумывать не стал: в таблице ниже есть пустые поля, куда вы впишете свои цифры, и она сама всё сложит.</p>
+  </header>
+
+  <!-- ================= ПЛОЩАДИ ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Шаг 1</div>
+      <h2>Сколько метров отделывать</h2>
+    </div>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Участок</th>
+            <th class="num">Длина, м</th>
+            <th class="num">Высота, м</th>
+            <th class="num">Площадь, м²</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Глухая стена (слева, со щитком)</td><td class="num">2,00</td><td class="num">2,60</td><td class="num">5,20</td></tr>
+          <tr><td>Простенок слева от двери</td><td class="num">0,30</td><td class="num">2,60</td><td class="num">0,78</td></tr>
+          <tr><td>Простенок справа от двери</td><td class="num">0,60</td><td class="num">2,60</td><td class="num">1,56</td></tr>
+          <tr class="total"><td>Итого чистая площадь</td><td class="num"></td><td class="num"></td><td class="num">7,54</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="row2">
+        <div class="field">
+          <label for="zapas">Запас на подрезку и брак, %</label>
+          <input type="number" id="zapas" value="10" min="0" max="40" step="1">
+        </div>
+        <div class="field">
+          <label>Закупать материала, м²</label>
+          <div class="big" id="area-out">8,29</div>
+        </div>
+      </div>
+      <p class="muted">Запас нужен всегда: часть панелей и плиток уходит в обрез по краям и вокруг двери. На узких простенках 0,30 и 0,60 м обрезков будет больше обычного — если возьмёте крупноформатный материал, поставьте 15&nbsp;% вместо 10&nbsp;%.</p>
+    </div>
+
+    <div class="note">
+      <strong>Чего в этих 7,54 м² нет.</strong> Вы не назвали три вещи, а они добавят метры: полосу стены <em>над дверью</em> (на фото там кирпич и звонок), <em>откосы</em> — боковые заходы отделки в дверной проём, и потолок ниши, если его тоже зашивать. Скажите размеры — досчитаю.
+    </div>
+  </section>
+
+  <!-- ================= ЧЕРТЕЖИ ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Шаг 2</div>
+      <h2>Как это выглядит в чертеже</h2>
+    </div>
+    <p>Два вида: сверху (чтобы увидеть угол) и спереди (чтобы увидеть стены в натуральную пропорцию). Пунктир и знак «?» — то, что вы пока не замеряли.</p>
+
+    <div class="figs">
+
+      <!-- ПЛАН -->
+      <figure>
+        <svg viewBox="0 0 330 296" role="img" aria-label="Вид сверху на входную нишу: левая стена 2 метра, простенки 0,30 и 0,60 метра по бокам двери">
+          <!-- кладка: стена с дверью (горизонтальная) -->
+          <rect x="70" y="26" width="200" height="26" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1.6"/>
+          <!-- кладка: левая стена (вертикальная) -->
+          <rect x="44" y="26" width="26" height="206" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1.6"/>
+
+          <!-- дверной проём в стене -->
+          <rect x="115" y="26" width="95" height="26" fill="var(--paper)" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="4 3"/>
+          <text x="162" y="43" class="lbl" text-anchor="middle">дверь&#160;?</text>
+
+          <!-- слой утепления + отделки (интерьер ниши) -->
+          <rect id="ins-top-l" x="70" y="52" width="45" height="13" fill="var(--warm)" opacity="0.5"/>
+          <rect id="ins-top-r" x="210" y="52" width="60" height="13" fill="var(--warm)" opacity="0.5"/>
+          <rect id="ins-left"  x="70" y="52" width="13" height="180" fill="var(--warm)" opacity="0.5"/>
+
+          <!-- размер 0,30 -->
+          <line x1="70" y1="16" x2="70" y2="26" class="dimline"/>
+          <line x1="115" y1="16" x2="115" y2="26" class="dimline"/>
+          <line x1="70" y1="20" x2="115" y2="20" class="dimline"/>
+          <text x="92" y="13" class="dim" text-anchor="middle">0,30</text>
+
+          <!-- размер 0,60 -->
+          <line x1="210" y1="16" x2="210" y2="26" class="dimline"/>
+          <line x1="270" y1="16" x2="270" y2="26" class="dimline"/>
+          <line x1="210" y1="20" x2="270" y2="20" class="dimline"/>
+          <text x="240" y="13" class="dim" text-anchor="middle">0,60</text>
+
+          <!-- размер 2,00 по левой стене -->
+          <line x1="34" y1="26" x2="44" y2="26" class="dimline"/>
+          <line x1="34" y1="232" x2="44" y2="232" class="dimline"/>
+          <line x1="38" y1="26" x2="38" y2="232" class="dimline"/>
+          <text x="22" y="132" class="dim" text-anchor="middle" transform="rotate(-90 22 132)">2,00 м</text>
+
+          <!-- выноска на остаток простенка -->
+          <line x1="83" y1="65" x2="115" y2="65" stroke="var(--alert)" stroke-width="1.6"/>
+          <line x1="83" y1="60" x2="83" y2="70" stroke="var(--alert)" stroke-width="1.6"/>
+          <line x1="115" y1="60" x2="115" y2="70" stroke="var(--alert)" stroke-width="1.6"/>
+          <text id="ostatok-svg" x="99" y="86" class="dim-hi" text-anchor="middle">0,18</text>
+          <text x="99" y="99" class="lbl-s" text-anchor="middle">останется</text>
+
+          <text x="175" y="150" class="lbl" text-anchor="middle">ниша (улица)</text>
+          <text x="175" y="166" class="lbl-s" text-anchor="middle">под навесом</text>
+
+          <!-- легенда -->
+          <rect x="44" y="252" width="16" height="10" fill="var(--warm)" opacity="0.5"/>
+          <text x="66" y="261" class="lbl-s">утеплитель + отделка</text>
+          <rect x="44" y="270" width="16" height="10" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1"/>
+          <text x="66" y="279" class="lbl-s">существующая кирпичная стена</text>
+        </svg>
+        <figcaption>Вид сверху · угол ниши</figcaption>
+      </figure>
+
+      <!-- ФАСАДЫ -->
+      <figure>
+        <svg viewBox="0 0 330 296" role="img" aria-label="Вид спереди на обе стены: глухая стена 2 на 2,6 метра и стена с дверью">
+          <!-- глухая стена -->
+          <rect x="30" y="24" width="112" height="146" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1.6"/>
+          <text x="86" y="96" class="dim" text-anchor="middle">5,20 м²</text>
+          <!-- щиток -->
+          <rect x="52" y="76" width="26" height="24" fill="var(--warm-bg)" stroke="var(--warm)" stroke-width="1.4"/>
+          <text x="65" y="112" class="lbl-s" text-anchor="middle">щиток</text>
+          <!-- размеры глухой -->
+          <line x1="30" y1="180" x2="30" y2="190" class="dimline"/>
+          <line x1="142" y1="180" x2="142" y2="190" class="dimline"/>
+          <line x1="30" y1="185" x2="142" y2="185" class="dimline"/>
+          <text x="86" y="203" class="dim" text-anchor="middle">2,00 м</text>
+          <line x1="152" y1="24" x2="162" y2="24" class="dimline"/>
+          <line x1="152" y1="170" x2="162" y2="170" class="dimline"/>
+          <line x1="157" y1="24" x2="157" y2="170" class="dimline"/>
+          <text x="172" y="97" class="dim" text-anchor="middle" transform="rotate(-90 172 97)">2,60 м</text>
+          <text x="86" y="220" class="lbl" text-anchor="middle">Глухая стена</text>
+
+          <!-- стена с дверью -->
+          <rect x="196" y="24" width="102" height="146" fill="var(--surface-2)" stroke="var(--ink)" stroke-width="1.6"/>
+          <!-- простенок слева 0,30 -->
+          <rect x="196" y="24" width="17" height="146" fill="var(--accent-bg)"/>
+          <!-- дверь -->
+          <rect x="213" y="52" width="51" height="118" fill="var(--paper)" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="4 3"/>
+          <text x="238" y="112" class="lbl" text-anchor="middle">дверь</text>
+          <text x="238" y="127" class="dim" text-anchor="middle">? × ?</text>
+          <!-- зона над дверью -->
+          <rect x="213" y="24" width="51" height="28" fill="none" stroke="var(--alert)" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <text x="238" y="42" class="dim-hi" text-anchor="middle">не замерено</text>
+          <!-- простенок справа 0,60 -->
+          <rect x="264" y="24" width="34" height="146" fill="var(--accent-bg)"/>
+
+          <line x1="196" y1="180" x2="196" y2="190" class="dimline"/>
+          <line x1="213" y1="180" x2="213" y2="190" class="dimline"/>
+          <line x1="196" y1="185" x2="213" y2="185" class="dimline"/>
+          <text x="197" y="203" class="dim" text-anchor="middle">0,30</text>
+
+          <line x1="264" y1="180" x2="264" y2="190" class="dimline"/>
+          <line x1="298" y1="180" x2="298" y2="190" class="dimline"/>
+          <line x1="264" y1="185" x2="298" y2="185" class="dimline"/>
+          <text x="288" y="203" class="dim" text-anchor="middle">0,60</text>
+
+          <text x="247" y="220" class="lbl" text-anchor="middle">Стена с дверью</text>
+
+          <text x="165" y="248" class="lbl-s" text-anchor="middle">Голубым — то, что вы замерили (2,34 м²).</text>
+          <text x="165" y="263" class="lbl-s" text-anchor="middle">Красным пунктиром — участок, который</text>
+          <text x="165" y="278" class="lbl-s" text-anchor="middle">надо померить дополнительно.</text>
+        </svg>
+        <figcaption>Вид спереди · обе стены в масштабе</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= ТОЛЩИНА ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Шаг 3</div>
+      <h2>Главная засада: простенок 0,30 м</h2>
+    </div>
+    <p>Утепление — это не краска, оно имеет толщину. Вся отделка выйдет в нишу на несколько сантиметров, и угол «съест» часть узкого простенка слева от двери. Подвигайте цифры и посмотрите, что остаётся.</p>
+
+    <div class="card">
+      <div class="row2">
+        <div class="field">
+          <label for="t-ins">Толщина утеплителя, мм</label>
+          <input type="number" id="t-ins" value="100" min="0" max="250" step="10">
+        </div>
+        <div class="field">
+          <label for="t-fin">Толщина отделки с основанием, мм</label>
+          <input type="number" id="t-fin" value="20" min="0" max="120" step="5">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Останется от простенка 0,30 м</label>
+          <div class="big" id="ostatok-out">0,18 м</div>
+        </div>
+        <div class="field">
+          <label>Дверь «утонет» в нишу на</label>
+          <div class="big" id="utopanie-out">120 мм</div>
+        </div>
+      </div>
+      <p class="muted">Ориентиры по толщине отделки: фасадная плитка на клею — около 20&nbsp;мм; панели или сайдинг по обрешётке — около 45–55&nbsp;мм вместе с каркасом и зазором. Точные цифры смотрите по конкретному товару, у разных производителей они разные.</p>
+    </div>
+
+    <div class="note red">
+      <strong>Проверьте это до покупки материала.</strong> Если дверь открывается наружу, а петли стоят со стороны узкого простенка, толстая отделка упрётся в полотно и дверь перестанет открываться до конца. Померьте рулеткой, сколько сейчас от края дверной коробки до угла, и в какую сторону ходит дверь.
+    </div>
+  </section>
+
+  <!-- ================= ВАРИАНТЫ ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Шаг 4</div>
+      <h2>Три варианта зашивки</h2>
+    </div>
+    <p>Для частного дома решение за вами — ни с кем согласовывать не нужно. Но вход — место, где стену задевают сумками, обувью, лопатой зимой, поэтому стойкость к удару здесь важнее, чем на глухом фасаде.</p>
+
+    <div class="opts">
+
+      <div class="opt">
+        <h3>Фасадная плитка на клею</h3>
+        <ul>
+          <li><span class="mark plus">+</span><span>Самая стойкая к ударам и истиранию — то, что нужно у двери.</span></li>
+          <li><span class="mark plus">+</span><span>Тонкая: съедает меньше всего простенка.</span></li>
+          <li><span class="mark plus">+</span><span>Вблизи выглядит как настоящая кладка, к вашему кирпичу стыкуется незаметнее всего.</span></li>
+          <li><span class="mark plus">+</span><span>Отдельную плитку можно заменить, не разбирая всё.</span></li>
+          <li><span class="mark minus">−</span><span>Мокрый процесс: клей и затирка. Летняя работа, в мороз класть нельзя.</span></li>
+          <li><span class="mark minus">−</span><span>Дольше по срокам, больше требований к ровности и прочности основания.</span></li>
+          <li><span class="mark minus">−</span><span>Тяжелее, и работа обычно дороже.</span></li>
+        </ul>
+      </div>
+
+      <div class="opt">
+        <h3>Фасадные панели под кирпич</h3>
+        <ul>
+          <li><span class="mark plus">+</span><span>Сухой монтаж по обрешётке, можно делать в холодное время.</span></li>
+          <li><span class="mark plus">+</span><span>Быстро, лёгкие, стена не нагружается.</span></li>
+          <li><span class="mark plus">+</span><span>Под ними остаётся вентзазор — стене легче сохнуть.</span></li>
+          <li><span class="mark minus">−</span><span>Вблизи виден повтор рисунка, рядом с настоящим кирпичом это заметно.</span></li>
+          <li><span class="mark minus">−</span><span>На морозе полимер хрупкий: сильный удар может проломить.</span></li>
+          <li><span class="mark minus">−</span><span>С каркасом толще всего — сильнее всего съедает простенок 0,30 м.</span></li>
+          <li><span class="mark minus">−</span><span>На узких простенках рисунок кирпича почти не читается — будет узкая полоска обрезков.</span></li>
+        </ul>
+      </div>
+
+      <div class="opt">
+        <h3>Сайдинг</h3>
+        <ul>
+          <li><span class="mark plus">+</span><span>Обычно самый дешёвый по материалу и самый быстрый в монтаже.</span></li>
+          <li><span class="mark plus">+</span><span>Лёгкий, ставится по той же обрешётке, много цветов.</span></li>
+          <li><span class="mark plus">+</span><span>Металлический вариант не боится мороза и не выгорает так, как виниловый.</span></li>
+          <li><span class="mark minus">−</span><span>Виниловый на морозе хрупкий, со временем выцветает.</span></li>
+          <li><span class="mark minus">−</span><span>Металлический мнётся от удара, вмятину не выправить.</span></li>
+          <li><span class="mark minus">−</span><span>Рядом с кирпичным домом выглядит как «обшивка», а не как часть дома.</span></li>
+          <li><span class="mark minus">−</span><span>Полосы сайдинга на простенке 0,30 м смотрятся мелко и дробно.</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note blue">
+      <strong>Если коротко.</strong> По стойкости и по виду рядом с настоящим кирпичом в вашем случае выигрывает <strong>плитка</strong>, по цене и скорости — <strong>сайдинг</strong>, панели под кирпич — середина. Но окончательно это решают цены, которые вы подставите ниже, и то, готовы ли вы ждать тёплого сезона ради мокрых работ.
+    </div>
+  </section>
+
+  <!-- ================= КАЛЬКУЛЯТОР ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Шаг 5</div>
+      <h2>Расчёт стоимости по материалу</h2>
+    </div>
+    <p>Все поля пустые. Возьмите цены из магазина или у поставщика — за квадратный метр — и впишите сюда. Считается по площади с запасом, она вверху. Итог пересчитывается сам.</p>
+
+    <div class="card">
+      <h3>Общая часть — одинаково для всех трёх вариантов</h3>
+      <div class="row2">
+        <div class="field">
+          <label for="p-ins">Утеплитель, ₽ за м²</label>
+          <input type="number" id="p-ins" data-common min="0" step="10" placeholder="впишите">
+        </div>
+        <div class="field">
+          <label for="p-fix">Клей и дюбели для утеплителя, ₽ за м²</label>
+          <input type="number" id="p-fix" data-common min="0" step="10" placeholder="впишите">
+        </div>
+      </div>
+      <p class="muted">Если продавец называет цену за упаковку или за лист — спросите, на сколько квадратов её хватает, и поделите. Могу посчитать за вас, только скажите цифры.</p>
+    </div>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Статья, ₽ за м²</th>
+            <th class="num">Плитка</th>
+            <th class="num">Панели</th>
+            <th class="num">Сайдинг</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Основание: клей + сетка / обрешётка</td>
+            <td class="num"><input type="number" data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Основание, плитка"></td>
+            <td class="num"><input type="number" data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Основание, панели"></td>
+            <td class="num"><input type="number" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Основание, сайдинг"></td>
+          </tr>
+          <tr>
+            <td>Сам отделочный материал</td>
+            <td class="num"><input type="number" data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Материал, плитка"></td>
+            <td class="num"><input type="number" data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Материал, панели"></td>
+            <td class="num"><input type="number" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Материал, сайдинг"></td>
+          </tr>
+          <tr>
+            <td>Доборы: затирка / углы, планки, стартовая</td>
+            <td class="num"><input type="number" data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Доборы, плитка"></td>
+            <td class="num"><input type="number" data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Доборы, панели"></td>
+            <td class="num"><input type="number" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Доборы, сайдинг"></td>
+          </tr>
+          <tr>
+            <td>Работа, если считаете за м² <span class="muted">(можно не заполнять)</span></td>
+            <td class="num"><input type="number" data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Работа, плитка"></td>
+            <td class="num"><input type="number" data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Работа, панели"></td>
+            <td class="num"><input type="number" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Работа, сайдинг"></td>
+          </tr>
+          <tr class="total">
+            <td>Итого за всю нишу</td>
+            <td class="num" id="sum-tile">—</td>
+            <td class="num" id="sum-panel">—</td>
+            <td class="num" id="sum-siding">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" id="verdict">Заполните все три колонки — и я подпишу, какой вариант вышел дешевле и на сколько.</p>
+    <p class="muted">Цифры сохраняются в браузере этого ноутбука: закроете страницу — при следующем открытии они останутся. На другом устройстве их не будет.</p>
+  </section>
+
+  <!-- ================= ЦВЕТА ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Шаг 6</div>
+      <h2>Варианты по цвету</h2>
+    </div>
+    <div class="note">
+      <strong>Что уже известно:</strong> дом из красного кирпича, дверь тёмно-коричневая. Это и есть две точки отсчёта — новая отделка должна ужиться с ними обеими. И держите в голове, что навес у вас из зелёного поликарбоната: под ним любой цвет будет казаться зеленее и темнее, чем в магазине под лампами.
+    </div>
+
+    <p>Три направления, по три оттенка в каждом — от тёмного к светлому. Коричневое и моховое показаны как гладкая обшивка (панель или сайдинг), кирпичное — как кладка.</p>
+
+    <div id="swatches"></div>
+
+    <div class="card">
+      <h3>Как это будет смотреться с красным кирпичом и коричневой дверью</h3>
+      <ul class="plain">
+        <li><strong>Коричневое — самый безошибочный ход.</strong> Коричневый и красный кирпич — соседи по цветовому кругу, они не спорят. Если взять тон двери, вход соберётся в одно целое; если взять на пару тонов светлее двери — дверь останется главной, а ниша станет для неё рамой. Второе обычно выглядит лучше: дверь не сливается со стеной.</li>
+        <li><strong>Мох — самое красивое, но и самое рискованное.</strong> Приглушённый зелёный с красным кирпичом — классика, они дополняют друг друга. Но работает это только на <em>сложном, сероватом</em> зелёном. Чистый яркий зелёный рядом с красным начинает «звенеть», а под вашим зелёным навесом добавится ещё и его собственный оттенок. Если берёте мох — обязательно приложите образец прямо под навесом.</li>
+        <li><strong>Под кирпич — честно, но не всегда нужно.</strong> Дом уже кирпичный. Повторить тот же красный один в один почти невозможно: новый материал будет чуть другого оттенка, и стык станет заметен именно потому, что вы пытались его спрятать. Надёжнее либо заметно темнее (коричневый кирпич), либо заметно светлее (песочный) — тогда это читается как задуманный приём, а не как неудачная заплатка.</li>
+        <li><strong>Ниша тёмная.</strong> Она закрыта навесом и стенами с двух сторон. Самые тёмные оттенки из каждой тройки сделают вход ещё мрачнее — под них сразу закладывайте хороший светильник.</li>
+        <li><strong>Грязь и следы.</strong> Это вход: брызги от ступеней, снег, обувь. Однотонная тёмная обшивка показывает разводы и пыль сильнее всего, фактура «под кирпич» и средние тона — заметно меньше.</li>
+        <li><strong>Решайте по образцу, а не по экрану.</strong> Цвета ниже — ориентир по направлению, а не точная выкраска: на вашем мониторе и у поставщика в каталоге они будут отличаться. Привезите кусок материала, приложите к стене под навесом в пасмурный день и вечером с фонарём.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= ЧТО УТОЧНИТЬ ================= -->
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Шаг 7</div>
+      <h2>Что нужно уточнить, прежде чем покупать</h2>
+    </div>
+    <p>Это не придирки — каждый пункт может поменять смету или сам вариант отделки.</p>
+    <ol class="q">
+      <li><strong>Что за каждой стеной?</strong> Отапливаемая комната, холодный тамбур или улица? Утеплять есть смысл только там, где за стеной тепло. Если за глухой стеной, например, неотапливаемая пристройка — утеплитель денег стоит, а эффекта не даст, и хватит просто отделки.</li>
+      <li><strong>Зачем утепляем?</strong> Мёрзнет комната за стеной, дует от двери, сырость и иней в углу — или хочется просто привести вход в порядок? От ответа зависит толщина утеплителя и вообще нужен ли он.</li>
+      <li><strong>Щиток на левой стене.</strong> На фото электрощит с пучком проводов прямо в зоне работ. Его переносят, зашивают вокруг с нишей или оставляют на выносе? Это отдельная работа и обязательно электрик — сами провода не трогайте.</li>
+      <li><strong>Вертикальный шов в углу.</strong> На фото в углу видна полоса раствора или пены между двумя стенами. Это трещина, деформационный шов или просто стык пристройки? Если стена трескается, сначала разбираются с причиной, иначе новая отделка треснет следом.</li>
+      <li><strong>Дверь.</strong> Ширина, высота, в какую сторону открывается, с какой стороны петли. И сколько от коробки до угла на самом деле.</li>
+      <li><strong>Стена над дверью и откосы.</strong> Высота участка над дверью, ширина откосов по бокам проёма, и нужно ли зашивать потолок ниши.</li>
+      <li><strong>Крепления навеса.</strong> Стойки и кронштейны навеса приходят в стену. Отделка пойдёт вокруг них или навес будут переставлять?</li>
+      <li><strong>Оттенок красного кирпича.</strong> Красный бывает очень разный — от рыжего до почти бордового. Если решите брать отделку «под кирпич», пришлите фото фасада днём, снятое <em>вне</em> навеса: под зелёным поликарбонатом оттенок не определить.</li>
+    </ol>
+  </section>
+
+  <p class="foot">Расчёт площадей — по вашим замерам: 2,00 × 2,60 плюс 0,30 × 2,60 плюс 0,60 × 2,60. Цены, толщины утеплителя и параметры материалов не выдуманы и не подставлены: их нужно взять у поставщика и вписать самостоятельно.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var AREA_NET = 7.54;
+  var STORE_KEY = "vhod-uteplenie-v1";
+
+  function num(el) {
+    if (!el) return 0;
+    var v = parseFloat(String(el.value).replace(",", "."));
+    return isFinite(v) ? v : 0;
+  }
+  function fmt(x, digits) {
+    return x.toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+  function money(x) {
+    return x.toLocaleString("ru-RU", { maximumFractionDigits: 0 }) + " ₽";
+  }
+
+  var zapasEl   = document.getElementById("zapas");
+  var areaOut   = document.getElementById("area-out");
+  var tInsEl    = document.getElementById("t-ins");
+  var tFinEl    = document.getElementById("t-fin");
+  var ostOut    = document.getElementById("ostatok-out");
+  var utopOut   = document.getElementById("utopanie-out");
+  var ostSvg    = document.getElementById("ostatok-svg");
+  var insTopL   = document.getElementById("ins-top-l");
+  var insTopR   = document.getElementById("ins-top-r");
+  var insLeft   = document.getElementById("ins-left");
+  var verdictEl = document.getElementById("verdict");
+
+  var allInputs = Array.prototype.slice.call(document.querySelectorAll('input[type="number"]'));
+
+  function areaWithSpare() {
+    var z = num(zapasEl);
+    if (z < 0) z = 0;
+    return AREA_NET * (1 + z / 100);
+  }
+
+  function renderArea() {
+    areaOut.textContent = fmt(areaWithSpare(), 2);
+  }
+
+  function renderThickness() {
+    var total = num(tInsEl) + num(tFinEl);       // мм
+    var ostatok = 0.30 - total / 1000;           // м
+
+    utopOut.textContent = fmt(total, 0) + " мм";
+
+    if (ostatok <= 0) {
+      ostOut.textContent = "не остаётся";
+      ostOut.style.color = "var(--alert)";
+      ostSvg.textContent = "0";
+    } else {
+      ostOut.textContent = fmt(ostatok, 2) + " м";
+      ostOut.style.color = ostatok < 0.15 ? "var(--alert)" : "var(--ink)";
+      ostSvg.textContent = fmt(ostatok, 2);
+    }
+
+    // масштаб плана: 0,30 м = 45 px, значит 1 мм = 0,15 px
+    var px = Math.max(0, Math.min(45, total * 0.15));
+    // на стене с дверью слой ложится вдоль всей стены, его толщина — это высота полосы
+    insTopL.setAttribute("height", String(px));
+    insTopR.setAttribute("height", String(px));
+    // на левой стене слой развёрнут на 90°, его толщина — это ширина полосы
+    insLeft.setAttribute("width", String(px));
+    // и именно она съедает простенок: красный размер начинается от её края
+    var line = ostSvg.parentNode.querySelectorAll('line[stroke="var(--alert)"]');
+    if (line.length === 3) {
+      line[0].setAttribute("x1", String(70 + px));
+      line[1].setAttribute("x1", String(70 + px));
+      line[1].setAttribute("x2", String(70 + px));
+      var mid = (70 + px + 115) / 2;
+      ostSvg.setAttribute("x", String(mid));
+    }
+  }
+
+  function renderSums() {
+    var common = 0;
+    document.querySelectorAll("input[data-common]").forEach(function (el) { common += num(el); });
+
+    var area = areaWithSpare();
+    var opts = ["tile", "panel", "siding"];
+    var names = { tile: "плитка", panel: "панели", siding: "сайдинг" };
+    var totals = {};
+    var filledAll = true;
+
+    opts.forEach(function (key) {
+      var per = 0, anyFilled = false;
+      document.querySelectorAll('input[data-opt="' + key + '"]').forEach(function (el) {
+        per += num(el);
+        if (String(el.value).trim() !== "") anyFilled = true;
+      });
+      var sum = (common + per) * area;
+      totals[key] = sum;
+      var cell = document.getElementById("sum-" + key);
+      cell.textContent = (anyFilled || common > 0) ? money(sum) : "—";
+      if (!anyFilled) filledAll = false;
+    });
+
+    if (filledAll && common > 0) {
+      var sorted = opts.slice().sort(function (a, b) { return totals[a] - totals[b]; });
+      var cheap = sorted[0], dear = sorted[2];
+      var diff = totals[dear] - totals[cheap];
+      verdictEl.textContent = "Дешевле всего выходит вариант «" + names[cheap] + "» — " + money(totals[cheap]) +
+        ". Самый дорогой, «" + names[dear] + "», дороже на " + money(diff) + ".";
+    } else {
+      verdictEl.textContent = "Заполните все три колонки — и я подпишу, какой вариант вышел дешевле и на сколько.";
+    }
+  }
+
+  function save() {
+    try {
+      var data = {};
+      allInputs.forEach(function (el, i) { data["i" + i] = el.value; });
+      localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    } catch (e) { /* приватный режим или запрет хранения — просто не сохраняем */ }
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      allInputs.forEach(function (el, i) {
+        if (typeof data["i" + i] === "string") el.value = data["i" + i];
+      });
+    } catch (e) { /* читать нечего — показываем значения по умолчанию */ }
+  }
+
+  function renderAll() {
+    renderArea();
+    renderThickness();
+    renderSums();
+  }
+
+  allInputs.forEach(function (el) {
+    el.addEventListener("input", function () { renderAll(); save(); });
+  });
+
+  // ---- образцы цвета ----
+  var groups = [
+    {
+      title: "Коричневая гамма — в тон двери",
+      lead: "Самый спокойный вариант: ниша и дверь становятся одной группой, красный кирпич дома их поддерживает.",
+      items: [
+        { name: "Тёмный шоколад", type: "board", base: "#4E3226", seam: "#3B241A",
+          note: "Тон в тон с вашей дверью. Вход выглядит цельно и дорого, но дверь на этом фоне почти пропадает, а ниша становится заметно темнее." },
+        { name: "Тёмный орех", type: "board", base: "#6B4A34", seam: "#553A28",
+          note: "На пару тонов светлее двери. Дверь остаётся главной, ниша работает для неё рамой. С красным кирпичом — самое естественное сочетание из всех девяти." },
+        { name: "Капучино", type: "board", base: "#A8866A", seam: "#8E6F55",
+          note: "Светлое тёплое бежево-коричневое. Вход становится светлее и приветливее, тёмная дверь читается как акцент. Пыль и разводы видны меньше, чем на тёмном." }
+      ]
+    },
+    {
+      title: "Зелёный мох",
+      lead: "Дополняющий цвет к красному кирпичу. Работает только на приглушённых, сероватых оттенках — чистый яркий зелёный с красным будет спорить.",
+      items: [
+        { name: "Тёмный мох", type: "board", base: "#3D4A33", seam: "#2E3827",
+          note: "Глубокий, почти хвойный. Красиво с красным кирпичом и коричневой дверью, но это самый тёмный вариант из девяти — под навесом ниша станет ощутимо мрачнее." },
+        { name: "Мох классический", type: "board", base: "#5A6B4A", seam: "#48583B",
+          note: "Та самая середина: серо-зелёный, как настоящий мох на камне. Лучший баланс между «интересно» и «не спорит с кирпичом». Если берёте зелёный — скорее этот." },
+        { name: "Оливково-серый", type: "board", base: "#7E8A6B", seam: "#697457",
+          note: "Светлый и пыльный, почти нейтральный. Читается как тёплый серый с зеленинкой — самый безопасный зелёный, вход не темнеет." }
+      ]
+    },
+    {
+      title: "Под кирпич",
+      lead: "Плитка или панель с кладкой. Помните: точно повторить оттенок вашего кирпича не получится, поэтому лучше отличаться осознанно.",
+      items: [
+        { name: "Красный классический", type: "brick", base: "#9B4B33", seam: "#D4CABA",
+          note: "Попытка попасть в тон дома. Смотрится привычно, но именно здесь риск промахнуться: новая кладка почти наверняка будет другого оттенка, и стык бросится в глаза." },
+        { name: "Тёмно-коричневый кирпич", type: "brick", base: "#5E3A2C", seam: "#BEB4A5",
+          note: "Заметно темнее фасада — и это выглядит как задуманный приём, а не как неудачная подгонка. Перекликается с дверью, фактура прячет грязь. Сильный вариант." },
+        { name: "Песочный кирпич", type: "brick", base: "#C09A70", seam: "#E4DCCC",
+          note: "Светлая кладка контрастом к красному фасаду. Вход становится светлее всех прочих вариантов; к коричневой двери подходит хорошо." }
+      ]
+    }
+  ];
+
+  function brickSVG(brick, mortar) {
+    var rows = 6, cols = 5, w = 200, h = 88;
+    var bh = h / rows, bw = w / cols, gap = 1.6, out = "";
+    out += '<rect x="0" y="0" width="' + w + '" height="' + h + '" fill="' + mortar + '"/>';
+    for (var r = 0; r < rows; r++) {
+      var offset = (r % 2) ? -bw / 2 : 0;
+      for (var c = -1; c <= cols; c++) {
+        var x = c * bw + offset + gap / 2;
+        var y = r * bh + gap / 2;
+        out += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (bw - gap).toFixed(1) +
+               '" height="' + (bh - gap).toFixed(1) + '" fill="' + brick + '"/>';
+      }
+    }
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="образец кладки">' + out + '</svg>';
+  }
+
+  function boardSVG(base, seam) {
+    var rows = 5, w = 200, h = 88, bh = h / rows, out = "";
+    out += '<rect x="0" y="0" width="' + w + '" height="' + h + '" fill="' + base + '"/>';
+    for (var r = 1; r < rows; r++) {
+      out += '<rect x="0" y="' + (r * bh - 1).toFixed(1) + '" width="' + w + '" height="2" fill="' + seam + '"/>';
+    }
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="образец обшивки">' + out + '</svg>';
+  }
+
+  var box = document.getElementById("swatches");
+  groups.forEach(function (g) {
+    var head = document.createElement("div");
+    head.className = "grp-head";
+    head.innerHTML = '<h3></h3><p class="muted"></p>';
+    head.querySelector("h3").textContent = g.title;
+    head.querySelector("p").textContent = g.lead;
+    box.appendChild(head);
+
+    var row = document.createElement("div");
+    row.className = "swatches";
+    g.items.forEach(function (p) {
+      var el = document.createElement("div");
+      el.className = "sw";
+      el.innerHTML = (p.type === "brick" ? brickSVG(p.base, p.seam) : boardSVG(p.base, p.seam)) +
+        '<div class="sw-body"><div class="sw-name"></div><div class="sw-hex"></div><div class="sw-note"></div></div>';
+      el.querySelector(".sw-name").textContent = p.name;
+      el.querySelector(".sw-hex").textContent = p.type === "brick" ? "кладка " + p.base : p.base;
+      el.querySelector(".sw-note").textContent = p.note;
+      row.appendChild(el);
+    });
+    box.appendChild(row);
+  });
+
+  load();
+  renderAll();
+})();
+</script>
