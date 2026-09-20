@@ -5,7 +5,7 @@ from aiogram import F, Router
 from aiogram.exceptions import TelegramAPIError
 from aiogram.types import CallbackQuery, FSInputFile, Message
 
-from bot.keyboards.faq import faq_categories, faq_memos, memo_action
+from bot.keyboards.faq import faq_categories, faq_memos, memo_buttons
 from bot.keyboards.menu import BTN_FAQ
 from bot.services import faq_service
 from database import repository
@@ -15,6 +15,11 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 router.message.filter(F.chat.type == "private")
+
+# Подпись к картинке Телеграм принимает не длиннее 1024 символов. Памятки
+# про ворота и GSM-модуль длиннее — целиком в подпись они не помещаются, и
+# без разделения житель не получил бы плакат совсем
+CAPTION_LIMIT = 1024
 
 
 @router.message(F.text == BTN_FAQ)
@@ -83,26 +88,75 @@ async def show_memo(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
+@router.callback_query(F.data.startswith("faq:poster:"))
+async def send_poster(callback: CallbackQuery) -> None:
+    """Плакат файлом: Телеграм не сжимает его, мелкий шрифт остаётся читаемым.
+
+    Такой файл житель сохраняет в телефон и открывает потом сам — у ворот,
+    где интернета может и не быть.
+    """
+    code = callback.data.split(":", 2)[-1]
+    conn = repository.connect()
+    try:
+        memo = faq_service.by_code(conn, code)
+    finally:
+        conn.close()
+
+    image = memo.image_path if memo else None
+    if image is None:
+        await callback.answer("Плакат не найден")
+        return
+
+    try:
+        await callback.message.answer_document(
+            FSInputFile(image),
+            caption=f"<b>{memo.title}</b>\n\n"
+                    "Это плакат из подъезда. Файл можно сохранить в телефон "
+                    "и открыть без интернета.")
+    except TelegramAPIError as exc:
+        logger.warning("Не удалось отправить плакат «%s»: %s", code, exc)
+        await callback.answer("Не удалось отправить файл, попробуйте позже")
+        return
+
+    await callback.answer()
+
+
 async def send_memo(message: Message, memo: faq_service.Memo,
                     with_action: bool = True) -> None:
-    """Отправляет памятку — с картинкой и кнопкой действия, если они есть.
+    """Отправляет памятку — с плакатом и кнопками, если они есть.
 
     Памятка объясняет, что нужно сделать, а кнопка сразу это начинает:
     прочитать и тут же оформиться удобнее, чем искать нужный пункт меню.
     Внутри чужого сценария кнопка не нужна — `with_action=False`: нажав её,
     житель бросит начатое и уйдёт в начало другого разговора.
+
+    Длинную памятку шлём двумя сообщениями: плакат с заголовком в подписи,
+    следом текст. Кнопки — под последним сообщением, чтобы житель нажимал
+    их, дочитав до конца.
     """
-    keyboard = memo_action(memo.action) if with_action else None
+    keyboard = memo_buttons(memo, with_action)
+    text = memo.text()
     image = memo.image_path
     if image is None:
-        await message.answer(memo.text(), reply_markup=keyboard)
+        await message.answer(text, reply_markup=keyboard)
         return
+
+    if len(text) <= CAPTION_LIMIT:
+        caption, follow_up = text, ""
+    else:
+        caption, follow_up = f"<b>{memo.title}</b>", memo.body
+
     try:
-        await message.answer_photo(FSInputFile(image), caption=memo.text(),
-                                   reply_markup=keyboard)
+        await message.answer_photo(
+            FSInputFile(image), caption=caption,
+            reply_markup=None if follow_up else keyboard)
     except Exception:                       # noqa: BLE001 — картинка не критична
         logger.warning("Не удалось отправить картинку %s", image)
-        await message.answer(memo.text(), reply_markup=keyboard)
+        await message.answer(text, reply_markup=keyboard)
+        return
+
+    if follow_up:
+        await message.answer(follow_up, reply_markup=keyboard)
 
 
 async def send_memo_by_code(message: Message, code: str,

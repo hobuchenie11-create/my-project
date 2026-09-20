@@ -4,6 +4,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from bot.handlers import faq as faq_handler
+from bot.keyboards.faq import BTN_SAVE_POSTER, memo_buttons
 from bot.services import faq_service
 from database import repository
 from database.init_db import init_db
@@ -142,3 +144,157 @@ def test_readings_are_not_treated_as_a_question(conn, memos, monkeypatch):
 
     asyncio.run(manual.manual_readings(Msg("где взять пульт от ворот")))
     assert asked == ["где взять пульт от ворот"]
+
+
+# ---------------------------------------------------------------------------
+# Плакаты из подъезда
+# ---------------------------------------------------------------------------
+
+class PhotoMsg:
+    """Сообщение, которое запоминает, что именно ушло жителю."""
+
+    def __init__(self):
+        self.texts: list[str] = []
+        self.photos: list[tuple[str, str]] = []      # (файл, подпись)
+        self.documents: list[tuple[str, str]] = []
+        self.keyboards: list = []
+
+    async def answer(self, text, reply_markup=None, **kwargs):
+        self.texts.append(text)
+        self.keyboards.append(reply_markup)
+
+    async def answer_photo(self, photo, caption="", reply_markup=None,
+                           **kwargs):
+        self.photos.append((photo.path.name, caption))
+        self.keyboards.append(reply_markup)
+
+    async def answer_document(self, document, caption="", **kwargs):
+        self.documents.append((document.path.name, caption))
+
+
+@pytest.fixture()
+def house(tmp_path):
+    """Настоящие памятки дома — вместе с их плакатами."""
+    db = tmp_path / "house.db"
+    init_db(db, apartments_count=80, nonresidential_count=1)
+    conn = repository.connect(db)
+    faq_service.load_memos(conn)                     # content/faq/*.md
+    yield conn
+    conn.close()
+
+
+def test_every_named_poster_exists(house):
+    """Опечатка в поле image — и житель молча не получит плакат."""
+    named = [(m["code"], m["image"]) for m in repository.active_memos(house)
+             if m["image"]]
+    assert named, "ни одна памятка не ссылается на плакат"
+
+    for code, image in named:
+        assert (faq_service.IMAGES_DIR / image).exists(), \
+            f"памятка «{code}» ссылается на {image}, а файла нет"
+
+
+def test_posters_are_attached_to_the_memos_they_belong_to(house):
+    expected = {
+        "vorota": "vorota.jpg",
+        "gsm-modul": "gsm-modul.jpg",
+        "dostup-vo-dvor": "kalitka-klyuchi.jpg",
+        "klyuchi": "kalitka-klyuchi.jpg",
+        "oplata": "kalitka-klyuchi.jpg",
+    }
+    for code, image in expected.items():
+        assert faq_service.by_code(house, code).image == image, code
+
+
+def test_long_memo_keeps_its_poster(house):
+    """Подпись длиннее 1024 символов Телеграм не примет — шлём двумя частями.
+
+    Памятка про ворота как раз такая: без разделения плакат бы пропал.
+    """
+    memo = faq_service.by_code(house, "vorota")
+    assert len(memo.text()) > faq_handler.CAPTION_LIMIT
+
+    message = PhotoMsg()
+    asyncio.run(faq_handler.send_memo(message, memo))
+
+    (image, caption), = message.photos
+    assert image == "vorota.jpg"
+    assert len(caption) <= faq_handler.CAPTION_LIMIT
+    assert memo.title in caption
+
+    assert message.texts == [memo.body]              # текст пришёл целиком
+    assert "89026767881" in message.texts[0]
+
+
+def test_short_memo_goes_one_message(house):
+    memo = faq_service.by_code(house, "klyuchi")
+    assert len(memo.text()) <= faq_handler.CAPTION_LIMIT
+
+    message = PhotoMsg()
+    asyncio.run(faq_handler.send_memo(message, memo))
+
+    (image, caption), = message.photos
+    assert image == "kalitka-klyuchi.jpg"
+    assert caption == memo.text()
+    assert message.texts == []
+
+
+def test_poster_button_stays_inside_another_dialog(house):
+    """Кнопку сценария внутри чужого разговора прячем, кнопку плаката — нет."""
+    memo = faq_service.by_code(house, "gsm-modul")
+
+    assert _labels(memo_buttons(memo)) == \
+        ["📱 Оставить заявку на смену номера", BTN_SAVE_POSTER]
+
+    inside = memo_buttons(memo, with_action=False)
+    assert _labels(inside) == [BTN_SAVE_POSTER]
+
+
+def test_memo_without_poster_has_no_save_button(house):
+    memo = faq_service.by_code(house, "novyy-sobstvennik")
+    assert memo.image == ""
+    assert BTN_SAVE_POSTER not in _labels(memo_buttons(memo))
+
+
+def test_save_button_sends_the_poster_as_a_file(house, monkeypatch):
+    """Файлом — потому что сжатую картинку с мелким шрифтом не прочитать."""
+    path = house.execute("PRAGMA database_list").fetchone()[2]
+    real_connect = repository.connect
+    monkeypatch.setattr(faq_handler.repository, "connect",
+                        lambda *a, **kw: real_connect(path))
+
+    callback = SimpleNamespace(data="faq:poster:vorota", message=PhotoMsg(),
+                               answered=[])
+    callback.answer = lambda *a, **kw: _noop(callback.answered, a)
+    asyncio.run(faq_handler.send_poster(callback))
+
+    (document, caption), = callback.message.documents
+    assert document == "vorota.jpg"
+    assert "Как пользоваться воротами" in caption
+    assert callback.message.photos == []             # именно файлом, не фото
+
+
+def test_save_button_survives_a_missing_poster(house, monkeypatch):
+    """Плакат удалили из папки — житель получит отказ, а бот не упадёт."""
+    path = house.execute("PRAGMA database_list").fetchone()[2]
+    real_connect = repository.connect
+    monkeypatch.setattr(faq_handler.repository, "connect",
+                        lambda *a, **kw: real_connect(path))
+    monkeypatch.setattr(faq_service, "IMAGES_DIR", faq_service.FAQ_DIR / "нет")
+
+    callback = SimpleNamespace(data="faq:poster:vorota", message=PhotoMsg(),
+                               answered=[])
+    callback.answer = lambda *a, **kw: _noop(callback.answered, a)
+    asyncio.run(faq_handler.send_poster(callback))
+
+    assert callback.message.documents == []
+    assert callback.answered == [("Плакат не найден",)]
+
+
+def _labels(keyboard) -> list[str]:
+    return [button.text
+            for row in keyboard.inline_keyboard for button in row]
+
+
+async def _noop(sink, args):
+    sink.append(args)

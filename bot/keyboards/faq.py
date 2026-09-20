@@ -37,3 +37,29 @@ def memo_action(action: str) -> InlineKeyboardMarkup | None:
         return None
     return InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text=label, callback_data=f"start:{action}")]])
+
+
+BTN_SAVE_POSTER = "💾 Сохранить плакат файлом"
+
+
+def memo_buttons(memo,
+                 with_action: bool = True) -> InlineKeyboardMarkup | None:
+    """Кнопки под памяткой: начать сценарий и сохранить плакат себе.
+
+    Картинкой Телеграм присылает сжатую копию — мелкий шрифт на плакате в
+    ней плывёт. Поэтому под памяткой с плакатом всегда есть кнопка «файлом»:
+    её житель сохраняет в телефон и читает потом, даже без интернета.
+
+    Кнопка плаката остаётся и внутри чужого сценария (`with_action=False`):
+    файл приходит отдельным сообщением и разговор не прерывает, в отличие
+    от кнопки, которая увела бы жителя в начало другого разговора.
+    """
+    rows = []
+    label = MEMO_ACTIONS.get(memo.action) if with_action else None
+    if label:
+        rows.append([InlineKeyboardButton(
+            text=label, callback_data=f"start:{memo.action}")])
+    if memo.image_path is not None:
+        rows.append([InlineKeyboardButton(
+            text=BTN_SAVE_POSTER, callback_data=f"faq:poster:{memo.code}")])
+    return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
