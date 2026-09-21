@@ -228,7 +228,7 @@ def test_deadline_follows_the_settings(monkeypatch):
     from bot.services import reminder_service
 
     monkeypatch.setattr(reminder_service, "config",
-                        replace(config, statement_day=21,
+                        replace(config, readings_day_end=21,
                                 readings_deadline_hour=12))
     assert reminder_service.deadline_text() == "21 числа, 12:00"
 
@@ -238,7 +238,13 @@ def test_reminder_goes_only_to_flats_that_have_not_submitted(db, monkeypatch):
     from bot.services.parser import parse_message
     from bot.services.reading_service import current_period, save_parsed_readings
 
+    from bot.services import reminder_service
+
     monkeypatch.setattr(scheduler, "config", replace(config, admin_ids=()))
+    # Текст напоминания зависит от числа месяца: после 20-го он другой.
+    # Отодвигаем срок, чтобы тест не зависел от сегодняшней даты
+    monkeypatch.setattr(reminder_service, "config",
+                        replace(config, statement_day=28, readings_day_end=28))
     conn = repository.connect(db)
     try:
         # оба жителя зарегистрированы, показания передал только первый
@@ -355,7 +361,7 @@ def test_reminder_after_the_deadline_switches_the_wording():
     assert "уже переданы ресурсоснабжающим" in late
     assert "в следующем месяце" in late
     assert "до 25 числа" in late            # как успеть в текущий расчёт
-    assert "с 15 по 19 число" in late       # и когда передавать впредь
+    assert "с 16 по 20 число, до 12:00" in late   # и когда передавать впредь
     assert "Заранее благодарю" not in late
 
 

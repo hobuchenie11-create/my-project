@@ -24,7 +24,7 @@ from bot.services.parser import (mentioned_flats, parse_message,
                                  split_messages)
 from bot.services.reading_service import (current_period, is_late, receipt_text,
                                           save_parsed_readings)
-from bot.texts import late_submission_text
+from bot.texts import late_submission_chat_text, late_submission_text
 from database import repository
 
 logger = logging.getLogger(__name__)
@@ -211,14 +211,22 @@ async def handle_group_message(message: Message) -> None:
         await _confirm_in_chat(message, apartment)
 
     # Подтверждение — в личку жителю
+    late = outcome.anything_saved and is_late() and not correction
     dm_text = receipt + ("\n\n" + problems_text if problems else "")
-    if outcome.anything_saved and is_late() and not correction:
+    if late:
         dm_text += "\n\n" + late_submission_text()
     delivered = await _dm(message, dm_text)
 
-    # В чат пишем только если в личку не дошло И есть о чём предупредить
-    if not delivered and problems:
-        await _reply(message, problems_text + _START_HINT)
+    # В чат пишем, только если в личку не дошло: у жителя, который боту не
+    # писал, других способов узнать нет. Опоздание — такой же повод, как
+    # ошибка в цифрах: иначе он видит 👍 и ждёт эти показания в квитанции,
+    # а они уйдут в следующий период.
+    if not delivered:
+        notes = [problems_text] if problems else []
+        if late:
+            notes.append(late_submission_chat_text(apartment["number"]))
+        if notes:
+            await _reply(message, "\n\n".join(notes) + _START_HINT)
 
 
 async def _confirm_in_chat(message: Message, apartment) -> None:

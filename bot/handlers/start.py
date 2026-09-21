@@ -7,6 +7,7 @@ from aiogram.types import Message
 from bot.config import config
 from bot.keyboards.menu import BTN_HELP, main_menu
 from bot.states.registration import Registration
+from bot.texts import collection_window
 from database import repository
 
 router = Router()
@@ -21,9 +22,9 @@ HELP_TEXT = (
     "📊 <b>История передач</b> — журнал ваших передач.\n"
     "📱 <b>Сменить номер на воротах</b> — заявка председателю на "
     "перепрограммирование телефона; можно в любой день.\n\n"
-    f"Показания принимаются с {config.readings_day_start} по "
-    f"{config.readings_day_end} число каждого месяца. Переданные позже "
-    "принимаются, но учитываются в следующем расчётном периоде.\n\n"
+    f"Показания принимаются {collection_window()} каждого месяца. "
+    "Переданные позже принимаются, но учитываются в следующем расчётном "
+    "периоде.\n\n"
     "Показания также можно отправить в общий чат дома по шаблону:\n"
     "<code>Кв.\n"
     "Эл.эн\n"

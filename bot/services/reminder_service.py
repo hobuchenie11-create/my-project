@@ -11,6 +11,7 @@ from datetime import date
 
 from bot.config import config
 from bot.services.reading_service import current_period, period_title
+from bot.texts import collection_window
 from database import repository
 
 
@@ -47,14 +48,14 @@ LATE_REMINDER_TEXT = (
     "ресурсоснабжающей организации — там принимают <b>до 25 числа</b>:\n"
     "• при оплате квитанции;\n"
     "• через личный кабинет на сайте.\n\n"
-    "В следующем месяце передайте, пожалуйста, с {day_start} по {day_end} "
-    "число — так показания попадут в ведомость дома без хлопот. Спасибо!"
+    "В следующем месяце передайте, пожалуйста, {window} — так показания "
+    "попадут в ведомость дома без хлопот. Спасибо!"
 )
 
 
 def deadline_text() -> str:
-    """«20 числа, 13:00» — последний срок для ведомости этого месяца."""
-    return (f"{config.statement_day} числа, "
+    """«20 числа, 12:00» — последний срок для ведомости этого месяца."""
+    return (f"{config.readings_day_end} числа, "
             f"{config.readings_deadline_hour}:00")
 
 
@@ -70,7 +71,7 @@ def reminder_text(period: str, today: date | None = None) -> str:
                                     deadline=deadline_text())
     return LATE_REMINDER_TEXT.format(
         period=period_title(period), statement_day=config.statement_day,
-        day_start=config.readings_day_start, day_end=config.readings_day_end)
+        window=collection_window())
 
 
 def pending_targets(conn: sqlite3.Connection, period: str | None = None) -> list[ReminderTarget]:

@@ -26,8 +26,8 @@ from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
 from bot.states.meters import ApartmentMeters
-from bot.texts import (collection_reminder_text, correction_text,
-                       resident_reply_text, rso_letter_text,
+from bot.texts import (collection_reminder_text, collection_window,
+                       correction_text, resident_reply_text, rso_letter_text,
                        special_readings_text, template_messages,
                        welcome_residents_text)
 from database import repository
@@ -338,7 +338,7 @@ async def show_settings(message: Message) -> None:
         "⚙ Настройки (файл .env):\n\n"
         f"Квартир: {config.apartments_count}\n"
         f"Нежилых помещений: {config.nonresidential_count}\n"
-        f"Прием показаний: с {config.readings_day_start} по {config.readings_day_end} число\n"
+        f"Приём показаний: {collection_window()}\n"
         f"Чат дома (показания): {config.group_chat_id or 'не подключен'}\n"
         f"Чат Совета дома (сводка): {config.council_chat_id or 'не подключен'}\n"
         f"Администраторы: {', '.join(map(str, config.admin_ids)) or 'не заданы'}"

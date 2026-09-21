@@ -31,12 +31,15 @@ class Config:
     #   reply    — всегда коротким сообщением
     #   off      — в чате не подтверждать (квитанция всё равно уйдёт в личку)
     chat_confirm: str = os.getenv("CHAT_CONFIRM", "auto").strip().lower()
-    # Период сбора показаний: с 15 по 19 число включительно
-    readings_day_start: int = int(os.getenv("READINGS_DAY_START", "15"))
-    readings_day_end: int = int(os.getenv("READINGS_DAY_END", "19"))
+    # Период сбора показаний: с 16 по 20 число включительно, последний день —
+    # до READINGS_DEADLINE_HOUR. Ровно так срок объявлен жителям, и все тексты
+    # бота называют его одинаково (bot.texts.collection_window)
+    readings_day_start: int = int(os.getenv("READINGS_DAY_START", "16"))
+    readings_day_end: int = int(os.getenv("READINGS_DAY_END", "20"))
     # Ведомость со всеми собранными показаниями: 20 числа в 14:00.
-    # До этого часа показания ещё попадают в текущий период —
-    # утренние 20 числа не должны считаться опоздавшими.
+    # Объявленный срок — полдень, а два часа до ведомости остаются запасом:
+    # показания, пришедшие в 12:30, в ведомость ещё попадают, и называть их
+    # опоздавшими было бы неправдой.
     statement_day: int = int(os.getenv("STATEMENT_DAY", "20"))
     statement_hour: int = int(os.getenv("STATEMENT_HOUR", "14"))
     # Объявление в чат дома о завершении сбора — отдельно от ведомости:

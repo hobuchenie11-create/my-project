@@ -247,3 +247,52 @@ def test_reply_failure_is_logged_with_the_reason(db, monkeypatch, caplog):
         asyncio.run(group.handle_group_message(message))
 
     assert "message to be replied not found" in caplog.text
+
+
+class UnreachableBot(FakeBot):
+    """Житель ни разу не писал боту в личку — написать ему нельзя."""
+
+    async def send_message(self, chat_id, text, **kwargs):
+        if chat_id > 0:                      # личка жителя, а не чат дома
+            from aiogram.exceptions import TelegramForbiddenError
+            raise TelegramForbiddenError(
+                method=SimpleNamespace(),
+                message="Forbidden: bot can't initiate conversation with a user")
+        self.dm.append((chat_id, text))
+
+
+def test_latecomer_without_private_chat_is_warned_in_the_chat(db, monkeypatch):
+    """Иначе он видит только 👍 и ждёт эти показания в текущей квитанции."""
+    monkeypatch.setattr(group, "is_late", lambda *a, **kw: True)
+
+    message = FakeMessage("Кв. 29\nЭл.эн 100\nХвс 5\nГвс 6", tg_id=777)
+    message.bot = UnreachableBot()
+    asyncio.run(group.handle_group_message(message))
+
+    assert _readings(db, "29")["electricity"] == 100.0   # показания записаны
+    warning = "\n".join(message.replies)
+    assert "после срока" in warning
+    assert "следующем расчётном периоде" in warning
+    assert "до 25 числа" in warning                      # как попасть в текущий
+
+
+def test_in_time_reading_leaves_the_chat_quiet(db, monkeypatch):
+    """Успел к сроку — в чате только отметка, лишних сообщений нет."""
+    monkeypatch.setattr(group, "is_late", lambda *a, **kw: False)
+
+    message = FakeMessage("Кв. 29\nЭл.эн 100\nХвс 5\nГвс 6", tg_id=777)
+    message.bot = UnreachableBot()
+    asyncio.run(group.handle_group_message(message))
+
+    assert message.replies == []
+
+
+def test_latecomer_with_private_chat_is_warned_privately(db, monkeypatch):
+    """Кому можно написать в личку — тому в чате ничего не пишем."""
+    monkeypatch.setattr(group, "is_late", lambda *a, **kw: True)
+
+    message = FakeMessage("Кв. 29\nЭл.эн 100\nХвс 5\nГвс 6")
+    asyncio.run(group.handle_group_message(message))
+
+    assert message.replies == []
+    assert "после срока" in message.bot.dm[0][1]
