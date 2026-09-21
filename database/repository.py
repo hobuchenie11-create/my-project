@@ -602,6 +602,28 @@ def memo_categories(conn: sqlite3.Connection) -> list[str]:
     return [row["category"] for row in rows]
 
 
+def add_meter_act(conn: sqlite3.Connection, apartment_id: int, kind: str,
+                  tg_id: int | None, file_id: str = "",
+                  note: str = "") -> None:
+    """Акт поверки (опломбировки) квартирного прибора учёта от жителя."""
+    conn.execute(
+        """INSERT INTO meter_acts (apartment_id, kind, tg_id, file_id, note)
+           VALUES (?, ?, ?, ?, ?)""",
+        (apartment_id, kind, tg_id, file_id, note),
+    )
+    conn.commit()
+
+
+def meter_acts(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Все присланные акты — по порядку квартир, как в реестре дома."""
+    return conn.execute(
+        """SELECT a.*, ap.number AS apartment_number, ap.sort_order
+             FROM meter_acts a
+             JOIN apartments ap ON ap.id = a.apartment_id
+            ORDER BY ap.sort_order, a.id"""
+    ).fetchall()
+
+
 def add_faq_gap(conn: sqlite3.Connection, tg_id: int | None, apartment: str,
                 question: str) -> None:
     conn.execute(

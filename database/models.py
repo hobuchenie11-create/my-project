@@ -439,6 +439,20 @@ CREATE TABLE IF NOT EXISTS verifications (
     created_at     TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
+-- Акты поверки и опломбировки квартирных приборов учёта. Жители присылают
+-- их боту, председатель передаёт ресурснику одним списком: по части квартир
+-- сведения не доходят до базы начислений, квартиры выпадают из общедомового
+-- реестра приборов учёта, и ОДН считается неверно.
+CREATE TABLE IF NOT EXISTS meter_acts (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    apartment_id INTEGER NOT NULL REFERENCES apartments (id),
+    kind         TEXT NOT NULL DEFAULT '',   -- ГВС, ХВС, электроэнергия
+    tg_id        INTEGER,
+    file_id      TEXT NOT NULL DEFAULT '',   -- файл в Telegram — переслать позже
+    note         TEXT NOT NULL DEFAULT '',
+    created_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
 -- Памятки Домоведа. Тексты живут в файлах content/faq/*.md и загружаются
 -- при старте бота — править их удобнее в редакторе, чем в переписке.
 CREATE TABLE IF NOT EXISTS faq (

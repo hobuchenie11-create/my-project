@@ -6,7 +6,8 @@ from bot.config import config
 from bot.handlers import admin, start, tasks
 from bot.keyboards.admin_menu import BTN_ADMIN
 from bot.keyboards.menu import (BTN_FAQ, BTN_GATE_PHONE, BTN_HELP,
-                                BTN_HISTORY, BTN_LAST, BTN_SUBMIT, main_menu)
+                                BTN_HISTORY, BTN_LAST, BTN_METER_ACT,
+                                BTN_SUBMIT, main_menu)
 
 
 def _buttons(markup) -> list[str]:
@@ -15,12 +16,14 @@ def _buttons(markup) -> list[str]:
 
 def test_resident_menu_is_limited_to_their_own_flat():
     assert _buttons(main_menu(is_admin=False)) == [
-        BTN_SUBMIT, BTN_LAST, BTN_HISTORY, BTN_GATE_PHONE, BTN_FAQ, BTN_HELP]
+        BTN_SUBMIT, BTN_LAST, BTN_HISTORY, BTN_GATE_PHONE, BTN_METER_ACT,
+        BTN_FAQ, BTN_HELP]
 
 
 def test_chairman_menu_adds_the_admin_button():
+    resident = _buttons(main_menu(is_admin=False))
     buttons = _buttons(main_menu(is_admin=True))
-    assert buttons[:6] == _buttons(main_menu(is_admin=False))
+    assert buttons[:len(resident)] == resident
     assert buttons[-1] == BTN_ADMIN
 
 

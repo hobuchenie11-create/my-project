@@ -9,6 +9,9 @@ BTN_HELP = "ℹ️ Помощь"
 # Заявка на перепрограммирование телефона в воротах — нужна не только
 # новосёлам: сменил оператора, потерял симку, записан номер жены
 BTN_GATE_PHONE = "📱 Сменить номер на воротах"
+# Акт поверки (опломбировки) счётчика: житель присылает копию, председатель
+# одним списком передаёт ресурснику — иначе сведения не доходят до базы
+BTN_METER_ACT = "📄 Передать акт поверки"
 
 
 def main_menu(is_admin: bool = False) -> ReplyKeyboardMarkup:
@@ -16,6 +19,7 @@ def main_menu(is_admin: bool = False) -> ReplyKeyboardMarkup:
         [KeyboardButton(text=BTN_SUBMIT)],
         [KeyboardButton(text=BTN_LAST), KeyboardButton(text=BTN_HISTORY)],
         [KeyboardButton(text=BTN_GATE_PHONE)],
+        [KeyboardButton(text=BTN_METER_ACT)],
         [KeyboardButton(text=BTN_FAQ), KeyboardButton(text=BTN_HELP)],
     ]
     if is_admin:

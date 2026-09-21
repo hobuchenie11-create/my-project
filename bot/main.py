@@ -9,7 +9,7 @@ from aiogram.types import BotCommand
 
 from bot import diagnostics, single_instance
 from bot.config import config
-from bot.handlers import (admin, common, faq, gatephone, group, manual,
+from bot.handlers import (acts, admin, common, faq, gatephone, group, manual,
                           newcomer, oek, photos, readings, registration,
                           reports, start, tasks)
 from bot.keepawake import keep_awake
@@ -129,6 +129,9 @@ def build_dispatcher() -> Dispatcher:
     # Раньше tasks: тот забирает любой присланный документ как правки годового
     # плана, а .xls от ресурсника — это шаблон реестра ОЭК
     dp.include_router(oek.router)
+    # Раньше photos: тот забирает любую фотографию в личке, а снимок акта
+    # поверки должен попасть в свой сценарий (он ждёт его по состоянию)
+    dp.include_router(acts.router)
     # Тоже раньше tasks: фотография, отправленная файлом, приходит документом
     dp.include_router(photos.router)
     dp.include_router(tasks.router)

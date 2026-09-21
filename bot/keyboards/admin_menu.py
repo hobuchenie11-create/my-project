@@ -23,6 +23,7 @@ BTN_CORRECTION = "✏️ Исправить показание"
 BTN_BLANKS = "🖨 Бланки для печати"
 BTN_RSO_LETTER = "✉️ Письмо в Росводоканал"
 BTN_RESIDENT_REPLY = "💬 Ответ жителю"
+BTN_ACTS = "📄 Акты поверки"
 BTN_FAQ_GAPS = "❓ Вопросы без ответа"
 BTN_USERS = "👥 Пользователи"
 BTN_SETTINGS = "⚙ Настройки"
@@ -47,7 +48,7 @@ def admin_menu() -> ReplyKeyboardMarkup:
             [KeyboardButton(text=BTN_REMIND), KeyboardButton(text=BTN_INVITE)],
             [KeyboardButton(text=BTN_CHAT_REMINDER),
              KeyboardButton(text=BTN_TEMPLATES)],
-            [KeyboardButton(text=BTN_FAQ_GAPS)],
+            [KeyboardButton(text=BTN_ACTS), KeyboardButton(text=BTN_FAQ_GAPS)],
             [KeyboardButton(text=BTN_USERS), KeyboardButton(text=BTN_SETTINGS)],
             [KeyboardButton(text=BTN_BACKUP)],
             [KeyboardButton(text=BTN_BACK)],

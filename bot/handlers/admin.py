@@ -5,7 +5,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from bot.config import config
-from bot.keyboards.admin_menu import (BTN_ADMIN, BTN_BACK, BTN_BACKUP, BTN_DEBTORS,
+from bot.keyboards.admin_menu import (BTN_ACTS, BTN_ADMIN, BTN_BACK,
+                                      BTN_BACKUP, BTN_DEBTORS,
                                       BTN_BLANKS, BTN_CHAT_REMINDER,
                                       BTN_CORRECTION, BTN_DEBTORS_DOC,
                                       BTN_FAQ_GAPS, BTN_METERS,
@@ -301,6 +302,17 @@ async def apply_apartment_layout(callback: CallbackQuery) -> None:
         "больше не опрашиваются. Попросите жителя прислать показания "
         "заново, и они встанут на свои места.")
     await callback.answer("Готово")
+
+
+@router.message(F.text == BTN_ACTS)
+async def show_acts(message: Message) -> None:
+    """Какие квартиры прислали акты поверки — и строка для письма ресурснику."""
+    from bot.services.act_service import acts_text
+    conn = repository.connect()
+    try:
+        await message.answer(acts_text(conn))
+    finally:
+        conn.close()
 
 
 @router.message(F.text == BTN_FAQ_GAPS)
