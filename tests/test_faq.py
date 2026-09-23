@@ -200,6 +200,7 @@ def test_posters_are_attached_to_the_memos_they_belong_to(house):
         "gsm-modul": "gsm-modul.jpg",
         "dostup-vo-dvor": "kalitka-klyuchi.jpg",
         "klyuchi": "kalitka-klyuchi.jpg",
+        "uk-evrocentr": "uk-evrocentr.jpg",
     }
     for code, image in expected.items():
         assert faq_service.by_code(house, code).image == image, code
