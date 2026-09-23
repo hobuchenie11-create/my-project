@@ -1,5 +1,6 @@
 """Заявка «Сменить номер на воротах» — доступна любому жителю, в любой день."""
 import asyncio
+import re
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -132,7 +133,8 @@ def test_request_reaches_the_chairman(db):
     # Житель видит подтверждение и памятку про оплату 10 ₽
     text = "\n".join(last.answers)
     assert "Заявка передана председателю" in text
-    assert "10 ₽" in text and "89026767881" in text
+    # Номер ворот сверяем по цифрам: оформление в памятке может меняться
+    assert "10 ₽" in text and "9026767881" in re.sub(r"\D", "", text)
 
 
 def test_memo_offers_the_button(conn):

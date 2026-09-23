@@ -6,6 +6,7 @@
 и что сценарий оформления доводит данные до председателя.
 """
 import asyncio
+import re
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -20,10 +21,16 @@ from database.init_db import init_db
 CHAIRMAN = 555
 RESIDENT = 777
 
-# Номера из плакатов, которые висят в подъездах
-GATE_MAGISTRALNAYA = "89026767881"
-GATE_HIMIKOV = "89026767880"
+# Номера из плакатов, которые висят в подъездах — значащие цифры, без
+# кода страны. Оформление в памятках меняется (короткий набор, +7, пробелы
+# и дефисы), а сам номер меняться не должен: сверяем по цифрам
+GATE_MAGISTRALNAYA = "9026767881"
+GATE_HIMIKOV = "9026767880"
 MODUS = "372323"
+
+
+def _digits(text: str) -> str:
+    return re.sub(r"\D", "", text)
 
 
 class FakeState:
@@ -120,15 +127,17 @@ def test_memos_are_filled_in(conn):
 
 def test_gate_numbers_are_in_place(conn):
     gates = faq_service.by_code(conn, "vorota").body
-    assert GATE_MAGISTRALNAYA in gates and GATE_HIMIKOV in gates
+    assert GATE_MAGISTRALNAYA in _digits(gates)
+    assert GATE_HIMIKOV in _digits(gates)
     assert "10 секунд" in gates
 
     gsm = faq_service.by_code(conn, "gsm-modul").body
     assert "10" in gsm and "Теле2" in gsm      # плата за каждый номер ворот
-    assert GATE_MAGISTRALNAYA in gsm and GATE_HIMIKOV in gsm
+    assert GATE_MAGISTRALNAYA in _digits(gsm)
+    assert GATE_HIMIKOV in _digits(gsm)
 
     keys = faq_service.by_code(conn, "klyuchi").body
-    assert MODUS in keys and "Модус" in keys
+    assert MODUS in _digits(keys) and "Модус" in keys
 
 
 def test_gate_only_opens_from_magistralnaya(conn):
@@ -186,7 +195,7 @@ def test_full_flow_reaches_the_chairman(db):
     assert state.state == newcomer.Newcomer.contacts
     assert "кв. 15" in flat.answers[0]
     # Вместе с вопросом про телефон уходит памятка про 10 ₽ на каждые ворота
-    assert any(GATE_HIMIKOV in text for text in flat.answers)
+    assert any(GATE_HIMIKOV in _digits(text) for text in flat.answers)
 
     contacts = Msg("Иванова Мария Петровна, +7 902 676-78-81")
     _run(newcomer.take_contacts(contacts, state))
@@ -203,7 +212,8 @@ def test_full_flow_reaches_the_chairman(db):
 
     # Новосёл сразу получает памятки про ворота и калитку
     tail = "\n".join(car.answers)
-    assert GATE_MAGISTRALNAYA in tail and "калитк" in tail.lower()
+    assert GATE_MAGISTRALNAYA in _digits(tail)
+    assert "калитк" in tail.lower()
     assert state.state is None
 
 

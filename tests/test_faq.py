@@ -1,5 +1,6 @@
 """Памятки Домоведа: загрузка из файлов, поиск ответа, журнал пробелов."""
 import asyncio
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -227,7 +228,8 @@ def test_long_memo_keeps_its_poster(house):
     assert memo.title in caption
 
     assert message.texts == [memo.body]              # текст пришёл целиком
-    assert "89026767881" in message.texts[0]
+    # Номер ворот сверяем по цифрам: оформление в памятке может меняться
+    assert "9026767881" in re.sub(r"\D", "", message.texts[0])
 
 
 def test_short_memo_goes_one_message(house):
