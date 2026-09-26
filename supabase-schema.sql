@@ -324,3 +324,16 @@ comment on table public.classes is
 -- Посмотреть заведённые классы (сами данные не показываются):
 --   select id, version, updated_at, array_length(admin_hashes,1) as казначеев
 --     from public.classes order by created_at;
+--
+-- Добавить ещё один пароль администратора, не зная прежних
+-- (прежние продолжают работать) — этим же возвращают себе доступ,
+-- если единственный пароль забылся:
+--   update public.classes
+--      set admin_hashes = admin_hashes || public.sha('новый-пароль');
+--
+-- Оставить ровно два пароля и стереть все остальные:
+--   update public.classes
+--      set admin_hashes = array[public.sha('первый'), public.sha('второй')];
+--
+-- Сменить код класса для родителей (им нужно будет сообщить новый):
+--   update public.classes set code_hash = public.sha('новый-код-класса');
