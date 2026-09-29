@@ -1826,6 +1826,16 @@ function paySheet(){
       ${c.mode === 'total' ? `<div class="hint">«Не сдаёт» уменьшит число сдающих —
         общая сумма ${money(+c.total||0)} разделится на остальных.</div>` : ''}
     </div>
+    ${c.cat === 'fund' && D.role === 'treasurer' ? `
+    <div class="field">
+      <label>Сдано сразу за несколько месяцев</label>
+      <div class="field-2">
+        <input type="number" inputmode="numeric" id="f-ahead" min="2" max="12" value="3">
+        <button class="btn wide" data-act="payahead">Отметить вперёд</button>
+      </div>
+      <div class="hint">Отметит этот месяц и следующие подряд, по ${money(perOf(c))} за месяц.
+        Месяцы, которые ещё не заведены, откроются сами с тем же взносом.</div>
+    </div>` : ''}
     <button class="btn pri wide" style="width:100%;padding:14px" data-act="savepay">Сохранить</button>
   </div>`;
 }
@@ -2116,6 +2126,31 @@ function setPay(cid, sid, status, sum, date){
   save();
 }
 
+/* Месяц фонда, следующий за указанной датой: заведённый — отдаём его,
+   иначе заводим по образцу самого позднего. Нужен и кнопке «Открыть следующий
+   месяц», и оплате на несколько месяцев вперёд — родители нередко сдают
+   сразу за четверть. */
+function fundMonthAfter(d){
+  const nxt = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  const occ = MONTH_KEYS[nxt.getMonth()];
+  const found = colsOf('fund').find(c =>
+    c.occ === occ && parseD(c.start).getFullYear() === nxt.getFullYear());
+  if (found) return found;
+  const sample = colsOf('fund').slice().sort((a,b) => parseD(b.start) - parseD(a.start))[0];
+  const amount = sample ? perOf(sample) : 500;
+  const c = {
+    id: 'c' + Date.now() + Math.random().toString(36).slice(2,6),
+    cat:'fund', occ,
+    title:`Фонд класса — ${MONTHS_N[nxt.getMonth()].toLowerCase()} ${nxt.getFullYear()}`,
+    mode:'per', amount, total: amount * active().length, payers: active().length,
+    start: isoD(nxt), days: sample ? sample.days : 10,
+    note:'Ежемесячный взнос на текущие нужды класса',
+    payments:{}, expenses:[], archived:false,
+  };
+  S.collections.push(c);
+  return c;
+}
+
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;
@@ -2219,6 +2254,25 @@ document.addEventListener('click', e => {
       render(); break;
     }
 
+    // Родитель сдал сразу за несколько месяцев: отмечаем текущий и следующие
+    // подряд, недостающие месяцы заводим на ходу. Сумма берётся по каждому
+    // месяцу отдельно — взнос со временем может меняться.
+    case 'payahead': {
+      const c = S.collections.find(x => x.id === sheet.c);
+      const n = Math.max(2, Math.min(12, +document.getElementById('f-ahead').value || 2));
+      const date = document.getElementById('f-date').value || isoD(today());
+      let cur = c, total = 0;
+      for (let i = 0; i < n; i++){
+        setPay(cur.id, sheet.s, 'paid', perOf(cur), date);
+        total += perOf(cur);
+        if (i < n - 1) cur = fundMonthAfter(parseD(cur.start));
+      }
+      const name = S.students.find(x => x.id === sheet.s).name;
+      sheet = null; save(); render();
+      toast(`${name}: ${n} ${plural(n,'месяц','месяца','месяцев')} вперёд, ${money(total)}`);
+      break;
+    }
+
     case 'savepay': {
       const c = S.collections.find(x => x.id === sheet.c);
       const cur = c.payments[sheet.s];
@@ -2239,22 +2293,12 @@ document.addEventListener('click', e => {
       const fund = colsOf('fund');
       // следующий месяц после самого позднего заведённого
       const last = fund.map(c => parseD(c.start)).sort((a,b) => b - a)[0] || today();
-      const d = new Date(last.getFullYear(), last.getMonth() + 1, 1);
-      const occ = MONTH_KEYS[d.getMonth()];
-      if (fund.some(c => c.occ === occ && parseD(c.start).getFullYear() === d.getFullYear())){
-        toast('Этот месяц уже заведён'); return;
-      }
-      const amount = fund.length ? perOf(fund[fund.length - 1]) : 500;
-      S.collections.push({
-        id:'c' + Date.now(), cat:'fund', occ,
-        title:`Фонд класса — ${MONTHS_N[d.getMonth()].toLowerCase()} ${d.getFullYear()}`,
-        mode:'per', amount, total:amount * active().length, payers:active().length,
-        start:isoD(d), days:10, note:'Ежемесячный взнос на текущие нужды класса',
-        payments:{}, expenses:[], archived:false,
-      });
-      occFilter.fund = occ;
+      const before = S.collections.length;
+      const c = fundMonthAfter(last);
+      if (S.collections.length === before){ toast('Этот месяц уже заведён'); return; }
+      occFilter.fund = c.occ;
       save(); scrollMemo[view] = window.scrollY; render();
-      toast(`Открыт ${MONTHS_N[d.getMonth()].toLowerCase()}`); break;
+      toast(`Открыт ${MONTHS_N[parseD(c.start).getMonth()].toLowerCase()}`); break;
     }
 
     case 'remindfund': {
