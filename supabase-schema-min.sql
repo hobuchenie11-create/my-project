@@ -218,6 +218,13 @@ grant execute on function public.class_admin_reset_others(uuid, text)   to anon,
 revoke execute on function public.auth_check(uuid, text) from anon, authenticated;
 revoke execute on function public.sha(text)             from anon, authenticated;
 
+create or replace function public.ping()
+returns timestamptz language sql stable
+set search_path = public, extensions as $$
+  select now()
+$$;
+grant execute on function public.ping() to anon, authenticated;
+
 notify pgrst, 'reload schema';
 
 comment on table public.classes is
