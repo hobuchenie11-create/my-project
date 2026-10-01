@@ -184,6 +184,26 @@ def house(tmp_path):
     conn.close()
 
 
+@pytest.mark.parametrize("question, code", [
+    ("приложение", "uk-evrocentr"),
+    ("есть ли приложение у ук", "uk-evrocentr"),
+    ("хочу оставить заявку через приложение", "uk-evrocentr"),
+    ("скачать приложение еврокомфорт", "uk-evrocentr"),
+    ("приложение модус", "dostup-vo-dvor"),
+    ("заказать ключи через приложение", "klyuchi"),
+    ("как оплатить через приложение", "oplata"),
+])
+def test_app_question_goes_to_the_right_memo(house, question, code):
+    """Приложений у дома несколько — слово «приложение» одно.
+
+    Заявки в УК, МодусОмск для домофона и банковское для квитанций: раньше
+    памятки спорили за это слово, и на голое «приложение» житель получал
+    квитанцию. Без уточнений это приложение управляющей компании.
+    """
+    found = faq_service.search(house, question)
+    assert found and found[0].code == code, [m.code for m in found]
+
+
 def test_every_named_poster_exists(house):
     """Опечатка в поле image — и житель молча не получит плакат."""
     named = [(m["code"], m["image"]) for m in repository.active_memos(house)
