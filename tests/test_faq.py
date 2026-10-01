@@ -204,6 +204,25 @@ def test_app_question_goes_to_the_right_memo(house, question, code):
     assert found and found[0].code == code, [m.code for m in found]
 
 
+@pytest.mark.parametrize("question, code", [
+    ("почему у соседей тепло а у меня холодно", "otoplenie-zapusk"),
+    ("батареи холодные когда включат отопление", "otoplenie-zapusk"),
+    ("низкое давление в системе отопления", "otoplenie-zapusk"),
+    ("почему слесарь не прибавит давление", "otoplenie-zapusk"),
+    ("как подготовиться к запуску отопления", "otoplenie-podgotovka"),
+    ("подтекает кран на батарее", "otoplenie-podgotovka"),
+    ("течёт труба на стояке куда сообщить", "otoplenie-podgotovka"),
+])
+def test_heating_question_goes_to_the_right_memo(house, question, code):
+    """Про отопление спрашивают двумя способами — и ответы разные.
+
+    «Почему холодно» — объяснение про воздух и давление. «Что проверить» —
+    осмотр квартиры до запуска. Перепутать их значит ответить не на то.
+    """
+    found = faq_service.search(house, question)
+    assert found and found[0].code == code, [m.code for m in found]
+
+
 def test_every_named_poster_exists(house):
     """Опечатка в поле image — и житель молча не получит плакат."""
     named = [(m["code"], m["image"]) for m in repository.active_memos(house)
@@ -222,6 +241,8 @@ def test_posters_are_attached_to_the_memos_they_belong_to(house):
         "dostup-vo-dvor": "kalitka-klyuchi.jpg",
         "klyuchi": "kalitka-klyuchi.jpg",
         "uk-evrocentr": "uk-evrocentr.jpg",
+        "otoplenie-zapusk": "otoplenie.jpg",
+        "otoplenie-podgotovka": "otoplenie.jpg",
     }
     for code, image in expected.items():
         assert faq_service.by_code(house, code).image == image, code
