@@ -212,6 +212,11 @@ def test_app_question_goes_to_the_right_memo(house, question, code):
     ("как подготовиться к запуску отопления", "otoplenie-podgotovka"),
     ("подтекает кран на батарее", "otoplenie-podgotovka"),
     ("течёт труба на стояке куда сообщить", "otoplenie-podgotovka"),
+    ("почему одинаковая сумма за отопление каждый месяц", "otoplenie-plata"),
+    ("что за перерасчёт в январе", "otoplenie-plata"),
+    ("почему платим за отопление летом", "otoplenie-plata"),
+    ("в квартире жарко что делать", "otoplenie-plata"),
+    ("можно ли перекрыть батарею", "otoplenie-plata"),
 ])
 def test_heating_question_goes_to_the_right_memo(house, question, code):
     """Про отопление спрашивают двумя способами — и ответы разные.
@@ -243,6 +248,7 @@ def test_posters_are_attached_to_the_memos_they_belong_to(house):
         "uk-evrocentr": "uk-evrocentr.jpg",
         "otoplenie-zapusk": "otoplenie.jpg",
         "otoplenie-podgotovka": "otoplenie.jpg",
+        "otoplenie-plata": "otoplenie-plata.jpg",
     }
     for code, image in expected.items():
         assert faq_service.by_code(house, code).image == image, code
