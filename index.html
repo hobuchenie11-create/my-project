@@ -2363,6 +2363,16 @@ document.addEventListener('click', e => {
       if (d.mode === 'total') d.amount = Math.ceil(d.total / d.payers);
       else d.total = d.amount * d.payers;
       d.days = Math.max(1, +d.days || S.defDays);
+      // В фонде один месяц заводят один раз. Второй такой же — обычно
+      // недосмотр, а исправляется он удалением вместе с отметками,
+      // поэтому лучше переспросить до того, как он появится.
+      if (!sheet.c && d.cat === 'fund'){
+        const y = parseD(d.start).getFullYear();
+        const twin = colsOf('fund').find(c => c.occ === d.occ && parseD(c.start).getFullYear() === y);
+        if (twin && !confirm(`«${twin.title}» уже заведён — в нём ${stats(twin).paid} `
+          + `${plural(stats(twin).paid,'отметка','отметки','отметок')} об оплате. `
+          + `Завести второй сбор на тот же месяц?`)) return;
+      }
       if (sheet.c){
         Object.assign(S.collections.find(x => x.id === sheet.c), d);
       } else {
