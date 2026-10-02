@@ -1045,6 +1045,14 @@ function cloudView(){
     <button class="btn wide" style="width:100%;margin-bottom:18px" data-act="copysecret">${svg(I.copy,15)} Скопировать пароль</button>
 
     <div class="field">
+      <label>Ваша подпись под отметками</label>
+      <input id="ac-name" autocomplete="off" value="${esc(D.adminName || '')}" placeholder="Например: Ольга С.">
+      <div class="hint">Появится рядом с датой: «3 октября · Ольга С.» — так видно, кто отметил сдачу.
+        Хранится на этом устройстве, у каждого ответственного своя.</div>
+    </div>
+    <button class="btn wide" style="width:100%;margin-bottom:18px" data-act="setname">Сохранить подпись</button>
+
+    <div class="field">
       <label>Новый код класса — для родителей, только просмотр</label>
       <input id="ac-code" autocomplete="off" placeholder="не короче 6 символов">
       <div class="hint">Смена кода мгновенно отключает всех, кто знал старый.
@@ -1544,6 +1552,13 @@ function collCard(c, compact){
         </div>
         <div class="mb-amt num">${money(st.per)}</div>
         <div class="mb-note">${c.note ? esc(c.note) + ' · ' : ''}${esc(S.students.find(s=>s.id===D.myId)?.name || '')}</div>
+        ${(() => {
+          const p = c.payments[D.myId] || {};
+          if (myStatus !== 'paid' || !p.by) return '';
+          // без глагола: род по имени не угадать, а ошибаться в этом не нужно
+          return `<div class="mb-note" style="margin-top:3px">Отметка: ${esc(p.by)}${
+            p.date ? ', ' + fmtD(parseD(p.date)) : ''}</div>`;
+        })()}
         ${myStatus === 'none' && t.phase === 'soon'
           ? `<div class="others" style="margin:12px 0 0">${svg(I.clock,15)} Сбор начнётся ${fmtD(parseD(c.start))}</div>`
           : myStatus === 'none'
@@ -1664,9 +1679,15 @@ function srow(c, s, i){
   <div class="srow ${mine?'mine':''} ${st==='skip'?'skipped':''}">
     <span class="s-no num">${i+1}</span>
     <span class="s-name" data-act="pay" data-c="${c.id}" data-s="${s.id}">${esc(s.name)}
-      ${st==='pending' ? '<span class="tag">отметила перевод — подтвердите</span>' :
-        st==='skip' ? '<span class="tag">не участвует в этом сборе</span>' :
-        st==='paid' ? `<span class="tag">${(c.payments[s.id].date ? fmtD(parseD(c.payments[s.id].date)) : '')}</span>` : ''}</span>
+      ${(() => {
+        const p = c.payments[s.id] || {};
+        // без глагола: «отметил» или «отметила» по имени не угадать, а ошибаться в этом не нужно
+        const who = p.by ? ' · ' + esc(p.by) : '';
+        if (st === 'pending') return '<span class="tag">отметила перевод — подтвердите</span>';
+        if (st === 'skip')    return '<span class="tag">не участвует в этом сборе</span>';
+        if (st === 'paid')    return `<span class="tag">${p.date ? fmtD(parseD(p.date)) : ''}${who}</span>`;
+        return '';
+      })()}</span>
     <span class="s-sum num">${sum}</span>
     <button class="chk ${st==='paid'?'paid':st==='pending'?'pending':st==='skip'?'skip':''}"
       data-act="${st==='skip'?'pay':'toggle'}" data-c="${c.id}" data-s="${s.id}"
@@ -1819,6 +1840,11 @@ function paySheet(){
       <div style="font-size:15px;padding:2px 0 2px">${esc(c.title)}
         <span style="color:var(--muted)"> · ${money(perOf(c))} с человека</span></div>
     </div>
+    ${cur.by ? `<div class="field">
+      <label>Кто отметил</label>
+      <div style="font-size:15px;padding:2px 0 2px">${esc(cur.by)}${cur.date ? `
+        <span style="color:var(--muted)"> · ${fmtD(parseD(cur.date))}</span>` : ''}</div>
+    </div>` : ''}
     <div class="field">
       <label>Статус</label>
       <div class="seg st">
@@ -2134,8 +2160,22 @@ function setPay(cid, sid, status, sum, date){
 
   if (status === 'none') delete c.payments[sid];
   else if (status === 'skip') c.payments[sid] = {status:'skip'};
-  else c.payments[sid] = {status, sum: sum ?? perOf(c), date: date || isoD(today())};
+  else c.payments[sid] = {status, sum: sum ?? perOf(c), date: date || isoD(today()),
+                          by: (D.adminName || '').trim()};
   save();
+}
+
+/* Кто поставил отметку. Пароль привязан к праву, а не к человеку: по одному
+   паролю могут войти двое, и тогда в записи никого не различить. Поэтому имя
+   спрашиваем у устройства — один раз, при первой отметке. Отказ запоминаем,
+   чтобы не донимать: подпись необязательна, работу она не блокирует. */
+function askAdminName(){
+  if (D.adminName || D.nameAsked) return;
+  D.nameAsked = true;
+  const v = prompt('Как подписывать ваши отметки? Это увидят родители рядом с датой.\n'
+    + 'Например: Ольга С. Можно не заполнять — нажмите «Отмена».');
+  if (v && v.trim()) D.adminName = v.trim().slice(0, 40);
+  saveDevice();
 }
 
 /* Месяц фонда, следующий за указанной датой: заведённый — отдаём его,
@@ -2250,6 +2290,7 @@ document.addEventListener('click', e => {
     case 'toggle': {
       const cid = el.dataset.c, sid = el.dataset.s;
       const cur = stOf(S.collections.find(x => x.id === cid), sid);
+      if (cur !== 'paid') askAdminName();
       setPay(cid, sid, cur === 'paid' ? 'none' : 'paid');
       scrollMemo[view] = window.scrollY; render(); break;
     }
@@ -2262,6 +2303,7 @@ document.addEventListener('click', e => {
       const c = S.collections.find(x => x.id === sheet.c);
       const sum = +document.getElementById('f-sum').value || perOf(c);
       const date = document.getElementById('f-date').value;
+      if (el.dataset.v === 'paid' || el.dataset.v === 'pending') askAdminName();
       setPay(sheet.c, sheet.s, el.dataset.v, sum, date);
       render(); break;
     }
@@ -2273,6 +2315,7 @@ document.addEventListener('click', e => {
       const c = S.collections.find(x => x.id === sheet.c);
       const n = Math.max(2, Math.min(12, +document.getElementById('f-ahead').value || 2));
       const date = document.getElementById('f-date').value || isoD(today());
+      askAdminName();
       let cur = c, total = 0;
       for (let i = 0; i < n; i++){
         setPay(cur.id, sheet.s, 'paid', perOf(cur), date);
@@ -2291,6 +2334,7 @@ document.addEventListener('click', e => {
       if (cur){
         cur.sum = +document.getElementById('f-sum').value || perOf(c);
         cur.date = document.getElementById('f-date').value;
+        if (cur.status !== 'skip') cur.by = (D.adminName || '').trim();
         save();
       }
       sheet = null; render(); toast('Сохранено'); break;
@@ -2492,6 +2536,13 @@ document.addEventListener('click', e => {
       cfg.url = normalizeUrl(cfg.url);
       if (!secret) { toast('Введите код доступа'); return; }
       joinClass({...cfg, secret});
+      break;
+    }
+
+    case 'setname': {
+      D.adminName = document.getElementById('ac-name').value.trim().slice(0, 40);
+      D.nameAsked = true; saveDevice(); render();
+      toast(D.adminName ? `Отметки подписываются: ${D.adminName}` : 'Подпись убрана');
       break;
     }
 
