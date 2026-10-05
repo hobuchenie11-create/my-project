@@ -1076,9 +1076,16 @@ function cloudView(){
       Отозвать доступ у всех, кроме меня
     </button>
   </div>` : `
+  <div class="sec-title">Доступ</div>
   <div class="card card-pad">
-    <div class="hint" style="margin:0">Отмечает сдачу и заводит сборы казначей. Вы видите суммы,
+    <div class="hint" style="margin:0 0 12px">Отмечает сдачу и заводит сборы казначей. Вы видите суммы,
       сроки, реквизиты для перевода и на что потрачены деньги.</div>
+    <!-- Ответственные обычно сперва заходят по коду класса, как все, а пароль
+         получают позже. Повторное открытие ссылки код уже не спрашивает, и без
+         этой кнопки им пришлось бы выходить из класса, стирая данные устройства. -->
+    <button class="btn wide" style="width:100%" data-act="relogin">Войти с паролем казначея</button>
+    <div class="hint" style="margin-top:10px">Если вам выдали пароль ответственного — нажмите
+      и введите его вместо кода класса. Выходить из класса для этого не нужно.</div>
   </div>`}
 
   <div class="sec-title">Состояние</div>
@@ -2538,6 +2545,12 @@ document.addEventListener('click', e => {
       joinClass({...cfg, secret});
       break;
     }
+
+    case 'relogin':
+      gate = {cfg: {...D.cloud}, mode:'code',
+              msg: 'Введите пароль ответственного — приложение откроет режим редактирования. '
+                 + 'Если передумали, введите код класса, и всё останется как было.'};
+      render(); break;
 
     case 'setname': {
       D.adminName = document.getElementById('ac-name').value.trim().slice(0, 40);
