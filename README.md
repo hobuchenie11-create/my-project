@@ -131,14 +131,20 @@ HEIC — the iPhone default — has no ffmpeg demuxer, so those files are transc
 to JPEG first (EXIF carried across, so `--order date` still works). Originals are
 never modified; everything is composed into new files.
 
-### Where to put the photos
+### Where the photos live
 
-`input/photos/` is the drop folder — see the README inside it for the GitHub
-upload steps. It exists so photos can be shared for a review or a settings pass.
+Anywhere on your machine — point the command at the folder and nothing is
+copied or uploaded:
 
-For a real archive, run the tool locally instead of uploading: git handles large
-binaries badly, and anything committed stays in the repository history even after
-deletion. A few dozen photos to tune the look is what the folder is for.
+```bash
+./autophotos ~/Pictures/Holiday --order date --title "Summer"
+./autophotos /mnt/c/Users/NAME/Pictures/Holiday    # Windows folder, from WSL
+```
+
+`input/photos/` is **not** part of that flow. It is a drop folder for sharing a
+small batch so someone else can look at it and help tune the settings. The
+repository is public and git keeps what it is given, so personal archives belong
+on your own disk, not there.
 
 ---
 
