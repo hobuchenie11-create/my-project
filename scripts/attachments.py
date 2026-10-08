@@ -56,6 +56,70 @@ class Flat:
     items: list[Item] = field(default_factory=list)
 
 
+def _rows(flat: Flat, work: Path) -> list[list[tuple[Path, Item, float]]]:
+    """Снимки по рядам: акт и скриншот — по одному, приборы — в ряд."""
+    rows: list[list[tuple[Path, Item, float]]] = []
+    row: list[tuple[Path, Item, float]] = []
+    for item in flat.items:
+        path = _prepared(item, work)
+        width = WIDTH.get(item.role, WIDTH["meter"])
+        if item.role != "meter" and row:
+            rows.append(row)
+            row = []
+        row.append((path, item, width))
+        if item.role != "meter":
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    return rows
+
+
+def _fit(rows, available_cm: float):
+    """Ужимает снимки, если страница не сходится.
+
+    Акт бывает и вертикальным, и горизонтальным: вертикальный в полную
+    ширину вылезает за поля вместе со всем, что под ним, — и фотография
+    прибора оказывается за краем страницы, чего в готовом файле уже не
+    видно. Поэтому высоту считаем заранее и при нехватке уменьшаем всё
+    пропорционально: лучше снимок помельче, чем документ, съехавший за
+    поле.
+    """
+    def scaled(act: float, rest: float):
+        return [[(path, item,
+                  width * (act if item.role == "act" else rest))
+                 for path, item, width in row] for row in rows]
+
+    def total(layout) -> float:
+        height = 0.0
+        for row in layout:
+            tallest = max(_size(path, width)[1] for path, _, width in row)
+            # подпись под рядом: строка ≈ 0,35 см плюс отступ
+            lines = max(len(_wrap(item.caption, max(18, int(width / 0.23))))
+                        for _, item, width in row)
+            height += tallest + 0.35 * lines + 0.45
+        return height
+
+    # Сначала ужимаем фотографии и скриншоты: акт в приложении читают, и
+    # мелкий акт обесценивает всю страницу. Только если и этого мало —
+    # уменьшаем сам акт
+    rest = 1.0
+    while rest > 0.55 and total(scaled(1.0, rest)) > available_cm:
+        rest -= 0.05
+
+    layout = scaled(1.0, rest)
+    height = total(layout)
+    if height > available_cm:
+        act = available_cm / height
+        for _ in range(4):
+            layout = scaled(act, rest)
+            height = total(layout)
+            if height <= available_cm:
+                break
+            act *= available_cm / height
+    return layout
+
+
 def _prepared(item: Item, work: Path) -> Path:
     """Снимок в нужном повороте. Боком снятый акт на странице не читается."""
     source = Path(item.path)
@@ -149,21 +213,8 @@ def build(flats: list[Flat], out: Path, work: Path,
             run.font.size = Pt(10)
 
         # Снимки одной роли идут одним рядом: акт сам по себе, приборы — вместе
-        row: list[tuple[Path, Item, float]] = []
-        current_role = None
-        for item in flat.items:
-            path = _prepared(item, work)
-            width_cm = WIDTH.get(item.role, WIDTH["meter"])
-            if item.role != current_role and row:
-                _picture_row(doc, row)
-                row = []
-            current_role = item.role
-            row.append((path, item, width_cm))
-            if item.role != "meter":          # акт и скриншот — по одному в ряд
-                _picture_row(doc, row)
-                row = []
-                current_role = None
-        if row:
+        header_cm = 2.2 + (0.8 if flat.note else 0)
+        for row in _fit(_rows(flat, work), USABLE_H - header_cm):
             _picture_row(doc, row)
 
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -203,6 +254,35 @@ def flats_for(images: Path) -> list[Flat]:
                 Item(str(images / "5.jpg"),
                      "ИПУ ГВС, ванная, зав. № С293923811, показание 179, "
                      "поверка до 23.03.2028"),
+            ],
+        ),
+        Flat(
+            number="50",
+            note="Акт приёмки квартирных приборов учёта ГВС от 03.03.2026 "
+                 "(АО «Омск РТС», Советский АО)",
+            items=[
+                Item(str(images / "6.jpg"),
+                     "Акт приёмки квартирных приборов учёта горячей воды "
+                     "от 03.03.2026: снят зав. № 0052988 (показание 889), "
+                     "установлен зав. № 63410979 (показание 1), "
+                     "пломба 25-28011, АМП 25-20730", role="act"),
+                Item(str(images / "7.jpg"),
+                     "ИПУ ГВС, санузел, зав. № 63410979, "
+                     "допущен в эксплуатацию до 02.01.2032"),
+                Item(str(images / "8.png"),
+                     "Сведения по кв. 50 в общедомовом реестре приборов учёта",
+                     role="screen"),
+            ],
+        ),
+        Flat(
+            number="80",
+            note="Акт поверочных работ ООО «ПКФ «СЧЁТ» от 30.01.2025 "
+                 "(МПИ 4 года, поверка до 29.01.2029)",
+            items=[
+                Item(str(images / "9.png"),
+                     "Сведения по кв. 80 в общедомовом реестре приборов учёта: "
+                     "ГВС кухня зав. № 22686427, ГВС санузел зав. № 22686544",
+                     role="screen"),
             ],
         ),
     ]
@@ -250,9 +330,6 @@ def build_pdf(flats: list[Flat], out: Path, work: Path,
                 y -= 12
         y -= 6
 
-        row: list[tuple[Path, Item, float]] = []
-        current_role = None
-
         def flush(row, y):
             if not row:
                 return y
@@ -282,19 +359,8 @@ def build_pdf(flats: list[Flat], out: Path, work: Path,
                 x += width + gap
             return lowest - 8
 
-        for item in flat.items:
-            path = _prepared(item, work)
-            width_cm = WIDTH.get(item.role, WIDTH["meter"])
-            if item.role != current_role and row:
-                y = flush(row, y)
-                row = []
-            current_role = item.role
-            row.append((path, item, width_cm))
-            if item.role != "meter":
-                y = flush(row, y)
-                row = []
-                current_role = None
-        if row:
+        available = (y - margin) / cm
+        for row in _fit(_rows(flat, work), available):
             y = flush(row, y)
 
         pdf.showPage()
