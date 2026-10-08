@@ -112,12 +112,12 @@ def _fit(rows, available_cm: float):
 
     # Страница с одной фотографией выглядит потерянной, а разглядывать на
     # ней нечего: растягиваем до разумного, пока помещается
-    if height < available_cm * 0.75:
+    if height < available_cm * 0.88:
         # Шире полей расти нельзя: скриншот реестра и так во всю страницу,
         # и лишние сантиметры обрезали бы правый столбец
         widest = max(sum(width for _, _, width in row) + 0.6 * (len(row) - 1)
                      for row in layout)
-        grow = min(1.8, available_cm * 0.85 / height, USABLE_W / widest)
+        grow = min(1.8, available_cm * 0.95 / height, USABLE_W / widest)
         return scaled(grow, grow)
 
     if height > available_cm:
@@ -296,6 +296,11 @@ def flats_for(images: Path) -> list[Flat]:
             note="Акт поверочных работ ООО «ПКФ «СЧЁТ» от 30.01.2025 "
                  "(МПИ 4 года, поверка до 29.01.2029)",
             items=[
+                Item(str(images / "11.jpg"),
+                     "Акт поверочных работ ООО «ПКФ «СЧЁТ» от 30.01.2025: "
+                     "ИПУ ГВС зав. № 22686427 (кухня, показание 287) и "
+                     "зав. № 22686544 (санузел, показание 1104), "
+                     "межповерочный интервал 4 года", role="act"),
                 Item(str(images / "9.png"),
                      "Выписка АО «ОмскВодоканал» по кв. 80: приборы учёта ГВС "
                      "зав. № 22686427 (кухня) и № 22686544 (санузел) приняты, "
