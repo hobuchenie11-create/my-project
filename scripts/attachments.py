@@ -109,6 +109,17 @@ def _fit(rows, available_cm: float):
 
     layout = scaled(1.0, rest)
     height = total(layout)
+
+    # Страница с одной фотографией выглядит потерянной, а разглядывать на
+    # ней нечего: растягиваем до разумного, пока помещается
+    if height < available_cm * 0.75:
+        # Шире полей расти нельзя: скриншот реестра и так во всю страницу,
+        # и лишние сантиметры обрезали бы правый столбец
+        widest = max(sum(width for _, _, width in row) + 0.6 * (len(row) - 1)
+                     for row in layout)
+        grow = min(1.8, available_cm * 0.85 / height, USABLE_W / widest)
+        return scaled(grow, grow)
+
     if height > available_cm:
         act = available_cm / height
         for _ in range(4):
@@ -254,6 +265,9 @@ def flats_for(images: Path) -> list[Flat]:
                 Item(str(images / "5.jpg"),
                      "ИПУ ГВС, ванная, зав. № С293923811, показание 179, "
                      "поверка до 23.03.2028"),
+                Item(str(images / "10.png"),
+                     "Сведения по кв. 29 в общедомовом реестре приборов учёта",
+                     role="screen"),
             ],
         ),
         Flat(
