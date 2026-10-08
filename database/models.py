@@ -270,7 +270,7 @@ DEFAULT_TASK_TEMPLATES = [
         "day_start": 20, "day_end": 25,
         "needs_amount": 0,
         "amount_field": "", "priority": "normal",
-        "description": "Передать собранные показания в Росводоканал и ОЭК.",
+        "description": "Передать собранные показания в ОмскВодоканал и ОЭК.",
     },
     {
         "code": "nonresidential_payment",
