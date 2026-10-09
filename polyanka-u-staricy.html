@@ -228,6 +228,7 @@ tr.reserve td{color:var(--ink-2)}
       <button class="view" data-cam="2" aria-pressed="false">Детская площадка</button>
       <button class="view" data-cam="3" aria-pressed="false">Общий вид</button>
       <button class="view" data-cam="4" aria-pressed="false">Вход и таблички</button>
+      <button class="view" data-cam="5" aria-pressed="false">Цветник</button>
       <span class="grow"></span>
       <button class="view" id="togglePins" aria-pressed="true">Выноски</button>
       <span class="hint">Модель в масштабе 1:1, м</span>
@@ -253,9 +254,24 @@ tr.reserve td{color:var(--ink-2)}
   <div class="expl" id="explList"></div>
 </section>
 
-<section id="border">
+<section id="bed">
   <div class="sechead">
     <p class="eyebrow">Лист 4</p>
+    <h2>Схема посадки цветника</h2>
+    <p>Цветник 5,0 × 2,0 м вдоль западного фасада клуба, у входа. Масштаб 1:25 при печати на A3. Цифра в круге — позиция по ведомости ассортимента, диаметр круга — габарит взрослого растения.</p>
+  </div>
+  <div class="planbox"><svg id="bedSvg" viewBox="0 0 1000 700" role="img" aria-label="Схема посадки цветника у входа в клуб"></svg></div>
+  <div class="notes" id="bedNote">
+    <p><b>Ярусность.</b> Три плана, читаемые от дорожки: у борта — бархатцы и петуния высотой 0,25 м, за ними — хосты, средний план держат хризантемы и октябринки 0,5–0,7 м, фон у стены — две гортензии 1,2–1,5 м. Цветник не закрывает окна первого этажа и не мешает подходу к крыльцу.</p>
+    <p><b>Непрерывное цветение.</b> С июня работают бархатцы и петуния, с июля вступает гортензия, в августе — хризантемы, в сентябре — октябринки. Цветник остаётся живым до заморозков: как раз к Дню пожилого человека и к осенним концертам. Лист хосты держит форму с мая по октябрь, когда остальное отцветает.</p>
+    <p><b>Палитра.</b> Традиционная деревенская: охра и оранжевый (бархатцы, хризантемы), малиновый и фиолетовый (петуния, октябринки), кремовый с розовым подпалом (гортензия) — те же цвета, что в тканых половиках на полянке. Белого и холодных оттенков нет намеренно.</p>
+    <p><b>Посадка.</b> Многолетники (гортензия, хоста, хризантема, октябринки) высаживаются один раз; бархатцы и петуния — однолетники, рассада обновляется ежегодно силами участников клуба. Шаг посадки принят по габариту взрослого растения, запас на разрастание многолетников — 3–4 года без деления.</p>
+  </div>
+</section>
+
+<section id="border">
+  <div class="sechead">
+    <p class="eyebrow">Лист 5</p>
     <h2>Сцена и северная граница участка</h2>
     <p>Сценический комплекс выходит к берегу — именно там открывается вид на Старицу, ради которого сцена и разворачивается на юг. Со стороны воды он закрыт прозрачной ветрозащитой. Ниже — два варианта его посадки.</p>
   </div>
@@ -284,7 +300,7 @@ tr.reserve td{color:var(--ink-2)}
 
 <section id="totals">
   <div class="sechead">
-    <p class="eyebrow">Лист 5</p>
+    <p class="eyebrow">Лист 6</p>
     <h2>Баланс территории</h2>
     <p>Распределение площадей по типам покрытий в границах благоустройства.</p>
   </div>
@@ -293,7 +309,7 @@ tr.reserve td{color:var(--ink-2)}
 
 <section id="vedomost">
   <div class="sechead">
-    <p class="eyebrow">Лист 6</p>
+    <p class="eyebrow">Лист 7</p>
     <h2>Дефектная ведомость и ориентировочная стоимость</h2>
     <p>Объёмы приняты по генплану и экспликации. Расценки укрупнённые, ориентировочные — до подачи заявки их нужно подтвердить коммерческими предложениями.</p>
   </div>
@@ -316,7 +332,7 @@ tr.reserve td{color:var(--ink-2)}
 </section>
 
 <section id="src">
-  <div class="sechead"><p class="eyebrow">Лист 7</p><h2>Исходные данные и допущения</h2></div>
+  <div class="sechead"><p class="eyebrow">Лист 8</p><h2>Исходные данные и допущения</h2></div>
   <div class="notes">
     <p><b>Источник по участку.</b> Публичная кадастровая карта, участок <span class="num">55:11:100201:1471</span>, уточнённая площадь <span class="num">1 712</span> м², категория — земли населённых пунктов, вид использования — для размещения объектов культуры. В выписке ЕГРН адрес указан как ул. Старожильская, д. 46, на карте участок подписан номером 44 — расхождение адресации нужно устранить до подачи заявки.</p>
     <p><b>Источник по размерам.</b> Схема-обмер инициативной группы: длина участка по берегу <span class="num">40</span> м, по улице <span class="num">38</span> м, глубина <span class="num">43–44</span> м; сцена <span class="num">8×5</span> м; ширина асфальтированного прохода <span class="num">5</span> м при длине <span class="num">22</span> м до существующего забора; отступ от восточной границы до клуба <span class="num">11,8</span> м; отступ от южного забора до клуба <span class="num">7</span> м; заезд <span class="num">6</span> м от забора до дороги; ширина парковки <span class="num">6</span> м.</p>
@@ -367,10 +383,10 @@ const OBJECTS = [
    surf:'Песчаное травмобезопасное покрытие h = 30 см по дренирующему основанию, 106 м²', pin:[35.6,23,3.4],
    desc:'В полосе между восточной стеной клуба и существующим забором — её фактическая ширина 6,7 м, поэтому площадка вытянута вдоль ограждения, а оборудование расставлено в линию. В одном поле зрения с беседкой. Четыре элемента: песочница 2,5 × 2,5 м с крышкой; качалка-балансир для малышей 1,8 м; качели «Гнездо» ⌀1,0 м на стойке 2,5 м; спортивная лазилка 4,0 × 3,0 м с рукоходом и канатом. Зоны приземления выдержаны по ГОСТ Р 52169. Покрытие по всей площади — сеяный песок слоем 30 см по дренирующему основанию: по ГОСТ Р ЕН 1177 это равноценно резине по травмобезопасности для высот падения до 3 м и вдвое дешевле. От резинового покрытия отказались ради укладывания в бюджет; взамен требуется регулярная подсыпка и рыхление песка под качелями и лазилкой — это берёт на себя клуб. По южному краю площадки — детская лавочка 1,4 м с пониженным сиденьем 0,35 м, лицом к игровой зоне.' },
 
- { n:7, name:'Цветник за входом и лавочка', kind:'new', fill:'#C2557B',
-   shape:{t:'rect', x:12.6, y:31.5, w:2.0, h:5}, dims:'цветник 2,0 × 5,0 м; лавочка 1,8 м', area:10, h:0.4,
-   surf:'Многолетники, бортовой камень; лавочка — дерево по металлическим опорам', pin:[13.6,34,1.0],
-   desc:'Узкая полоса многолетников вдоль западной стены сразу за входом: её видно и от ворот, и с крыльца. Напротив, на газоне перед входом, — лавочка 1,8 м со спинкой, развёрнутая к цветнику и зданию. Содержание цветника передаётся на общественный уход силами школы и совета ветеранов.' },
+ { n:7, name:'Цветник за входом и лавочки', kind:'new', fill:'#C2557B',
+   shape:{t:'rect', x:12.6, y:31.5, w:2.0, h:5}, dims:'цветник 2,0 × 5,0 м; 2 лавочки по 1,8 м', area:10, h:0.4,
+   surf:'52 растения шести видов, бортовой камень; лавочки — дерево по металлическим опорам', pin:[13.6,34,1.0],
+   desc:'Полоса вдоль западной стены сразу за входом: её видно и от ворот, и с крыльца. Посадка в четыре яруса — у борта бархатцы и петуния, за ними хосты, средний план из хризантем-дубков и октябринок, фон у стены — две гортензии метельчатые; схема посадки вынесена на лист 4. Напротив, на газоне перед входом, — две лавочки по 1,8 м со спинками, поставленные рядом с интервалом 0,6 м и развёрнутые фронтом на сцену: сидящий видит эстраду и полянку, а цветник и вход остаются сбоку. Содержание цветника передаётся на общественный уход силами школы и совета ветеранов.' },
 
  { n:8, name:'Навес над входом в клуб', kind:'new', fill:'#8FA3AD',
    shape:{t:'rect', x:12.4, y:27.2, w:2.2, h:3.6}, dims:'навес 2,2 × 3,6 м, h = 3,0 м', area:8, h:3.0,
@@ -420,6 +436,38 @@ const BALANCE = [
 ];
 </script>
 <script>
+
+/* ═══ цветник у входа: ассортимент и схема посадки. Один массив питает и 3D, и чертёж ═══ */
+const FLORA={
+  'гортензия': {full:'Гортензия метельчатая',           ltn:'Hydrangea paniculata',        d:1.00,h:'1,2–1,5 м',bloom:'июль – сентябрь',   mo:[0,0,1,1,1,0],c:'#C8A98C'},
+  'хризантема':{full:'Хризантема корейская («дубки»)',  ltn:'Chrysanthemum × koreanum',    d:0.45,h:'0,5 м',    bloom:'август – октябрь',  mo:[0,0,0,1,1,1],c:'#C08A12'},
+  'астра':     {full:'Астра новобельгийская, октябринки',ltn:'Symphyotrichum novi-belgii', d:0.40,h:'0,6–0,7 м',bloom:'сентябрь – октябрь',mo:[0,0,0,0,1,1],c:'#6B4DAF'},
+  'хоста':     {full:'Хоста',                            ltn:'Hosta',                      d:0.55,h:'0,35 м',   bloom:'лист: май – октябрь',mo:[1,1,1,1,1,1],c:'#39704C'},
+  'петуния':   {full:'Петуния',                          ltn:'Petunia × hybrida',          d:0.30,h:'0,25 м',   bloom:'июнь – сентябрь',   mo:[0,1,1,1,1,0],c:'#9C2159'},
+  'бархатцы':  {full:'Бархатцы отклонённые',             ltn:'Tagetes patula',             d:0.25,h:'0,25 м',   bloom:'июнь – октябрь',    mo:[0,1,1,1,1,1],c:'#D1760A'}};
+const BEDL=5.0, BEDW=2.0;                       // габариты цветника, м
+const PLANT=[                                   // [вид, u вдоль 0–5 м, v от дорожки 0–2 м]
+  /* фон у стены */
+  ['гортензия',1.20,1.52],['гортензия',3.80,1.52],
+  /* средний план: октябринки выше, за ними к дорожке — хризантемы */
+  ['астра',0.25,0.95],['хризантема',0.63,0.74],['астра',1.01,0.95],['хризантема',1.39,0.74],
+  ['астра',1.77,0.95],['хризантема',2.15,0.74],['астра',2.53,0.95],['хризантема',2.91,0.74],
+  ['астра',3.29,0.95],['хризантема',3.67,0.74],['астра',4.05,0.95],['хризантема',4.43,0.74],
+  ['астра',4.81,0.95],
+  /* акценты переднего плана */
+  ['хоста',0.45,0.42],['хоста',1.60,0.42],['хоста',2.55,0.42],['хоста',3.50,0.42],['хоста',4.60,0.42],
+  /* бордюр по кромке */
+  ['бархатцы',0.13,0.15],['петуния',0.38,0.15],['бархатцы',0.63,0.15],['петуния',0.88,0.15],
+  ['бархатцы',1.13,0.15],['петуния',1.38,0.15],['бархатцы',1.63,0.15],['петуния',1.88,0.15],
+  ['бархатцы',2.12,0.15],['петуния',2.37,0.15],['бархатцы',2.62,0.15],['петуния',2.87,0.15],
+  ['бархатцы',3.12,0.15],['петуния',3.37,0.15],['бархатцы',3.62,0.15],['петуния',3.87,0.15],
+  ['бархатцы',4.12,0.15],['петуния',4.37,0.15],['бархатцы',4.62,0.15],['петуния',4.87,0.15],
+  /* заполнение промежутков между хостами */
+  ['бархатцы',0.18,0.62],['бархатцы',0.85,0.62],['петуния',1.05,0.62],['бархатцы',1.25,0.62],
+  ['бархатцы',1.98,0.62],['петуния',2.18,0.62],['бархатцы',2.95,0.62],['петуния',3.15,0.62],
+  ['бархатцы',3.88,0.62],['петуния',4.08,0.62],['бархатцы',4.28,0.62],['бархатцы',4.88,0.62]];
+
+
 /* ═══════════════ Лист 2. Генплан ═══════════════ */
 (function(){
   const S=10, PX=x=>(x*S).toFixed(1), PY=y=>((SITE.yN-y)*S).toFixed(1);
@@ -495,8 +543,11 @@ const BALANCE = [
   s+=`<line x1="${PX(14.85)}" y1="${PY(25)}" x2="${PX(18.1)}" y2="${PY(25)}" stroke="var(--accent)" stroke-width="2.8"/>`;
   s+=`<text x="${PX(16.5)}" y="${PY(25)-6}" text-anchor="middle" class="planmini" fill="var(--accent)">таблички</text>`;
   /* лавочки */
-  s+=`<rect x="${PX(11.1)}" y="${PY(30.4)}" width="${(0.4*S)}" height="${(1.8*S)}" fill="#B98A52" stroke="var(--ink)" stroke-width=".7"/>`;
-  s+=`<text x="${PX(11.0)}" y="${PY(31.2)}" text-anchor="end" class="planmini">лавочка</text>`;
+  [[11.3,29.5],[9.25,28.25]].forEach(b=>{                        // лавочки, фронтом на сцену
+    const bx=+PX(b[0]), by=+PY(b[1]);
+    s+=`<rect x="${bx-9}" y="${by-2.3}" width="18" height="4.6" fill="#B98A52" stroke="var(--ink)" stroke-width=".7" transform="rotate(-31.4 ${bx} ${by})"/>`;
+  });
+  s+=`<text x="${PX(8.0)}" y="${PY(30.4)}" text-anchor="end" class="planmini">лавочки на сцену</text>`;
   s+=`<rect x="${PX(36.6)}" y="${PY(15.7)}" width="${(0.4*S)}" height="${(1.4*S)}" fill="#B98A52" stroke="var(--ink)" stroke-width=".7"/>`;
   s+=`<text x="${PX(32.5)}" y="${PY(15.7)}" text-anchor="end" class="planmini">лавочка</text>`;
   /* ширина восточной полосы — ключевой размер */
@@ -574,7 +625,78 @@ const BALANCE = [
   }).join('');
 })();
 
-/* ═══════════════ Лист 5. Баланс ═══════════════ */
+/* ═══════════════ Лист 4. Схема посадки цветника ═══════════════ */
+(function(){
+  const K=150, X0=112, Y0=64, W=BEDL*K, H=BEDW*K;     // 150 px на метр = 1:25 при печати A3
+  const BX=u=>(X0+u*K).toFixed(1), BY=v=>(Y0+(BEDW-v)*K).toFixed(1);
+  const KEY=Object.keys(FLORA);                        // порядок позиций в ведомости
+  const cnt={}; PLANT.forEach(q=>cnt[q[0]]=(cnt[q[0]]||0)+1);
+  let s='<defs><pattern id="wall" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'
+      + '<line x1="0" y1="0" x2="0" y2="8" stroke="var(--line-strong)" stroke-width="2"/></pattern></defs>';
+
+  /* стена клуба и газон */
+  s+=`<rect x="${X0-14}" y="${Y0-28}" width="${W+28}" height="22" fill="url(#wall)" stroke="var(--line-strong)" stroke-width="1"/>`;
+  s+=`<text x="${X0+W/2}" y="${Y0-34}" text-anchor="middle" class="plantext">стена клуба, западный фасад</text>`;
+  /* борт и плодородный грунт */
+  s+=`<rect x="${X0}" y="${Y0}" width="${W}" height="${H}" fill="#6B4B2E" fill-opacity=".10" stroke="var(--ink)" stroke-width="1.3"/>`;
+  s+=`<rect x="${X0+9}" y="${Y0+9}" width="${W-18}" height="${H-18}" fill="none" stroke="var(--ink-3)" stroke-width=".8" stroke-dasharray="5 4"/>`;
+  s+=`<text x="${X0}" y="${Y0+H+16}" class="planmini">борт бетонный 120 мм, грунт плодородный h=250 мм</text>`;
+
+  /* растения */
+  s+=`<clipPath id="bedclip"><rect x="${X0}" y="${Y0}" width="${W}" height="${H}"/></clipPath><g clip-path="url(#bedclip)">`;
+  PLANT.filter(q=>q[0]==='гортензия').forEach(q=>{          // резерв на разрастание куста
+    s+=`<circle cx="${BX(q[1])}" cy="${BY(q[2])}" r="${(0.75*K).toFixed(1)}" fill="none" stroke="${FLORA['гортензия'].c}" stroke-width="1" stroke-dasharray="6 5"/>`; });
+  s+='</g>';
+  PLANT.forEach(q=>{
+    const f=FLORA[q[0]], r=(f.d/2*K).toFixed(1), n=KEY.indexOf(q[0])+1;
+    s+=`<circle cx="${BX(q[1])}" cy="${BY(q[2])}" r="${r}" fill="${f.c}" fill-opacity=".42" stroke="${f.c}" stroke-width="1.3"/>`;
+    s+=`<text x="${BX(q[1])}" y="${+BY(q[2])+3.4}" text-anchor="middle" class="plandim" style="font-size:9.5px;fill:var(--ink)">${n}</text>`;
+  });
+
+  /* размеры */
+  const dimH=(y,x1,x2,txt)=>`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="var(--ink-2)" stroke-width=".9"/>`
+    +`<line x1="${x1}" y1="${y-4}" x2="${x1}" y2="${y+4}" stroke="var(--ink-2)" stroke-width="1.4"/>`
+    +`<line x1="${x2}" y1="${y-4}" x2="${x2}" y2="${y+4}" stroke="var(--ink-2)" stroke-width="1.4"/>`
+    +`<text x="${(x1+x2)/2}" y="${y-6}" text-anchor="middle" class="plandim">${txt}</text>`;
+  s+=dimH(Y0+H+30,X0,X0+W,'5000');
+  s+=`<line x1="${X0-30}" y1="${Y0}" x2="${X0-30}" y2="${Y0+H}" stroke="var(--ink-2)" stroke-width=".9"/>`;
+  s+=`<line x1="${X0-34}" y1="${Y0}" x2="${X0-26}" y2="${Y0}" stroke="var(--ink-2)" stroke-width="1.4"/>`;
+  s+=`<line x1="${X0-34}" y1="${Y0+H}" x2="${X0-26}" y2="${Y0+H}" stroke="var(--ink-2)" stroke-width="1.4"/>`;
+  s+=`<text x="${X0-38}" y="${Y0+H/2}" text-anchor="middle" class="plandim" transform="rotate(-90 ${X0-38} ${Y0+H/2})">2000</text>`;
+  s+=`<text x="${X0+W/2}" y="${Y0+H+52}" text-anchor="middle" class="planmini">газон и подход от тротуарной дорожки</text>`;
+
+  /* ведомость ассортимента */
+  const LY=452, RH=29, C={nm:132,ltn:392,d:604,h:664,q:716,bl:734,mo:876};
+  const MO=['май','июн','июл','авг','сен','окт'];
+  s+=`<text x="${C.nm-20}" y="${LY-12}" class="plantext">Ведомость ассортимента</text>`;
+  s+=`<line x1="100" y1="${LY-4}" x2="996" y2="${LY-4}" stroke="var(--line-strong)" stroke-width="1"/>`;
+  [['вид',C.nm,'start'],['латинское название',C.ltn,'start'],['⌀, м',C.d,'end'],['h',C.h,'end'],['шт.',C.q,'end'],['срок цветения',C.bl,'start']]
+    .forEach(c=>{ s+=`<text x="${c[1]}" y="${LY+9}" text-anchor="${c[2]}" class="planmini" style="letter-spacing:.08em;text-transform:uppercase">${c[0]}</text>`; });
+  MO.forEach((m,i)=>{ s+=`<text x="${C.mo+i*20+10}" y="${LY+9}" text-anchor="middle" class="planmini">${m}</text>`; });
+  KEY.forEach((k,i)=>{
+    const f=FLORA[k], y=LY+24+i*RH, b=y+5;
+    s+=`<line x1="100" y1="${y-6}" x2="996" y2="${y-6}" stroke="var(--line)" stroke-width=".8"/>`;
+    s+=`<circle cx="112" cy="${b-4}" r="8.5" fill="${f.c}" fill-opacity=".42" stroke="${f.c}" stroke-width="1.3"/>`;
+    s+=`<text x="112" y="${b-1}" text-anchor="middle" class="plandim" style="font-size:9px;fill:var(--ink)">${i+1}</text>`;
+    s+=`<text x="${C.nm}" y="${b}" class="plantext">${f.full}</text>`;
+    s+=`<text x="${C.ltn}" y="${b}" class="planmini" style="font-style:italic">${f.ltn}</text>`;
+    s+=`<text x="${C.d}" y="${b}" text-anchor="end" class="plandim">${f.d.toFixed(2).replace('.',',')}</text>`;
+    s+=`<text x="${C.h}" y="${b}" text-anchor="end" class="plandim">${f.h}</text>`;
+    s+=`<text x="${C.q}" y="${b}" text-anchor="end" class="plandim" style="fill:var(--ink)">${cnt[k]}</text>`;
+    s+=`<text x="${C.bl}" y="${b}" class="planmini">${f.bloom}</text>`;
+    f.mo.forEach((on,j)=>{ if(on) s+=`<rect x="${C.mo+j*20+2}" y="${b-11}" width="16" height="13" rx="2" fill="${f.c}" fill-opacity="${k==='хоста'?.22:.62}"/>`; });
+  });
+  const last=LY+24+KEY.length*RH;
+  s+=`<line x1="100" y1="${last-6}" x2="996" y2="${last-6}" stroke="var(--line-strong)" stroke-width="1"/>`;
+  s+=`<text x="${C.nm}" y="${last+9}" class="plantext">Итого</text>`;
+  s+=`<text x="${C.q}" y="${last+9}" text-anchor="end" class="plandim" style="fill:var(--ink)">${PLANT.length}</text>`;
+  s+=`<text x="${C.bl}" y="${last+9}" class="planmini">многолетники — ${PLANT.filter(q=>q[0]!=='бархатцы'&&q[0]!=='петуния').length} шт., однолетники — ${PLANT.filter(q=>q[0]==='бархатцы'||q[0]==='петуния').length} шт.</text>`;
+  s+=`<text x="${C.nm}" y="${last+30}" class="planmini">Заливка в календаре — цветение, бледная — декоративный лист. Пунктир на схеме — габарит гортензии через 4–5 лет: резерв на разрастание, до смыкания куста занят однолетниками.</text>`;
+
+  document.getElementById('bedSvg').innerHTML=s;
+})();
+
+/* ═══════════════ Лист 6. Баланс ═══════════════ */
 (function(){
   const t=BALANCE.reduce((a,b)=>a+b.a,0);
   document.getElementById('totBody').innerHTML =
@@ -584,7 +706,7 @@ const BALANCE = [
 })();
 </script>
 <script>
-/* ═══════════════ Лист 6. Дефектная ведомость ═══════════════ */
+/* ═══════════════ Лист 7. Дефектная ведомость ═══════════════ */
 const ЛИМИТ = 3500000, РЕЗЕРВ = 0.05;
 const VED = [
  ['Подготовительные работы и демонтаж', [
@@ -599,7 +721,10 @@ const VED = [
    ['Бортовой камень БР 100.20.8 с установкой на бетон','п.м',152,1150],
    ['Песчаное травмобезопасное покрытие h = 30 см по дренирующему основанию с бортом','м²',106,780],
    ['Газон обыкновенный по плодородному слою 15 см','м²',211,390],
-   ['Цветник: борт, плодородный грунт, посадка многолетников','м²',10,2800],
+   ['Цветник: бетонный борт 120 мм, плодородный грунт h = 25 см','м²',10,1450],
+   ['Посадочный материал (многолетники): гортензия метельчатая С5 — 2, хоста С3 — 5, хризантема корейская С2 — 6, октябринки С2 — 7','шт',20,510],
+   ['Рассада однолетников: бархатцы отклонённые — 18, петуния — 14','шт',32,90],
+   ['Посадка с заправкой лунок компостом и поливом','шт',52,95],
  ]],
  ['Малые формы детской площадки', [
    ['Песочница 2,5 × 2,5 м с крышкой','шт',1,62000],
@@ -619,7 +744,7 @@ const VED = [
  ['Прочие малые формы и входная группа', [
    ['Беседка шестигранная ⌀ 5,0 м: каркас, стойки, скамьи, настил','шт',1,236000],
    ['Кровля беседки: металлочерепица «Каскад» 0,5 мм по обрешётке','м²',27,1850],
-   ['Лавочка 1,8 м со спинкой у входа в клуб','шт',1,24000],
+   ['Лавочка 1,8 м со спинкой у входа в клуб','шт',2,24000],
    ['Козырёк над входом 2,2 × 3,6 м: металлокаркас, кровля «Каскад»','компл.',1,74000],
    ['Ворота распашные 5,0 м с прорезной резьбой, резные столбы','компл.',1,112000],
    ['Столбы деревянные 100 × 100 мм с бетонированием, шаг 2,5 м','шт',46,1650],
@@ -1072,7 +1197,8 @@ box(1.8,.4,3.2,tiled(matConcrete,2,3,1.5),TX(13.7),0,TZ(29));                 //
 })();
 plaque(['ЛЮБИНО-МАЛОРОССКИЙ','СТАРОЖИЛЬСКИЙ КЛУБ'],2.0,.62,15.85,2.35);
 plaque(['БИБЛИОТЕКА'],1.15,.4,17.5,2.35);
-bench(11.3,29.5,1.8,Math.PI/2,1);                              // лавочка напротив входа и цветника
+bench(11.3,29.5,1.8,-2.593,1);                                 // лавочки развёрнуты фронтом на сцену
+bench(9.25,28.25,1.8,-2.593,1);
 bench(37.0,15,1.4,-Math.PI/2,.8);                               // детская лавочка
 [19.5,22.5,25.5,28.5,31.5].forEach(x=>box(1.1,1.5,.12,trim,TX(x),1.7,TZ(25)+.06));
 [33,36,39].forEach(z=>box(.12,1.5,1.1,trim,TX(14.6)-.06,1.7,TZ(z)));
@@ -1109,14 +1235,97 @@ box(18.4,.35,16.2,tiled(matConcrete,18,16,3),TX(23.7),0,TZ(33));              //
 })();
 
 /* цветник */
-slab(12.6,31.5,2.0,5,matSoil,.3,1.4);
-for(let i=0;i<60;i++){                                         // зелень и мелкие соцветия
-  const gx=TX(12.8+(i%5)*.36), gz=TZ(31.9+Math.floor(i/5)*.42);
-  const bush=new T.Mesh(new T.SphereGeometry(.17,6,5),M(0x3E6B2A,{roughness:.95}));
-  bush.position.set(gx,.40,gz); bush.scale.y=.7; bush.castShadow=true; scene.add(bush);
-  if(i%2===0){ const fl=new T.Mesh(new T.SphereGeometry(.075,5,4),
-      M([0xB8223F,0xD8930C,0x8E2E9E,0xC43A12][(i/2)%4],{roughness:.8}));
-    fl.position.set(gx+(hash(i,1,7)-.5)*.25,.55,gz+(hash(i,2,9)-.5)*.25); scene.add(fl); } }
+slab(12.6,31.5,2.0,5,matSoil,.18,1.4);
+[[12.6,31.5,2.0,.12],[12.6,36.38,2.0,.12]].forEach(k=>slab(k[0],k[1],k[2],k[3],matConcrete,.26,1));
+[[12.6,31.5,.12,5],[14.48,31.5,.12,5]].forEach(k=>slab(k[0],k[1],k[2],k[3],matConcrete,.26,1));
+/* ── цветник: посадка по схеме, координаты u вдоль (0–5 м) и v поперёк (0–2 м) ── */
+const SOIL=.18;
+const PL={roughness:.96,envMapIntensity:.18};
+const bedFoliage=foliageMat(leafTex([30,58,20],[78,116,46],320,6));   // мелкий лист для куртин
+const hydFoliage=foliageMat(leafTex([26,54,20],[64,100,38],240,9));   // крупный лист гортензии
+function clump(x,y,z,size,mat,rot){                                   // два скрещённых биллборда
+  for(let k=0;k<2;k++){ const m=new T.Mesh(new T.PlaneGeometry(size,size),mat);
+    m.position.set(x,y,z); m.rotation.set(0,rot+k*Math.PI/2,0);
+    m.castShadow=true; m.customDepthMaterial=mat.userData.depth; scene.add(m); } }
+const mFol=M(0x27501C,PL), mFol2=M(0x336226,PL);
+const hostaTex=(function(){                     // лист хосты: пластина с жилками
+  const n=256,c=cnv(n),g=c.getContext('2d'), cx=n/2; g.clearRect(0,0,n,n);
+  g.fillStyle='#2C5B38'; g.beginPath(); g.moveTo(cx,8);
+  g.bezierCurveTo(cx+40,58,cx+100,152,cx+58,234);
+  g.bezierCurveTo(cx+28,256,cx-28,256,cx-58,234);
+  g.bezierCurveTo(cx-100,152,cx-40,58,cx,8); g.fill();
+  g.globalAlpha=.70; g.strokeStyle='#5D8E54'; g.lineWidth=3;
+  for(let i=-5;i<=5;i++){ g.beginPath(); g.moveTo(cx,24);
+    g.quadraticCurveTo(cx+i*18,140,cx+i*8,242); g.stroke(); }
+  g.globalAlpha=1; g.strokeStyle='#89B272'; g.lineWidth=4;
+  g.beginPath(); g.moveTo(cx,16); g.lineTo(cx,246); g.stroke();
+  const t=new T.CanvasTexture(c); t.encoding=T.sRGBEncoding; t.anisotropy=8; return t;
+})();
+const hostaMat=new T.MeshStandardMaterial({map:hostaTex,alphaTest:.5,side:T.DoubleSide,
+  roughness:.82,metalness:0,envMapIntensity:.16});
+hostaMat.userData.depth=new T.MeshDepthMaterial({depthPacking:T.RGBADepthPacking,map:hostaTex,alphaTest:.5});
+function hostaLeaf(x,y,z,L,W,a,tilt){           // лист растёт из центра розетки и выгибается дугой
+  const g=new T.PlaneGeometry(W,L,1,6); g.translate(0,L/2,0);
+  const pos=g.attributes.position;
+  for(let i=0;i<pos.count;i++){ const t=pos.getY(i)/L; pos.setZ(i,-Math.pow(t,1.7)*L*.42); }
+  g.computeVertexNormals();
+  const m=new T.Mesh(g,hostaMat); m.rotation.order='YXZ';
+  m.position.set(x,y,z); m.rotation.y=-a-Math.PI/2; m.rotation.x=-Math.PI/2+tilt;
+  m.castShadow=true; m.customDepthMaterial=hostaMat.userData.depth; scene.add(m);
+}
+const mHyd=M(0x2B5526,PL), mPan=M(0xD8CFA8,{roughness:.92,envMapIntensity:.14}),
+      mPan2=M(0xBE8396,{roughness:.92,envMapIntensity:.14});
+const mMar=[M(0xC25A05,PL),M(0xD79405,PL),M(0xA63C04,PL)];
+const mPet=[M(0x8E1246,PL),M(0xB07CA8,PL),M(0x4B1F6E,PL),M(0xA32357,PL)];
+const mChr=[M(0xB8860A,PL),M(0xA34A0F,PL),M(0xC9A52E,PL)];
+const mAst=[M(0x5E42A0,PL),M(0x7A5CBC,PL),M(0x9478CE,PL)];
+function blob(mat,x,y,z,sx,sy,sz,ry,seg){
+  const m=new T.Mesh(new T.SphereGeometry(.5,seg||7,(seg||7)-2),mat);
+  m.scale.set(sx,sy,sz); m.position.set(x,y,z); if(ry)m.rotation.y=ry;
+  m.castShadow=true; scene.add(m); return m;
+}
+PLANT.forEach((pl,idx)=>{
+  const [kind,u,v]=pl, x=TX(12.6+v), z=TZ(31.5+u);
+  const rr=n=>{const q=Math.sin((idx+3)*37.1+n*61.7)*43758.5453; return q-Math.floor(q);};
+  if(kind==='гортензия'){                       // метельчатая: куст и соцветия-метёлки
+    for(let i=0;i<7;i++) clump(x+(rr(i)-.5)*.70, SOIL+.26+rr(i+6)*.46, z+(rr(i+12)-.5)*.70,
+                               .62+rr(i+3)*.22, hydFoliage, rr(i+15)*3.14);
+    for(let i=0;i<8;i++){ const a=rr(i+20)*6.283, d=.08+rr(i+26)*.32;
+      const px=x+Math.cos(a)*d, py=SOIL+.62+rr(i+38)*.24, pz=z+Math.sin(a)*d;
+      const H=.26+rr(i+34)*.10, lean=(rr(i+42)-.5)*.22;
+      for(let j=0;j<12;j++){ const t=j/11, rad=.015+.085*(1-t*.80);
+        const b=rr(i*13+j+50)*6.283, rj=rad*(.30+rr(i*13+j+77)*.70), S=.052+rr(i*13+j+91)*.020;
+        blob(t<.34?mPan2:mPan, px+Math.cos(b)*rj+lean*t, py+t*H, pz+Math.sin(b)*rj, S,.042,S,0,5); } }
+  } else if(kind==='хоста'){                    // розетка дуговидных листьев
+    for(let i=0;i<13;i++){ const a=i*.483+rr(i)*.26, L=.30+rr(i+13)*.15;
+      hostaLeaf(x+Math.cos(a)*.04, SOIL+.06+rr(i+5)*.05, z+Math.sin(a)*.04,
+                L, L*.64, a, .52+rr(i+26)*.30); }
+  } else if(kind==='бархатцы'){                 // плотная кочка с помпонами
+    clump(x, SOIL+.10, z, .30, bedFoliage, rr(60)*3.14);
+    for(let i=0;i<7;i++){ const a=rr(i)*6.283, d=rr(i+7)*.11;
+      blob(mMar[i%3], x+Math.cos(a)*d, SOIL+.15+rr(i+14)*.05, z+Math.sin(a)*d,
+           .070+rr(i+21)*.022,.055,.070+rr(i+21)*.022,0,6); }
+  } else if(kind==='петуния'){                  // стелющаяся куртина с воронками
+    clump(x, SOIL+.09, z, .34, bedFoliage, rr(60)*3.14);
+    for(let i=0;i<9;i++){ const a=rr(i)*6.283, d=rr(i+9)*.15, R=.050+rr(i+18)*.018;
+      const f=new T.Mesh(new T.ConeGeometry(R,R*1.25,8,1,true),mPet[i%4]);   // раскрытая воронка
+      f.rotation.x=Math.PI+(rr(i+27)-.5)*.8; f.rotation.z=(rr(i+36)-.5)*.8;   // зевом вверх
+      f.position.set(x+Math.cos(a)*d, SOIL+.15+rr(i+45)*.04, z+Math.sin(a)*d);
+      f.material.side=T.DoubleSide; f.castShadow=true; scene.add(f); }
+  } else if(kind==='хризантема'){               // шаровидная куртина осеннего цветения
+    for(let i=0;i<4;i++) clump(x+(rr(i+60)-.5)*.30, SOIL+.16+rr(i+64)*.14, z+(rr(i+68)-.5)*.30,
+                               .46+rr(i+72)*.14, bedFoliage, rr(i+76)*3.14);
+    for(let i=0;i<14;i++){ const a=rr(i)*6.283, d=rr(i+14)*.21;
+      blob(mChr[i%3], x+Math.cos(a)*d, SOIL+.30+rr(i+28)*.14, z+Math.sin(a)*d,
+           .055+rr(i+42)*.018,.045,.055+rr(i+42)*.018,0,6); }
+  } else {                                      // октябринки — высокие ажурные куртины
+    for(let i=0;i<4;i++) clump(x+(rr(i+60)-.5)*.24, SOIL+.22+rr(i+64)*.26, z+(rr(i+68)-.5)*.24,
+                               .38+rr(i+72)*.12, bedFoliage, rr(i+76)*3.14);
+    for(let i=0;i<16;i++){ const a=rr(i)*6.283, d=rr(i+16)*.20;
+      blob(mAst[i%3], x+Math.cos(a)*d, SOIL+.42+rr(i+32)*.26, z+Math.sin(a)*d,
+           .040+rr(i+48)*.013,.030,.040+rr(i+48)*.013,0,6); }
+  }
+});
 
 /* ── беседка ── */
 (function(){
@@ -1262,6 +1471,7 @@ const VIEWS=[
   [new T.Vector3(14,4.5,20),    new T.Vector3(8.5,1.2,6.5)],
   [new T.Vector3(30,36,44),     new T.Vector3(-1,0,0)],
   [new T.Vector3(-9.2,2.7,5.2), new T.Vector3(-3.2,2.2,-4.2)],
+  [new T.Vector3(-9.6,1.45,-10.4), new T.Vector3(-5.3,.72,-12.1)],
 ];
 setView(VIEWS[0][0],VIEWS[0][1]);
 
