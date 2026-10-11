@@ -217,6 +217,10 @@ def test_app_question_goes_to_the_right_memo(house, question, code):
     ("почему платим за отопление летом", "otoplenie-plata"),
     ("в квартире жарко что делать", "otoplenie-plata"),
     ("можно ли перекрыть батарею", "otoplenie-plata"),
+    ("кто поставляет ресурсы в наш дом", "resursniki"),
+    ("как сверить платежи", "resursniki"),
+    ("личный кабинет оэк", "resursniki"),
+    ("платёж не дошёл что делать", "resursniki"),
 ])
 def test_heating_question_goes_to_the_right_memo(house, question, code):
     """Про отопление спрашивают двумя способами — и ответы разные.
