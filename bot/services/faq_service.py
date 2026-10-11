@@ -9,6 +9,7 @@
 говорит «не знаю» и записывает вопрос в журнал `faq_gaps`, чтобы председатель
 раз в неделю посмотрел, о чём спрашивают, и дописал памятку.
 """
+import math
 import re
 import sqlite3
 from dataclasses import dataclass
@@ -108,22 +109,82 @@ def load_memos(conn: sqlite3.Connection, directory: Path | None = None) -> int:
 # Поиск и выдача
 # ---------------------------------------------------------------------------
 
+# Окончания, которые отбрасываем перед сравнением. «Ключи», «ключами» и
+# «ключей» — одно слово, но по началу они расходятся, и житель, спросивший
+# «куда ехать за ключами», получал не ту памятку
+_ENDINGS = ("ами", "ями", "ыми", "ими", "ого", "его", "ому", "ему",
+            "ых", "их", "ам", "ям", "ах", "ях", "ов", "ев", "ой", "ей",
+            "ую", "юю", "ая", "яя", "ые", "ие", "ый", "ий", "ом", "ем",
+            "ью", "а", "я", "ы", "и", "е", "о", "у", "ю", "ь", "й")
+
+# Короче четырёх букв корень уже ничего не значит: «вод» от «вода» годится
+# и для воды, и для водителя
+MIN_STEM = 4
+
+
+def _stem(word: str) -> str:
+    """Отбрасывает окончание, если без него остаётся узнаваемый корень."""
+    for ending in _ENDINGS:
+        if word.endswith(ending) and len(word) - len(ending) >= MIN_STEM:
+            return word[:-len(ending)]
+    return word
+
+
 def _words(text: str) -> set[str]:
     lowered = re.sub(r"[^а-яёa-z0-9]+", " ", text.lower())
-    return {w for w in lowered.split() if len(w) >= MIN_WORD} - STOP_WORDS
+    plain = {w for w in lowered.split() if len(w) >= MIN_WORD} - STOP_WORDS
+    return {_stem(w) for w in plain}
 
 
-def _score(question: set[str], memo: sqlite3.Row) -> int:
-    """Насколько памятка подходит вопросу. 0 — не подходит."""
-    keywords = _words(memo["keywords"])
-    title = _words(memo["title"])
-    score = 0
+def _affinity(word: str, other: str) -> float:
+    """Насколько слово вопроса близко к слову памятки. 0 — не близко.
+
+    Совпадение по началу слова нужно: «оплат» должно ловить «оплата» и
+    «оплатить». Но считать его равным точному попаданию нельзя — «дом»
+    начинается так же, как «домофон», и памятка про домофон перебивала
+    вопрос про дом. Поэтому вес тем меньше, чем сильнее слова разошлись.
+    """
+    if word == other:
+        return 1.0
+    if not (other.startswith(word) or word.startswith(other)):
+        return 0.0
+    return min(len(word), len(other)) / max(len(word), len(other))
+
+
+def _best(word: str, words: set[str]) -> float:
+    return max((_affinity(word, other) for other in words), default=0.0)
+
+
+def _weights(question: set[str],
+             prepared: list[tuple]) -> dict[str, float]:
+    """Вес слова: чем в большем числе памяток оно есть, тем меньше значит.
+
+    «Квартира» встречается почти в каждой памятке и потому не отличает
+    ничего, а «жарко» — только в одной, и именно оно показывает, что
+    жителю нужно. Без этого редкое слово проигрывало частому.
+    """
+    total = len(prepared) or 1
+    seen = dict.fromkeys(question, 0)
+    for _, keywords, title in prepared:
+        for word in question:
+            if _best(word, keywords) or _best(word, title):
+                seen[word] += 1
+    return {word: math.log((total + 1) / (count + 1)) + 1
+            for word, count in seen.items()}
+
+
+def _score(question: set[str], keywords: set[str], title: set[str],
+           weights: dict[str, float]) -> float:
+    """Насколько памятка подходит вопросу. 0 — не подходит.
+
+    Ключевое слово весит больше заголовка: заголовок короткий, и случайное
+    слово попадает в него чаще.
+    """
+    score = 0.0
     for word in question:
-        # Совпадение по началу слова: «оплат» ловит «оплата», «оплатить»
-        if any(k.startswith(word) or word.startswith(k) for k in keywords):
-            score += 3
-        if any(t.startswith(word) or word.startswith(t) for t in title):
-            score += 2
+        weight = weights[word]
+        score += 3 * _best(word, keywords) * weight
+        score += 2 * _best(word, title) * weight
     return score
 
 
@@ -134,9 +195,13 @@ def search(conn: sqlite3.Connection, question: str,
     if not words:
         return []
 
+    prepared = [(row, _words(row["keywords"]), _words(row["title"]))
+                for row in repository.active_memos(conn)]
+    weights = _weights(words, prepared)
+
     scored = []
-    for row in repository.active_memos(conn):
-        score = _score(words, row)
+    for row, keywords, title in prepared:
+        score = _score(words, keywords, title, weights)
         if score:
             scored.append((score, row))
 

@@ -229,6 +229,12 @@ def test_app_question_goes_to_the_right_memo(house, question, code):
     ("магнит тко", "resursniki"),
     ("куда звонить по вывозу мусора", "resursniki"),
     ("офис модуса адрес", "klyuchi"),
+    # Эти два вопроса раньше приводили не туда: памятки набирали поровну,
+    # и бот выбирал по порядку в меню
+    ("телефон ворот", "vorota"),
+    ("куда ехать за ключами", "klyuchi"),
+    ("потеряла ключ от калитки", "klyuchi"),
+    ("в квартире жарко что делать", "otoplenie-plata"),
     # широкие слова в памятке по ресурсникам не должны забирать чужое
     ("телефон управляющей компании", "uk-evrocentr"),
     ("застряли в лифте", "uk-evrocentr"),
@@ -242,6 +248,35 @@ def test_heating_question_goes_to_the_right_memo(house, question, code):
     """
     found = faq_service.search(house, question)
     assert found and found[0].code == code, [m.code for m in found]
+
+
+@pytest.mark.parametrize("word, stem", [
+    ("ключами", "ключ"),
+    ("ключи", "ключ"),
+    ("ключей", "ключ"),
+    ("воротами", "ворот"),
+    ("ворота", "ворот"),
+    ("квартире", "квартир"),
+    ("квартиру", "квартир"),
+    ("дом", "дом"),              # короткое слово не трогаем
+    ("вода", "вода"),            # «вод» — уже не корень, а огрызок
+])
+def test_endings_do_not_hide_the_same_word(word, stem):
+    """Житель пишет в любом падеже, а памятка — в своём."""
+    assert faq_service._stem(word) == stem
+
+
+def test_rare_word_outweighs_a_common_one(house):
+    """«Жарко» есть в одной памятке, «квартира» — во многих.
+
+    Пока слова весили одинаково, вопрос «в квартире жарко» уводил жителя
+    к памятке новосёла: она тоже про квартиру.
+    """
+    prepared = [(row, faq_service._words(row["keywords"]),
+                 faq_service._words(row["title"]))
+                for row in repository.active_memos(house)]
+    weights = faq_service._weights({"жарк", "квартир"}, prepared)
+    assert weights["жарк"] > weights["квартир"]
 
 
 def test_every_named_poster_exists(house):
