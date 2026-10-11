@@ -85,9 +85,19 @@ def _fit(rows, available_cm: float):
     пропорционально: лучше снимок помельче, чем документ, съехавший за
     поле.
     """
+    # Ниже этого скриншот реестра превращается в полоску, где не разобрать
+    # ни заводского номера, ни даты — а ради них он и приложен
+    SCREEN_MIN = 11.0
+
+    def factor(item, act: float, rest: float) -> float:
+        if item.role == "act":
+            return act
+        if item.role == "screen":
+            return max(rest, min(1.0, SCREEN_MIN / WIDTH["screen"]))
+        return rest
+
     def scaled(act: float, rest: float):
-        return [[(path, item,
-                  width * (act if item.role == "act" else rest))
+        return [[(path, item, width * factor(item, act, rest))
                  for path, item, width in row] for row in rows]
 
     def total(layout) -> float:
@@ -304,6 +314,12 @@ def flats_for(images: Path) -> list[Flat]:
                      "ИПУ ГВС зав. № 22686427 (кухня, показание 287) и "
                      "зав. № 22686544 (санузел, показание 1104), "
                      "межповерочный интервал 4 года", role="act"),
+                Item(str(images / "12.jpg"),
+                     "ИПУ ГВС, кухня, зав. № 22686427, показание 317, "
+                     "поверка до 29.01.2029"),
+                Item(str(images / "13.jpg"),
+                     "ИПУ ГВС, санузел, зав. № 22686544, показание 1256, "
+                     "поверка до 29.01.2029"),
                 Item(str(images / "9.png"),
                      "Сведения из общедомового реестра на сайте "
                      "АО «Омскводоканал» по кв. 80: приборы учёта ГВС "
@@ -434,12 +450,14 @@ def main() -> None:
     parser.add_argument("--pdf", default="Приложение2.pdf")
     parser.add_argument("--work", default="work",
                         help="куда класть повёрнутые копии снимков")
+    parser.add_argument("--date", default="«____» ____________ 2026 г.",
+                        help="дата письма в шапке страницы")
     args = parser.parse_args()
 
     images = Path(args.images)
     flats = flats_for(images)
-    print(f"Готово: {build(flats, Path(args.out), Path(args.work))}")
-    print(f"Готово: {build_pdf(flats, Path(args.pdf), Path(args.work))}")
+    print(f"Готово: {build(flats, Path(args.out), Path(args.work), args.date)}")
+    print(f"Готово: {build_pdf(flats, Path(args.pdf), Path(args.work), args.date)}")
 
 
 if __name__ == "__main__":

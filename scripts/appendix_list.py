@@ -58,10 +58,12 @@ FOOT = ("Документы, подтверждающие сведения на�
         "приведены в приложении № 2 — по одной "
         "странице на каждую квартиру.")
 
+DEFAULT_DATE = "«____» ____________ 2026 г."
+
 WIDTHS = [0.9, 1.2, 2.6, 2.6, 6.2, 2.0, 4.0]      # см, сумма 19,5 — альбомная
 
 
-def build_docx(out: Path) -> Path:
+def build_docx(out: Path, date: str = DEFAULT_DATE) -> Path:
     from docx import Document
     from docx.enum.section import WD_ORIENT
     from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -79,8 +81,7 @@ def build_docx(out: Path) -> Path:
 
     head = doc.add_paragraph()
     head.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    run = head.add_run("Приложение № 1 к письму "
-                       "от «____» ____________ 2026 г.")
+    run = head.add_run(f"Приложение № 1 к письму от {date}")
     run.italic = True
     run.font.size = Pt(9)
 
@@ -123,7 +124,7 @@ def build_docx(out: Path) -> Path:
     return out
 
 
-def build_pdf(out: Path) -> Path:
+def build_pdf(out: Path, date: str = DEFAULT_DATE) -> Path:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import ParagraphStyle
@@ -166,7 +167,7 @@ def build_pdf(out: Path) -> Path:
     ]))
 
     doc.build([
-        Paragraph("Приложение № 1 к письму от «____» ____________ 2026 г.",
+        Paragraph(f"Приложение № 1 к письму от {date}",
                   ParagraphStyle("hdr", fontName=font, fontSize=8,
                                  alignment=2, spaceAfter=8)),
         Paragraph(TITLE, title),
@@ -182,9 +183,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", default="Приложение1.docx")
     parser.add_argument("--pdf", default="Приложение1.pdf")
+    parser.add_argument("--date", default=DEFAULT_DATE,
+                        help="дата письма в шапке")
     args = parser.parse_args()
-    print(f"Готово: {build_docx(Path(args.out))}")
-    print(f"Готово: {build_pdf(Path(args.pdf))}")
+    print(f"Готово: {build_docx(Path(args.out), args.date)}")
+    print(f"Готово: {build_pdf(Path(args.pdf), args.date)}")
 
 
 if __name__ == "__main__":
