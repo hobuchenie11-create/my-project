@@ -226,6 +226,9 @@ def test_app_question_goes_to_the_right_memo(house, question, code):
     ("омскгоргаз часы работы", "resursniki"),
     ("часы приёма оэк", "resursniki"),
     ("как записаться в водоканал", "resursniki"),
+    ("магнит тко", "resursniki"),
+    ("куда звонить по вывозу мусора", "resursniki"),
+    ("офис модуса адрес", "klyuchi"),
     # широкие слова в памятке по ресурсникам не должны забирать чужое
     ("телефон управляющей компании", "uk-evrocentr"),
     ("застряли в лифте", "uk-evrocentr"),
