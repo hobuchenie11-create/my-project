@@ -221,6 +221,15 @@ def test_app_question_goes_to_the_right_memo(house, question, code):
     ("как сверить платежи", "resursniki"),
     ("личный кабинет оэк", "resursniki"),
     ("платёж не дошёл что делать", "resursniki"),
+    ("куда идти с вопросом по квитанции за воду", "resursniki"),
+    ("телефон водоканала", "resursniki"),
+    ("омскгоргаз часы работы", "resursniki"),
+    ("часы приёма оэк", "resursniki"),
+    ("как записаться в водоканал", "resursniki"),
+    # широкие слова в памятке по ресурсникам не должны забирать чужое
+    ("телефон управляющей компании", "uk-evrocentr"),
+    ("застряли в лифте", "uk-evrocentr"),
+    ("за что начисляют домофон в квитанции", "oplata"),
 ])
 def test_heating_question_goes_to_the_right_memo(house, question, code):
     """Про отопление спрашивают двумя способами — и ответы разные.
@@ -253,6 +262,7 @@ def test_posters_are_attached_to_the_memos_they_belong_to(house):
         "otoplenie-zapusk": "otoplenie.jpg",
         "otoplenie-podgotovka": "otoplenie.jpg",
         "otoplenie-plata": "otoplenie-plata.jpg",
+        "resursniki": "resursniki.jpg",
     }
     for code, image in expected.items():
         assert faq_service.by_code(house, code).image == image, code
