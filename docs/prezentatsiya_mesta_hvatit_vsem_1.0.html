@@ -353,14 +353,14 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
     <button class="chip" data-r="0,0,.5,.655" aria-pressed="false">Запад</button>
     <button class="chip" data-r=".5,0,1,.655" aria-pressed="false">Восток, ул. Химиков</button>
     <button class="chip" data-r="0,.67,1,1" aria-pressed="false">Условные обозначения</button>
-        <button class="chip" data-r=".42,.1,.75,.36" aria-pressed="false">Организации у дома № 2</button>
+        <button class="chip" data-r=".40,.07,.80,.36" aria-pressed="false">Организации у дома № 2</button>
   </div>
   <div class="viewer" id="viewer" role="img" aria-label="Схема организации дорожного движения по ул. Магистральной, 2. Колесо мыши приближает, перетаскивание сдвигает.">
     <img id="schemeImg" data-img="scheme.jpg" alt="">
     <div class="zoomctl"><button class="btn" id="zin" aria-label="Приблизить">+</button><button class="btn" id="zout" aria-label="Отдалить">−</button></div>
     <span class="hint">Колесо мыши — масштаб, перетаскивание — сдвиг</span>
   </div>
-<div class="who"><span><b>1</b> Газпромбанк</span><span><b>2</b> Big сервис, ремонтная мастерская</span><span><b>3</b> Офис недвижимости</span><span><b>4</b> Пункт выдачи «Озон»</span><span><b>5</b> Офис ритуальных услуг</span></div>
+<div class="who"><span><b>1</b> Газпромбанк</span><span><b>2</b> Мастерская по ремонту бытовой техники</span><span><b>3</b> Офис недвижимости</span><span><b>4</b> Пункт выдачи «Озон»</span><span><b>5</b> Офис ритуальных услуг «Каменьград»</span><span><b>6</b> Магазин-бар «Пивноff»</span></div>
     <p class="src">Схема согласована инспектором ОП ОН УГИБДД УМВД России по Омской области (отметка «Соответствует требованиям БДД») и Департаментом городского хозяйства Администрации г. Омска.</p>
 </section>
 
@@ -511,7 +511,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
   <div class="ref"><b>Социальная значимость</b><span>Комфортность и безопасность</span></div>
   <h2>Социально значимый проект: комфорт и безопасность для разных категорий людей</h2>
   <p class="lead">Жители близлежащих домов смогут чаще пользоваться обновлённым благоустройством, а заходить и заезжать во двор станет комфортнее и безопаснее.</p>
-  <div class="who"><span>Пешеходы</span><span>Люди с инвалидностью: 3 специальных места</span><span>Клиенты Газпромбанка</span><span>Клиенты офиса недвижимости</span><span>Клиенты Озона</span><span>Клиенты ремонтной мастерской</span><span>Клиенты офиса ритуальных услуг</span><span>Жители близлежащих домов</span></div>
+  <div class="who"><span>Пешеходы</span><span>Люди с инвалидностью: 3 специальных места</span><span>Клиенты Газпромбанка</span><span>Клиенты офиса недвижимости</span><span>Клиенты Озона</span><span>Клиенты мастерской по ремонту бытовой техники</span><span>Клиенты офиса ритуальных услуг «Каменьград»</span><span>Клиенты магазина-бара «Пивноff»</span><span>Жители близлежащих домов</span></div>
   <div class="cols c2" style="gap:20px">
     <div class="card soc ped"><h3>Безопасность детей и пожилых людей</h3><p>Обустроенный переход вместо перехода «где придётся» на оживлённой улице.</p></div>
     <div class="card soc"><h3>Свободные тротуары и проезд</h3><p>Автомобили стоят на размеченных местах, а не на тротуарах, у ворот и на торце дома.</p></div>
@@ -530,6 +530,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
       <p class="mono" style="font-size:22px">02.11.2026, 17:00</p><p>Во дворе дома № 2 по ул. Магистральной, площадка «Радужный дворик».</p>
       <h3 style="font-size:20px;margin-top:8px">Письменные решения</h3>
       <p class="mono" style="font-size:18px">02.11 – 06.11.2026, 18:00–20:00</p><p>г. Омск, ул. Магистральная, д. 2, кв. 40. Указываются Ф.И.О., дата рождения, адрес проживания, подпись.</p>
+      <p>Подписать можно на собрании или у ответственных участников инициативной группы.</p>
     </div>
     <div class="card"><h3 style="font-size:20px;margin-bottom:6px">Инициаторы проекта</h3>
       <div class="contact"><span>Кузбаков Темирбулат Мухтарович</span><b>8 923 680-90-43</b></div>
@@ -621,7 +622,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 
   /* scheme viewer */
   var vw=$('#viewer'), im=$('#schemeImg'), IW=3600, IH=2335, S=1, TX=0, TY=0, drag=null;
-  var ORGS=[[1, "Газпромбанк", 1664, 585], [2, "Big сервис, ремонтная мастерская", 1971, 585], [3, "Офис недвижимости", 2175, 585], [4, "Пункт выдачи «Озон»", 2380, 585], [5, "Офис ритуальных услуг", 2500, 585]];
+  var ORGS=[[1, "Газпромбанк", 1778, 394], [2, "Мастерская по ремонту бытовой техники", 2066, 281], [3, "Офис недвижимости", 2132, 281], [4, "Пункт выдачи «Озон»", 2290, 265], [5, "Офис ритуальных услуг «Каменьград»", 2470, 256], [6, "Магазин-бар «Пивноff»", 2749, 391]];
   var pinEls=ORGS.map(function(o){var e=document.createElement('span');e.className='orgpin';e.textContent=o[0];e.title=o[1];e.setAttribute('role','img');e.setAttribute('aria-label',o[1]);vw.appendChild(e);return e});
   function placePins(a){pinEls.forEach(function(e,i){e.style.transition=a?'left .5s cubic-bezier(.2,.7,.2,1),top .5s cubic-bezier(.2,.7,.2,1)':'none';e.style.left=(TX+ORGS[i][2]*S)+'px';e.style.top=(TY+ORGS[i][3]*S)+'px'})}
   function apply(anim){placePins(anim);im.classList.toggle('anim',!!anim);im.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')'}

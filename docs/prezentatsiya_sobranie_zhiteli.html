@@ -172,7 +172,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
   </div>
   <div class="card social"><h3>Социально значимый проект</h3>
     <p>Проект решает задачи комфортности и безопасности для разных категорий людей. Жители близлежащих домов смогут чаще пользоваться обновлённым благоустройством, а заходить и заезжать во двор станет комфортнее и безопаснее.</p>
-    <div class="who"><span>Пешеходы</span><span>Люди с инвалидностью: 3 специальных места</span><span>Клиенты Газпромбанка</span><span>Клиенты офиса недвижимости</span><span>Клиенты Озона</span><span>Клиенты ремонтной мастерской</span><span>Клиенты офиса ритуальных услуг</span><span>Жители близлежащих домов</span></div></div>
+    <div class="who"><span>Пешеходы</span><span>Люди с инвалидностью: 3 специальных места</span><span>Клиенты Газпромбанка</span><span>Клиенты офиса недвижимости</span><span>Клиенты Озона</span><span>Клиенты мастерской по ремонту бытовой техники</span><span>Клиенты офиса ритуальных услуг «Каменьград»</span><span>Клиенты магазина-бара «Пивноff»</span><span>Жители близлежащих домов</span></div></div>
 </section>
 
 <section class="slide" id="about">
@@ -244,7 +244,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
         <button class="chip" data-r=".27,.17,.53,.5" aria-pressed="false">Пешеходный переход</button>
         <button class="chip" data-r=".5,0,1,.655" aria-pressed="false">Восточная часть</button>
         <button class="chip" data-r="0,0,.5,.655" aria-pressed="false">Западная часть</button>
-        <button class="chip" data-r=".42,.1,.75,.36" aria-pressed="false">Организации у дома № 2</button>
+        <button class="chip" data-r=".40,.07,.80,.36" aria-pressed="false">Организации у дома № 2</button>
       </div>
       <div class="viewer" id="viewer" role="img" aria-label="Схема организации дорожного движения. Колесо мыши приближает, перетаскивание сдвигает.">
         <img id="schemeImg" data-img="scheme.jpg" alt="">
@@ -260,7 +260,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
       <span class="cell"></span><span>Размеченное парковочное место с номером</span>
       <span class="dash"></span><span>Граница работ первого и второго этапа</span>
     </div>
-    <div class="orglist" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><i>1</i><span>Газпромбанк</span><i>2</i><span>Big сервис, ремонтная мастерская</span><i>3</i><span>Офис недвижимости</span><i>4</i><span>Пункт выдачи «Озон»</span><i>5</i><span>Офис ритуальных услуг</span></div></div>
+    <div class="orglist" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><i>1</i><span>Газпромбанк</span><i>2</i><span>Мастерская по ремонту бытовой техники</span><i>3</i><span>Офис недвижимости</span><i>4</i><span>Пункт выдачи «Озон»</span><i>5</i><span>Офис ритуальных услуг «Каменьград»</span><i>6</i><span>Магазин-бар «Пивноff»</span></div></div>
   </div>
 </section>
 
@@ -317,7 +317,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
   <div class="cols c3" style="align-items:stretch">
     <div class="card" style="display:flex;flex-direction:column;gap:10px"><span class="big">70</span><p><b>Не менее 70 голосов</b> жителей нужно, чтобы проект был выдвинут.</p><p>Каждый голос поддержки важен: от него зависит, продвинется ли наша инициатива на конкурсе дальше.</p></div>
     <div class="card" style="display:flex;flex-direction:column;gap:12px">
-      <div class="step"><b>Сегодня</b><h3>Подпишите решение на собрании</h3><p class="small">02.11.2026, 17:00, «Радужный дворик».</p></div>
+      <div class="step"><b>Подпись</b><h3>Подпишите на собрании или у ответственных участников инициативной группы</h3><p class="small">Собрание 02.11.2026, 17:00, «Радужный дворик». Контакты участников справа.</p></div>
       <div class="step"><b>Нет времени?</b><h3>Письменное решение</h3><p class="small">с 02.11 по 06.11, 18:00–20:00, ул. Магистральная, 2, кв. 40. Нужны Ф.И.О., дата рождения, адрес и подпись.</p></div>
     </div>
     <div class="card"><h3 style="margin-bottom:6px">Инициаторы проекта</h3>
@@ -347,7 +347,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
   var sx=null;deck.addEventListener('touchstart',function(e){sx=e.touches[0].clientX},{passive:true});deck.addEventListener('touchend',function(e){if(!paged||sx===null)return;var d=e.changedTouches[0].clientX-sx;sx=null;if(Math.abs(d)>80&&!e.target.closest('.viewer'))go(d<0?1:-1)});
   /* scheme viewer */
   var vw=$('#viewer'),im=$('#schemeImg'),IW=3600,IH=2335,S=1,TX=0,TY=0,drag=null,curR=[0,0,1,.655];
-  var ORGS=[[1, "Газпромбанк", 1664, 585], [2, "Big сервис, ремонтная мастерская", 1971, 585], [3, "Офис недвижимости", 2175, 585], [4, "Пункт выдачи «Озон»", 2380, 585], [5, "Офис ритуальных услуг", 2500, 585]];
+  var ORGS=[[1, "Газпромбанк", 1778, 394], [2, "Мастерская по ремонту бытовой техники", 2066, 281], [3, "Офис недвижимости", 2132, 281], [4, "Пункт выдачи «Озон»", 2290, 265], [5, "Офис ритуальных услуг «Каменьград»", 2470, 256], [6, "Магазин-бар «Пивноff»", 2749, 391]];
   var pinEls=ORGS.map(function(o){var e=document.createElement('span');e.className='orgpin';e.textContent=o[0];e.title=o[1];e.setAttribute('role','img');e.setAttribute('aria-label',o[1]);vw.appendChild(e);return e});
   function placePins(a){pinEls.forEach(function(e,i){e.style.transition=a?'left .5s cubic-bezier(.2,.7,.2,1),top .5s cubic-bezier(.2,.7,.2,1)':'none';e.style.left=(TX+ORGS[i][2]*S)+'px';e.style.top=(TY+ORGS[i][3]*S)+'px'})}
   function apply(a){placePins(a);im.classList.toggle('anim',!!a);im.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')'}
