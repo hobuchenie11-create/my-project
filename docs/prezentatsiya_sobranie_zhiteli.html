@@ -106,6 +106,35 @@ figcaption{font-size:.8em;color:var(--muted)}
 .big{font-family:var(--serif);font-size:clamp(54px,7vw,120px);font-weight:600;line-height:1;color:var(--accent)}
 .contact{display:flex;flex-direction:column;padding:10px 0;border-bottom:1px solid var(--line)}.contact:last-child{border:0}
 .contact span{color:var(--muted);font-size:.8em}.contact b{font-family:var(--mono);font-weight:500;font-size:1.15em;user-select:all}
+.tabs{display:inline-flex;flex-wrap:wrap;max-width:100%;border:1px solid var(--line);border-radius:6px;overflow:hidden;align-self:flex-start;background:var(--surface)}
+.tabs button{border:0;background:none;padding:9px 16px;font-size:15px;min-height:40px}
+.tabs button+button{border-left:1px solid var(--line)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.tag{display:inline-block;font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--line);border-radius:3px;color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* virtual walk */
+.sim{position:relative;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#fff;height:100%;min-height:360px}
+.walkgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;flex:1;min-height:360px}
+.world{position:absolute;left:0;top:0;width:3600px;height:2335px;transform-origin:0 0}
+.world.anim{transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+.world img{display:block;max-width:none;width:3600px;height:auto}
+.world svg{position:absolute;left:0;top:0;width:3600px;height:2335px;pointer-events:none}
+#walk{gap:14px}
+#walk h2{font-size:clamp(24px,2.4vw,34px);max-width:none}
+@media (max-width:959px){.walkgrid{grid-template-columns:minmax(0,1fr);flex:none}.sim{height:56vh}}
+.walkctl{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.walkctl .tabs{flex:none}
+.walkctl input[type=range]{flex:1;min-width:140px;accent-color:var(--accent);height:40px}
+.timelab{font-family:var(--mono);font-size:14px;color:var(--muted);min-width:78px;text-align:right}
+.cap{display:flex;flex-direction:column;gap:12px;align-self:stretch}
+.cap p{font-size:18px;line-height:1.5}
+.cap .src{margin-top:auto}
+
+.cap p{font-size:1em;line-height:1.5}
+.cap .src{font-size:.68em;color:var(--muted)}
+.walkgrid{grid-template-columns:minmax(0,1fr) 360px}
+@media (max-width:959px){.walkgrid{grid-template-columns:minmax(0,1fr)}}
+#walk h2{font-size:clamp(26px,2.8vw,44px);max-width:none}
 @media (max-width:640px){.bar b{font-size:15px}}
 body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
@@ -113,7 +142,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 
 
 <header class="bar"><b>Парковка на ул. Магистральной, 2</b>
-  <div class="ctrl"><button class="btn" id="prev" aria-label="Назад">←</button><span class="count" id="count">1 / 10</span><button class="btn" id="next" aria-label="Вперёд">→</button></div>
+  <div class="ctrl"><button class="btn" id="prev" aria-label="Назад">←</button><span class="count" id="count">1 / 11</span><button class="btn" id="next" aria-label="Вперёд">→</button></div>
 </header>
 <div class="progress"><i id="prog"></i></div>
 
@@ -235,6 +264,29 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
   </div>
 </section>
 
+<!-- walk -->
+<section class="slide" id="walk" >
+  <h2>Как это будет работать: смотрим на схеме</h2>
+  <div class="walkctl">
+    <div class="tabs" role="tablist" aria-label="Сцены прогулки">
+      <button role="tab" aria-selected="true" data-scene="0">Переход через дорогу</button>
+      <button role="tab" aria-selected="false" data-scene="1">Парковка вдоль дороги</button>
+      <button role="tab" aria-selected="false" data-scene="2">Парковка у торца дома</button>
+    </div>
+    <button class="btn pri" id="wPlay" aria-label="Воспроизвести">▶ Смотреть</button>
+    <button class="btn" id="wRestart" aria-label="Сначала">↺</button>
+    <button class="btn" id="wAll">Все сцены подряд</button>
+  </div>
+  <div class="walkgrid">
+    <div class="sim" id="sim" role="img" aria-label="Анимация на схеме проекта: автомобили останавливаются перед пешеходным переходом, женщина с детьми переходит улицу, автомобили паркуются на размеченных местах">
+      <div class="world" id="world"><img id="worldImg" data-img="scheme.jpg" alt=""><svg id="actors" viewBox="0 0 3600 2335" aria-hidden="true"></svg></div>
+    </div>
+    <aside class="card cap"><span class="tag" id="capTag" style="align-self:flex-start">Пешеходный переход</span><p id="capText" aria-live="off"></p>
+      <p class="src">Иллюстративная анимация на основе схемы проекта: траектории условные, пешеходы показаны крупнее масштаба схемы. Размеры мест и расположение знаков соответствуют листу 4.</p></aside>
+  </div>
+  <div class="walkctl"><input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Положение на временной шкале"><span class="timelab" id="wTime">0:00</span></div>
+</section>
+
 <section class="slide" id="why">
   <h2>Чем проект полезен жителям</h2>
   <div class="why">
@@ -272,7 +324,8 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
   var deck=$('#deck'), slides=$$('.slide',deck), cur=0, paged=false;
   function setPaged(){var want=window.innerWidth>=960&&window.innerHeight>=600;if(want===paged&&deck.dataset.i)return;paged=want;deck.dataset.i=1;deck.classList.toggle('paged',paged);if(paged)show(cur);else{slides.forEach(function(s){s.classList.remove('on')});upd()}}
   function show(i){cur=Math.max(0,Math.min(slides.length-1,i));slides.forEach(function(s,k){s.classList.toggle('on',k===cur)});if(paged)slides[cur].scrollTop=0;upd();try{history.replaceState(null,'','#'+slides[cur].id)}catch(e){}
-    if(slides[cur].id==='scheme')requestAnimationFrame(function(){region(curR,false)})}
+    if(slides[cur].id==='scheme')requestAnimationFrame(function(){region(curR,false)});
+    if(typeof walkHook==='function')walkHook(slides[cur].id==='walk')}
   function upd(){$('#count').textContent=(cur+1)+' / '+slides.length;$('#prog').style.width=((cur+1)/slides.length*100)+'%';$('#prev').disabled=cur===0;$('#next').disabled=cur===slides.length-1}
   function go(d){if(paged)show(cur+d);else{var k=Math.max(0,Math.min(slides.length-1,cur+d));cur=k;slides[k].scrollIntoView({behavior:'smooth'});upd()}}
   $('#prev').onclick=function(){go(-1)};$('#next').onclick=function(){go(1)};
@@ -291,6 +344,101 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
   $('#zin').onclick=function(){zoomAt(1.4,vw.clientWidth/2,vw.clientHeight/2)};$('#zout').onclick=function(){zoomAt(1/1.4,vw.clientWidth/2,vw.clientHeight/2)};
   im.addEventListener('load',function(){region(curR,false)});
   window.addEventListener('resize',function(){setPaged();region(curR,false)});
+  /* virtual walk */
+  var SVGNS='http://www.w3.org/2000/svg';
+  function mk(tag,at,par){var e=document.createElementNS(SVGNS,tag);for(var k in at)e.setAttribute(k,at[k]);if(par)par.appendChild(e);return e}
+  function carEl(col){var g=mk('g',{});
+    mk('rect',{x:-26,y:-8,width:56,height:22,rx:7,fill:'#000',opacity:.2},g);
+    mk('rect',{x:-28,y:-11,width:56,height:22,rx:7,fill:col,stroke:'rgba(0,0,0,.45)','stroke-width':.8},g);
+    mk('rect',{x:-15,y:-8.5,width:20,height:17,rx:3,fill:'#fff',opacity:.1},g);
+    mk('rect',{x:5,y:-8.5,width:9,height:17,rx:2,fill:'#16232d',opacity:.88},g);
+    mk('rect',{x:-21,y:-8,width:6,height:16,rx:2,fill:'#16232d',opacity:.8},g);
+    mk('rect',{x:8,y:-13,width:4,height:2.4,rx:1,fill:col,stroke:'rgba(0,0,0,.4)','stroke-width':.5},g);
+    mk('rect',{x:8,y:10.6,width:4,height:2.4,rx:1,fill:col,stroke:'rgba(0,0,0,.4)','stroke-width':.5},g);
+    mk('rect',{x:26,y:-9.5,width:2.6,height:4.2,rx:1,fill:'#fff3c2'},g);
+    mk('rect',{x:26,y:5.3,width:2.6,height:4.2,rx:1,fill:'#fff3c2'},g);
+    var b1=mk('rect',{x:-28.4,y:-9.5,width:2.6,height:4.2,rx:1,fill:'#6e1414'},g), b2=mk('rect',{x:-28.4,y:5.3,width:2.6,height:4.2,rx:1,fill:'#6e1414'},g);
+    g._b=[b1,b2]; return g}
+  function famEl(){var g=mk('g',{}), inner=mk('g',{},g);
+    function person(cx,cy,rx,ry,hr,cc,hc){var q=mk('g',{transform:'translate('+cx+','+cy+')'},inner);mk('ellipse',{cx:0,cy:0,rx:rx,ry:ry,fill:cc,stroke:'#fff','stroke-width':1},q);mk('circle',{cx:.5,cy:0,r:hr,fill:hc,stroke:'#fff','stroke-width':.7},q);return q}
+    mk('rect',{x:-4,y:-22,width:8,height:44,rx:4,fill:'#000',opacity:.12},inner);
+    mk('line',{x1:0,y1:-5,x2:-3.5,y2:-14,stroke:'#2d4a63','stroke-width':1.4},inner);
+    mk('line',{x1:0,y1:5,x2:-3.5,y2:14,stroke:'#2d4a63','stroke-width':1.4},inner);
+    person(-3.5,-17,2.1,4.2,2.8,'#c0392b','#6b5036');
+    person(-3.5,17,2.1,4.2,2.8,'#d68910','#2f241d');
+    person(0,0,3,6,3.5,'#1f5f8b','#43342b');
+    g._i=inner; return g}
+  var SC=[
+   {name:'Пешеходный переход',cam:[895,585,1320,1030],dur:30,poster:9,
+    cars:[{col:'#2f3b46',k:[[0,1600,728,180],[2,1480,728,180],[4,1330,728,180],[5,1240,728,180],[5.8,1196,728,180],[11,1196,728,180],[13,1130,728,180],[15,1040,728,180],[18,930,728,180],[21,800,728,180],[24,650,728,180]],br:[[3.2,11]]},
+          {col:'#c4cacf',k:[[0,380,955,0],[4,600,955,0],[8,820,955,0],[12,940,955,0],[14,990,955,0],[16,1008,955,0],[22,1008,955,0],[24,1085,955,0],[26,1210,955,0],[29,1400,955,0]],br:[[12.5,22]]}],
+    fam:{k:[[0,1100,602,90],[3,1100,610,90],[23,1100,1010,90],[25,1100,1022,90]]},
+    cap:[[0,'Автомобиль приближается к пешеходному переходу. Знак 3.24 ограничивает скорость до 20 км/ч, впереди искусственная неровность (знаки 1.17 и 5.20).'],
+         [3.3,'Водитель замедляется и останавливается перед переходом. Женщина с детьми ждёт у края тротуара.'],
+         [7,'Пешеходы выходят на проезжую часть по размеченному переходу. Знаки 5.19.1 и 5.19.2 видны с обеих сторон.'],
+         [11,'Автомобиль встречного направления тоже подъезжает к переходу, а первый водитель продолжает движение на скорости не выше 20 км/ч после того, как пешеходы освободили полосу.'],
+         [16,'Разделительная полоса отделяет встречные потоки: транспорт каждого направления пропускает пешеходов по очереди.'],
+         [22,'Пешеходы дошли до противоположного тротуара, движение возобновляется.']]},
+   {name:'Параллельная парковка',cam:[560,640,1120,880],dur:15,poster:12,
+    park:[[673,786,180,'#1f4a73'],[847,786,180,'#dfe2e4']],
+    cars:[{col:'#2f3b46',k:[[0,1250,726,180],[4,1000,726,180],[6.2,900,728,177],[7.8,850,734,172],[9,810,748,165],[10.2,782,770,170],[11.4,762,786,180],[15,762,786,180]],br:[[5,15]]}],
+    cap:[[0,'Водитель едет по проезжей части и выбирает свободное место параллельной парковки на разделительной полосе. Размер места 2,5 × 7,5 м.'],
+         [5,'Знак 6.4 с табличкой 8.6.1 показывает, что автомобиль ставят параллельно проезжей части.'],
+         [7.5,'Автомобиль заезжает на место под небольшим углом, не мешая встречному потоку.'],
+         [11.4,'Автомобиль стоит внутри разметки и не занимает проезд. Остановка вне размеченных мест запрещена знаком 3.27 с табличкой 8.24 «Работает эвакуатор».']]},
+   {name:'Парковка под углом 90°',cam:[2210,400,2690,760],dur:15,poster:12,
+    park:[[2372,491,180,'#dfe2e4'],[2372,427,180,'#7a1f24']],
+    cars:[{col:'#1f4a73',k:[[0,2800,695,180],[3.5,2560,695,180],[5,2500,694,187],[5.8,2466,684,215],[6.6,2444,660,250],[7.4,2440,628,268],[8.6,2438,606,265],[9.4,2428,584,235],[10.2,2405,565,208],[11,2382,557,185],[11.6,2372,555,180],[15,2372,555,180]],br:[[4.6,6.6],[9.4,15]]}],
+    cap:[[0,'Автомобиль подъезжает к площадке у въезда во двор. Места размером 5,0 × 2,5 м расположены под углом 90° к проезду.'],
+         [5,'Водитель сворачивает с проезжей части на площадку, проезд отделён бордюром.'],
+         [9.4,'Автомобиль занимает размеченное место. Рядом выделены места для инвалидов со знаком 8.17.'],
+         [12,'Автомобиль не заезжает на тротуар, пешеходам остаётся свободный проход.']]}];
+  var simEl=$('#sim'), world=$('#world'), act=$('#actors'), scn=0, T=0, playing=false, last=0, spd=1, chain=false, actors=[], reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  /* Hermite interpolation with zero velocity at stops */
+  function prep(k){var n=k.length,m=[];for(var c=1;c<=3;c++){m[c]=[];for(var i=0;i<n;i++){var v;
+      if(i===0){v=(k[1][c]-k[0][c])/(k[1][0]-k[0][0]); if(k[1][c]===k[0][c])v=0}
+      else if(i===n-1){v=(k[i][c]-k[i-1][c])/(k[i][0]-k[i-1][0]); if(k[i][c]===k[i-1][c])v=0}
+      else if(k[i][c]===k[i-1][c]||k[i][c]===k[i+1][c]){v=0}
+      else v=(k[i+1][c]-k[i-1][c])/(k[i+1][0]-k[i-1][0]);
+      m[c][i]=v}}
+    return m}
+  function at(k,m,t){var n=k.length;if(t<=k[0][0])return [k[0][1],k[0][2],k[0][3]];if(t>=k[n-1][0])return [k[n-1][1],k[n-1][2],k[n-1][3]];
+    var i=0;while(i<n-2&&t>k[i+1][0])i++;var h=k[i+1][0]-k[i][0],u=(t-k[i][0])/h,u2=u*u,u3=u2*u,r=[];
+    for(var c=1;c<=3;c++){r.push((2*u3-3*u2+1)*k[i][c]+(u3-2*u2+u)*h*m[c][i]+(-2*u3+3*u2)*k[i+1][c]+(u3-u2)*h*m[c][i+1])}
+    return r}
+  function fmt(t){var s=Math.floor(t);return Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60)}
+  function buildScene(i,pose){scn=i;var sc=SC[i];act.innerHTML='';actors=[];
+    (sc.park||[]).forEach(function(p){var c=carEl(p[3]);c.setAttribute('transform','translate('+p[0]+','+p[1]+') rotate('+p[2]+')');act.appendChild(c)});
+    (sc.cars||[]).forEach(function(c){var g=carEl(c.col);act.appendChild(g);actors.push({g:g,k:c.k,m:prep(c.k),br:c.br,car:true})});
+    if(sc.fam){var g=famEl();act.appendChild(g);actors.push({g:g,k:sc.fam.k,m:prep(sc.fam.k),fam:true})}
+    $$('[data-scene]').forEach(function(b){b.setAttribute('aria-selected',b.dataset.scene==i?'true':'false')});
+    $('#capTag').textContent=sc.name; T=pose?sc.poster:0; camTo(sc.cam,true); render()}
+  function camTo(r,anim){var W=simEl.clientWidth,H=simEl.clientHeight;if(!W||!H)return;var w=r[2]-r[0],h=r[3]-r[1],s=Math.min(W/w,H/h);
+    var tx=(W-w*s)/2-r[0]*s,ty=(H-h*s)/2-r[1]*s;world.classList.toggle('anim',!!anim);world.style.transform='translate('+tx+'px,'+ty+'px) scale('+s+')'}
+  function render(){var sc=SC[scn];
+    actors.forEach(function(a){var p=at(a.k,a.m,T);
+      if(a.car){a.g.setAttribute('transform','translate('+p[0].toFixed(1)+','+p[1].toFixed(1)+') rotate('+p[2].toFixed(1)+')');
+        var on=false;(a.br||[]).forEach(function(b){if(T>=b[0]&&T<=b[1])on=true});a.g._b.forEach(function(e){e.setAttribute('fill',on?'#ff3b30':'#6e1414')})}
+      else{var sw=T>=a.k[1][0]&&T<a.k[a.k.length-2][0]?Math.sin(T*7)*.9:0;
+        a.g.setAttribute('transform','translate('+p[0].toFixed(1)+','+p[1].toFixed(1)+') rotate('+p[2].toFixed(1)+') scale(2.1)');a.g._i.setAttribute('transform','translate(0,'+sw.toFixed(2)+') rotate('+(sw*2.2).toFixed(1)+')')}});
+    var txt='';sc.cap.forEach(function(c){if(T>=c[0])txt=c[1]});$('#capText').textContent=txt;
+    $('#wTime').textContent=fmt(T)+' / '+fmt(sc.dur);$('#scrub').value=Math.round(T/sc.dur*1000)}
+  function setPlay(v){playing=v;$('#wPlay').textContent=v?'❚❚ Пауза':'▶ Смотреть';$('#wPlay').setAttribute('aria-label',v?'Пауза':'Воспроизвести');if(v){last=performance.now();requestAnimationFrame(tick)}}
+  function tick(ts){if(!playing)return;var dt=Math.min(.1,(ts-last)/1000);last=ts;T+=dt*spd;var d=SC[scn].dur;
+    if(T>=d){T=d;render();setPlay(false);if(chain&&scn<SC.length-1){setTimeout(function(){if(!chain)return;buildScene(scn+1,false);setTimeout(function(){if(chain)setPlay(true)},700)},1400)}else chain=false;return}
+    render();requestAnimationFrame(tick)}
+  $('#wPlay').onclick=function(){if(playing){chain=false;setPlay(false)}else{if(T>=SC[scn].dur-.05)T=0;setPlay(true)}};
+  $('#wRestart').onclick=function(){T=0;render();setPlay(true)};
+  
+  $('#wAll').onclick=function(){chain=true;buildScene(0,false);setTimeout(function(){setPlay(true)},700)};
+  $$('[data-scene]').forEach(function(b){b.onclick=function(){chain=false;setPlay(false);buildScene(+b.dataset.scene,true)}});
+  $('#scrub').addEventListener('input',function(){chain=false;setPlay(false);T=this.value/1000*SC[scn].dur;render()});
+  window.addEventListener('resize',function(){camTo(SC[scn].cam,false)});
+  var wImg=$('#worldImg');wImg.addEventListener('load',function(){camTo(SC[scn].cam,false)});
+  buildScene(0,true);
+  function walkHook(on){if(on){camTo(SC[scn].cam,false);if(paged&&!reduce&&!playing&&T<=SC[scn].poster+.1){T=0;render();setTimeout(function(){setPlay(true)},500)}}else{chain=false;setPlay(false)}}
+
+
   var h=(location.hash||'').slice(1),hi=slides.findIndex(function(s){return s.id===h});if(hi>0)cur=hi;
   setPaged();if(!paged)upd();region(curR,false);
 })();
