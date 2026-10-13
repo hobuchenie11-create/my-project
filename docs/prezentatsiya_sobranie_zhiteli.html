@@ -85,7 +85,7 @@ figcaption{font-size:.8em;color:var(--muted)}
 .place .n{font-family:var(--serif);font-size:1.6em;font-weight:600;white-space:nowrap}
 
 /* legend + viewer */
-.viewer{position:relative;border:1px solid var(--line);border-radius:4px;background:#fff;overflow:hidden;touch-action:none;cursor:grab;height:min(60vh,640px);min-height:300px}
+.viewer{position:relative;border:1px solid var(--line);border-radius:4px;background:#fff;overflow:hidden;touch-action:none;cursor:grab;height:min(54vh,600px);min-height:300px}
 .viewer img{position:absolute;left:0;top:0;max-width:none;width:3600px;height:auto;transform-origin:0 0;user-select:none;-webkit-user-drag:none}
 .viewer img.anim{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .zoomctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}.zoomctl .btn{width:46px;padding:0;font-size:22px}
@@ -141,6 +141,9 @@ figcaption{font-size:.8em;color:var(--muted)}
 .walkgrid{grid-template-columns:minmax(0,1fr) 360px}
 @media (max-width:959px){.walkgrid{grid-template-columns:minmax(0,1fr)}}
 #walk h2{font-size:clamp(26px,2.8vw,44px);max-width:none}
+.orgpin{position:absolute;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;background:#5B3E8C;color:#fff;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45);display:grid;place-items:center;font-family:var(--mono);font-weight:500;font-size:16px;line-height:1;z-index:3;cursor:help}
+.orglist{display:grid;grid-template-columns:36px minmax(0,1fr);gap:8px 12px;align-items:center;font-size:.8em}
+.orglist i{font-style:normal;width:30px;height:30px;border-radius:50%;background:#5B3E8C;color:#fff;display:grid;place-items:center;font-family:var(--mono);font-size:15px}
 @media (max-width:640px){.bar b{font-size:15px}}
 body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
@@ -169,7 +172,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
   </div>
   <div class="card social"><h3>Социально значимый проект</h3>
     <p>Проект решает задачи комфортности и безопасности для разных категорий людей. Жители близлежащих домов смогут чаще пользоваться обновлённым благоустройством, а заходить и заезжать во двор станет комфортнее и безопаснее.</p>
-    <div class="who"><span>Пешеходы</span><span>Люди с инвалидностью: 3 специальных места</span><span>Клиенты Газпромбанка</span><span>Клиенты Озона</span><span>Клиенты ремонтной мастерской</span><span>Клиенты офиса ритуальных услуг</span><span>Жители близлежащих домов</span></div></div>
+    <div class="who"><span>Пешеходы</span><span>Люди с инвалидностью: 3 специальных места</span><span>Клиенты Газпромбанка</span><span>Клиенты офиса недвижимости</span><span>Клиенты Озона</span><span>Клиенты ремонтной мастерской</span><span>Клиенты офиса ритуальных услуг</span><span>Жители близлежащих домов</span></div></div>
 </section>
 
 <section class="slide" id="about">
@@ -233,7 +236,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </section>
 
 <section class="slide" id="scheme">
-  <h2>Схема проекта: как её читать</h2>
+  <h2>Схема проекта</h2>
   <div class="cols c64" style="align-items:start">
     <div style="display:flex;flex-direction:column;gap:12px">
       <div class="chips" role="group" aria-label="Участки схемы">
@@ -241,6 +244,7 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
         <button class="chip" data-r=".27,.17,.53,.5" aria-pressed="false">Пешеходный переход</button>
         <button class="chip" data-r=".5,0,1,.655" aria-pressed="false">Восточная часть</button>
         <button class="chip" data-r="0,0,.5,.655" aria-pressed="false">Западная часть</button>
+        <button class="chip" data-r=".42,.1,.75,.36" aria-pressed="false">Организации у дома № 2</button>
       </div>
       <div class="viewer" id="viewer" role="img" aria-label="Схема организации дорожного движения. Колесо мыши приближает, перетаскивание сдвигает.">
         <img id="schemeImg" data-img="scheme.jpg" alt="">
@@ -255,7 +259,8 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
       <img data-img="bump.png" alt=""><span>Искусственная неровность, скорость 20 км/ч</span>
       <span class="cell"></span><span>Размеченное парковочное место с номером</span>
       <span class="dash"></span><span>Граница работ первого и второго этапа</span>
-    </div></div>
+    </div>
+    <div class="orglist" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><i>1</i><span>Газпромбанк</span><i>2</i><span>Big сервис, ремонтная мастерская</span><i>3</i><span>Офис недвижимости</span><i>4</i><span>Пункт выдачи «Озон»</span><i>5</i><span>Офис ритуальных услуг</span></div></div>
   </div>
 </section>
 
@@ -342,7 +347,10 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
   var sx=null;deck.addEventListener('touchstart',function(e){sx=e.touches[0].clientX},{passive:true});deck.addEventListener('touchend',function(e){if(!paged||sx===null)return;var d=e.changedTouches[0].clientX-sx;sx=null;if(Math.abs(d)>80&&!e.target.closest('.viewer'))go(d<0?1:-1)});
   /* scheme viewer */
   var vw=$('#viewer'),im=$('#schemeImg'),IW=3600,IH=2335,S=1,TX=0,TY=0,drag=null,curR=[0,0,1,.655];
-  function apply(a){im.classList.toggle('anim',!!a);im.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')'}
+  var ORGS=[[1, "Газпромбанк", 1664, 585], [2, "Big сервис, ремонтная мастерская", 1971, 585], [3, "Офис недвижимости", 2175, 585], [4, "Пункт выдачи «Озон»", 2380, 585], [5, "Офис ритуальных услуг", 2500, 585]];
+  var pinEls=ORGS.map(function(o){var e=document.createElement('span');e.className='orgpin';e.textContent=o[0];e.title=o[1];e.setAttribute('role','img');e.setAttribute('aria-label',o[1]);vw.appendChild(e);return e});
+  function placePins(a){pinEls.forEach(function(e,i){e.style.transition=a?'left .5s cubic-bezier(.2,.7,.2,1),top .5s cubic-bezier(.2,.7,.2,1)':'none';e.style.left=(TX+ORGS[i][2]*S)+'px';e.style.top=(TY+ORGS[i][3]*S)+'px'})}
+  function apply(a){placePins(a);im.classList.toggle('anim',!!a);im.style.transform='translate('+TX+'px,'+TY+'px) scale('+S+')'}
   function region(r,a){var W=vw.clientWidth,H=vw.clientHeight;if(!W||!H)return;var x0=r[0]*IW,y0=r[1]*IH,w=(r[2]-r[0])*IW,h=(r[3]-r[1])*IH;S=Math.min(W/w,H/h);TX=(W-w*S)/2-x0*S;TY=(H-h*S)/2-y0*S;apply(a)}
   $$('.chip').forEach(function(c){c.onclick=function(){curR=c.dataset.r.split(',').map(Number);$$('.chip').forEach(function(x){x.setAttribute('aria-pressed',x===c?'true':'false')});region(curR,true)}});
   function zoomAt(f,cx,cy){var ns=Math.max(.05,Math.min(1.6,S*f));TX=cx-(cx-TX)*ns/S;TY=cy-(cy-TY)*ns/S;S=ns;apply(false)}
