@@ -1,4 +1,7 @@
 """Меню председателя: реестр, ведомость, статистика, пользователи, бэкап."""
+import asyncio
+import logging
+
 from aiogram import F, Router
 from aiogram.exceptions import TelegramAPIError
 from aiogram.fsm.context import FSMContext
@@ -7,6 +10,7 @@ from aiogram.types import CallbackQuery, FSInputFile, Message
 from bot.config import config
 from bot.keyboards.admin_menu import (BTN_ACTS, BTN_ADMIN, BTN_BACK,
                                       BTN_BACKUP, BTN_DEBTORS,
+                                      BTN_MAIL_TEST,
                                       BTN_BLANKS, BTN_CHAT_REMINDER,
                                       BTN_CORRECTION, BTN_DEBTORS_DOC,
                                       BTN_FAQ_GAPS, BTN_METERS,
@@ -27,11 +31,14 @@ from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
 from bot.states.meters import ApartmentMeters
-from bot.texts import (collection_reminder_text, collection_window,
-                       correction_text, resident_reply_text, rso_letter_text,
+from bot.texts import (HOUSE_ADDRESS, collection_reminder_text,
+                       collection_window, correction_text,
+                       resident_reply_text, rso_letter_text,
                        special_readings_text, template_messages,
                        welcome_residents_text)
 from database import repository
+
+logger = logging.getLogger(__name__)
 from database.backup import make_backup
 from reports.monthly_statement import generate_statement
 
@@ -370,6 +377,45 @@ def mail_state() -> str:
     return (f"{config.smtp_user} → {', '.join(config.mail_to)}, "
             f"отправка {config.oek_mail_day} числа в "
             f"{config.oek_mail_hour:02d}:00")
+
+
+@router.message(F.text == BTN_MAIL_TEST)
+async def test_mail(message: Message) -> None:
+    """Пробное письмо самой себе — до того, как письмо уйдёт ресурснику.
+
+    Проверять почту на живом реестре нельзя: ОЭК получит письмо, которое
+    отправили «на пробу», и отозвать его не выйдет. Поэтому бот пишет на
+    тот же адрес, с которого отправляет, — письмо приходит в свой ящик.
+    """
+    from bot.services import mail_service
+
+    try:
+        mail_service.check_configured()
+    except mail_service.MailNotConfigured as exc:
+        await message.answer(
+            f"📧 {exc}\n\nПуть к файлу настроек — в «⚙ Настройки».")
+        return
+
+    await message.answer(f"Отправляю пробное письмо на {config.smtp_user}…")
+    try:
+        await asyncio.to_thread(
+            mail_service.send,
+            f"Проверка связи, {HOUSE_ADDRESS}",
+            "Это пробное письмо от Домоведа.\n\n"
+            "Если оно пришло — почта настроена верно, и реестр ОЭК уйдёт "
+            "ресурснику тем же путём.",
+            None, (config.smtp_user,))
+    except Exception as exc:                   # noqa: BLE001 — причина в тексте
+        logger.warning("Пробное письмо не ушло: %s", exc)
+        await message.answer(f"📧 Письмо не отправлено.\n\n{exc}")
+        return
+
+    await message.answer(
+        f"📧 Пробное письмо отправлено на {config.smtp_user}.\n\n"
+        "Загляните в ящик — письмо «Проверка связи». Не пришло за пару "
+        "минут — посмотрите папку «Спам».\n\n"
+        f"Реестр ОЭК уйдёт на {', '.join(config.mail_to)} "
+        f"{config.oek_mail_day} числа в {config.oek_mail_hour:02d}:00.")
 
 
 @router.message(F.text == BTN_BACKUP)

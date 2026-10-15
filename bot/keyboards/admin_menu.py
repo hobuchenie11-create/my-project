@@ -27,6 +27,7 @@ BTN_ACTS = "📄 Акты поверки"
 BTN_FAQ_GAPS = "❓ Вопросы без ответа"
 BTN_USERS = "👥 Пользователи"
 BTN_SETTINGS = "⚙ Настройки"
+BTN_MAIL_TEST = "✉️ Проверить почту"
 BTN_BACKUP = "💾 Резервная копия"
 BTN_BACK = "⬅️ Главное меню"
 
@@ -50,7 +51,8 @@ def admin_menu() -> ReplyKeyboardMarkup:
              KeyboardButton(text=BTN_TEMPLATES)],
             [KeyboardButton(text=BTN_ACTS), KeyboardButton(text=BTN_FAQ_GAPS)],
             [KeyboardButton(text=BTN_USERS), KeyboardButton(text=BTN_SETTINGS)],
-            [KeyboardButton(text=BTN_BACKUP)],
+            [KeyboardButton(text=BTN_MAIL_TEST),
+             KeyboardButton(text=BTN_BACKUP)],
             [KeyboardButton(text=BTN_BACK)],
         ],
         resize_keyboard=True,

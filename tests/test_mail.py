@@ -156,3 +156,57 @@ def test_right_host_leaves_the_password_as_the_suspect(monkeypatch):
 
     assert "пароль приложения" in hint
     assert "SMTP_HOST" not in hint
+
+
+# ---------------------------------------------------------------------------
+# Пробное письмо: проверяем почту, не беспокоя ресурсника
+# ---------------------------------------------------------------------------
+
+def test_test_letter_goes_to_our_own_address(mail, monkeypatch):
+    """Проверять почту на живом реестре нельзя — ОЭК его уже не вернёт."""
+    from bot.handlers import admin
+
+    sent = {}
+
+    def fake_send(subject, body, attachment=None, to=None):
+        sent.update(subject=subject, attachment=attachment, to=to)
+        return list(to)
+
+    monkeypatch.setattr(mail_service, "send", fake_send)
+    monkeypatch.setattr(admin, "config",
+                        replace(config, smtp_user="dom@mail.ru",
+                                mail_to=("oek_orc@omesc.ru",)))
+
+    class Msg:
+        def __init__(self):
+            self.answers = []
+
+        async def answer(self, text, **kwargs):
+            self.answers.append(text)
+
+    message = Msg()
+    asyncio.run(admin.test_mail(message))
+
+    assert sent["to"] == ("dom@mail.ru",)        # себе, не ресурснику
+    assert sent["attachment"] is None            # реестр не прикладываем
+    assert "Проверка связи" in sent["subject"]
+    assert any("Спам" in text for text in message.answers)
+    assert any("oek_orc@omesc.ru" in text for text in message.answers)
+
+
+def test_test_letter_explains_what_is_missing(monkeypatch):
+    """Почта не настроена — кнопка объясняет, а не падает молча."""
+    from bot.handlers import admin
+
+    class Msg:
+        def __init__(self):
+            self.answers = []
+
+        async def answer(self, text, **kwargs):
+            self.answers.append(text)
+
+    message = Msg()
+    asyncio.run(admin.test_mail(message))
+
+    assert "SMTP_USER" in message.answers[0]
+    assert "Настройки" in message.answers[0]
