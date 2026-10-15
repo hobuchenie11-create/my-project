@@ -353,8 +353,23 @@ async def show_settings(message: Message) -> None:
         f"Приём показаний: {collection_window()}\n"
         f"Чат дома (показания): {config.group_chat_id or 'не подключен'}\n"
         f"Чат Совета дома (сводка): {config.council_chat_id or 'не подключен'}\n"
-        f"Администраторы: {', '.join(map(str, config.admin_ids)) or 'не заданы'}"
+        f"Администраторы: {', '.join(map(str, config.admin_ids)) or 'не заданы'}\n"
+        f"Почта для реестра ОЭК: {mail_state()}\n\n"
+        # Путь к файлу настроек: искать его по компьютеру — дело долгое,
+        # а бот знает его точно
+        f"Файл настроек: <code>{config.base_dir / '.env'}</code>"
     )
+
+
+def mail_state() -> str:
+    """Коротко о почте: настроена ли и куда уйдёт реестр."""
+    from bot.services import mail_service
+
+    if not mail_service.is_configured():
+        return "не настроена (SMTP_USER, SMTP_PASSWORD, MAIL_TO в .env)"
+    return (f"{config.smtp_user} → {', '.join(config.mail_to)}, "
+            f"отправка {config.oek_mail_day} числа в "
+            f"{config.oek_mail_hour:02d}:00")
 
 
 @router.message(F.text == BTN_BACKUP)

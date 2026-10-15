@@ -108,3 +108,32 @@ def test_one_word_name_is_enough():
     short = Msg("Е")
     asyncio.run(registration.process_name(short, State()))
     assert "хотя бы две буквы" in short.answers[0]
+
+
+def test_settings_show_where_the_env_file_lives():
+    """Искать .env по компьютеру — дело долгое, а бот знает путь точно."""
+    from bot.handlers.admin import mail_state
+
+    assert ".env" in str(config.base_dir / ".env")
+    # Почта не настроена — в настройках видно, каких строк не хватает
+    state = mail_state()
+    assert "SMTP_USER" in state and "MAIL_TO" in state
+
+
+def test_settings_name_the_mail_recipient_when_configured(monkeypatch):
+    from dataclasses import replace as dc_replace
+
+    from bot.handlers import admin
+    from bot.services import mail_service
+
+    patched = dc_replace(config, smtp_user="dom@yandex.ru",
+                         smtp_password="секрет",
+                         mail_to=("oek_orc@omesc.ru",))
+    monkeypatch.setattr(admin, "config", patched)
+    monkeypatch.setattr(mail_service, "config", patched)
+
+    state = admin.mail_state()
+
+    assert "dom@yandex.ru" in state
+    assert "oek_orc@omesc.ru" in state
+    assert "21 числа в 20:00" in state
