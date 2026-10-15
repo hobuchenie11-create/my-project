@@ -123,3 +123,36 @@ def test_mail_password_is_not_in_the_repository():
     example = Path(".env.example").read_text(encoding="utf-8")
     assert "SMTP_PASSWORD=" in example
     assert example.count("SMTP_PASSWORD=\n") == 1, "образец должен быть пустым"
+
+
+# ---------------------------------------------------------------------------
+# Чужой сервер исходящей почты
+# ---------------------------------------------------------------------------
+
+def test_host_is_suggested_by_the_address():
+    assert mail_service.expected_host("yavorsuk@yandex.ru") == "smtp.yandex.ru"
+    assert mail_service.expected_host("dom@mail.ru") == "smtp.mail.ru"
+    assert mail_service.expected_host("sovet@dom-2.ru") == ""   # незнакомый
+
+
+def test_wrong_host_is_named_in_the_error(monkeypatch):
+    """Логин с Яндекса на сервере Mail.ru — отказ, по которому не догадаться."""
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="yavorsuk@yandex.ru",
+                                smtp_host="smtp.mail.ru"))
+
+    hint = mail_service.login_failed_hint(Exception("535 auth failed"))
+
+    assert "SMTP_HOST=smtp.yandex.ru" in hint
+    assert "yavorsuk@yandex.ru" in hint
+
+
+def test_right_host_leaves_the_password_as_the_suspect(monkeypatch):
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="yavorsuk@yandex.ru",
+                                smtp_host="smtp.yandex.ru"))
+
+    hint = mail_service.login_failed_hint(Exception("535 auth failed"))
+
+    assert "пароль приложения" in hint
+    assert "SMTP_HOST" not in hint

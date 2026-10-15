@@ -70,6 +70,12 @@ class Config:
     # положить в папку или отправить боту в личку — он сохранит его сюда.
     oek_dir: Path = Path(os.getenv("OEK_TEMPLATE_DIR")
                          or BASE_DIR / "data" / "oek")
+    # Отправка реестра ресурснику по почте: 21 числа в 20:00. Утром того же
+    # дня бот присылает председателю файл на сверку — письмо ресурснику не
+    # отзовёшь, и сутки между формированием и отправкой нужны на проверку.
+    oek_mail_day: int = int(os.getenv("OEK_MAIL_DAY", "21"))
+    oek_mail_hour: int = int(os.getenv("OEK_MAIL_HOUR", "20"))
+    oek_review_hour: int = int(os.getenv("OEK_REVIEW_HOUR", "10"))
     # Когда автоматически формировать ведомость непередавших
     debtors_day: int = int(os.getenv("DEBTORS_DAY", "20"))
     debtors_hour: int = int(os.getenv("DEBTORS_HOUR", "9"))
@@ -87,7 +93,10 @@ class Config:
     # Почта для отправки реестра ОЭК ресурснику. Пароль — «пароль
     # приложения» почтового сервиса, не пароль от аккаунта. Живёт в .env
     # рядом с токеном бота и в переписку не попадает.
-    smtp_host: str = os.getenv("SMTP_HOST", "smtp.mail.ru")
+    # Сервер исходящей почты: smtp.yandex.ru для Яндекса, smtp.mail.ru для
+    # Mail.ru. Сервер должен соответствовать адресу в SMTP_USER — чужой
+    # сервер отвечает отказом в аутентификации, и причина по тексту неясна
+    smtp_host: str = os.getenv("SMTP_HOST", "smtp.yandex.ru")
     smtp_port: int = int(os.getenv("SMTP_PORT", "465"))
     smtp_user: str = os.getenv("SMTP_USER", "")
     smtp_password: str = os.getenv("SMTP_PASSWORD", "")

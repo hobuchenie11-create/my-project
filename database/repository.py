@@ -652,6 +652,16 @@ def claim_scheduled_task(conn: sqlite3.Connection, key: str) -> bool:
     return cur.rowcount > 0
 
 
+def scheduled_task_done(conn: sqlite3.Connection, key: str) -> bool:
+    """Отметка уже стоит? В отличие от claim — только читает, ничего не ставит.
+
+    Нужно там, где одно задание зависит от другого: отправку реестра в 20:00
+    пропускаем, если председатель уже отправила его кнопкой или отложила.
+    """
+    return conn.execute("SELECT 1 FROM scheduler_log WHERE key = ?",
+                        (key,)).fetchone() is not None
+
+
 def release_scheduled_task(conn: sqlite3.Connection, key: str) -> None:
     """Снимает отметку: задача не сделана, пусть следующий тик попробует снова.
 

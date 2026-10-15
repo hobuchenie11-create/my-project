@@ -109,6 +109,18 @@ async def _tick(bot: Bot, now: datetime) -> None:
             and _claim(f"oek:{today}")):
         await send_oek_registry(bot)
 
+    # Реестр на сверку председателю — утром того дня, когда он уйдёт в ОЭК
+    if (now.day == config.oek_mail_day and now.hour >= config.oek_review_hour
+            and _claim(f"oekreview:{today}")):
+        if not await send_oek_review(bot):
+            _release(f"oekreview:{today}")
+
+    # Отправка реестра ресурснику почтой — 21 числа в 20:00
+    if (now.day == config.oek_mail_day and now.hour >= config.oek_mail_hour
+            and _claim(f"oekmail:{today}")):
+        if not await mail_oek_registry(bot):
+            _release(f"oekmail:{today}")
+
     # Объявление жителям — отдельно от ведомости и позже неё
     if (now.day == config.announce_day and now.hour >= config.announce_hour
             and _claim(f"announce:{today}")):
@@ -239,6 +251,156 @@ async def send_oek_registry(bot: Bot) -> None:
                                    period)
     logger.info("Реестр ОЭК сформирован: %s (заполнено %s из %s)",
                 result.path, len(result.filled), result.rows_total)
+
+
+def oek_sent_key(period: str) -> str:
+    """Отметка «реестр за период уже ушёл в ОЭК» — одна на все пути отправки."""
+    return f"oek_sent:{period}"
+
+
+def oek_hold_key(period: str) -> str:
+    """Отметка «председатель отложила отправку» — вечером не отправляем."""
+    return f"oek_hold:{period}"
+
+
+def _done(key: str) -> bool:
+    conn = repository.connect()
+    try:
+        return repository.scheduled_task_done(conn, key)
+    finally:
+        conn.close()
+
+
+async def send_oek_review(bot: Bot) -> bool:
+    """Реестр председателю на сверку — за часы до автоматической отправки.
+
+    Письмо ресурснику не отзовёшь, а ошибка в показаниях всплывает через
+    месяц, когда расход окажется отрицательным. Поэтому между «файл готов»
+    и «файл ушёл» стоит день, а в этом сообщении — кнопка «отложить».
+    """
+    from excel.oek_registry import OekFormatError
+    from reports.oek_registry import NoTemplateError, generate_oek_registry
+
+    from bot.keyboards.admin_menu import oek_review
+    from bot.services import mail_service
+
+    period = current_period()
+    if _done(oek_sent_key(period)):
+        logger.info("Реестр ОЭК за %s уже отправлен — сверка не нужна", period)
+        return True
+
+    try:
+        result = generate_oek_registry(period)
+    except (NoTemplateError, OekFormatError) as exc:
+        logger.warning("Реестр ОЭК к сверке не готов: %s", exc)
+        await _tell_admins(bot, f"📨 Реестр ОЭК не сформирован.\n\n{exc}")
+        return True                      # дело не в связи, повтор не поможет
+
+    where = (", ".join(config.mail_to) if mail_service.is_configured()
+             else "почта не настроена — отправлю только по кнопке")
+    text = (
+        f"📨 <b>Реестр ОЭК на сверку</b> — {period_title(period)}\n\n"
+        f"{result.summary(period_title(period))}\n\n"
+        f"Файл: <b>{result.path.name}</b> (имя ресурсника сохранено)\n"
+        f"Сегодня в {config.oek_mail_hour:02d}:00 уйдёт на {where}.\n\n"
+        "Если в показаниях ошибка — нажмите «⏸ Отложить отправку», "
+        "исправьте и отправьте кнопкой, когда будете готовы."
+    )
+
+    ok = False
+    for admin_id in config.admin_ids:
+        try:
+            await bot.send_document(admin_id, FSInputFile(result.path),
+                                    caption=f"📨 Реестр ОЭК на сверку — "
+                                            f"{period_title(period)}",
+                                    reply_markup=oek_review(period))
+            await bot.send_message(admin_id, text)
+            ok = True
+        except TelegramAPIError as exc:
+            logger.warning("Не удалось прислать реестр на сверку %s: %s",
+                           admin_id, exc)
+    return ok
+
+
+async def mail_oek_registry(bot: Bot) -> bool:
+    """Отправляет реестр ресурснику по почте — по расписанию.
+
+    Молча не отправляет в двух случаях: реестр уже ушёл (кнопкой) или
+    председатель отложила отправку. Про оба случая пишет ей, иначе вечер
+    выглядит одинаково — тишина.
+    """
+    from excel.oek_registry import OekFormatError
+    from reports.oek_registry import NoTemplateError, generate_oek_registry
+
+    from bot.services import mail_service
+
+    period = current_period()
+    if _done(oek_sent_key(period)):
+        logger.info("Реестр ОЭК за %s уже отправлен — повтор не нужен", period)
+        return True
+    if _done(oek_hold_key(period)):
+        await _tell_admins(
+            bot, "⏸ Отправка реестра в ОЭК отложена — автоматически его "
+                 "не отправляю. Когда проверите, нажмите «📧 Отправить "
+                 "в ОЭК» под файлом.")
+        return True
+    if not mail_service.is_configured():
+        await _tell_admins(
+            bot, "📧 Реестр ОЭК не отправлен: почта не настроена. "
+                 "Заполните в .env SMTP_USER, SMTP_PASSWORD и MAIL_TO.")
+        return True
+
+    try:
+        result = generate_oek_registry(period)
+    except (NoTemplateError, OekFormatError) as exc:
+        logger.warning("Реестр ОЭК не сформирован: %s", exc)
+        await _tell_admins(bot, f"📨 Реестр ОЭК не отправлен.\n\n{exc}")
+        return True
+
+    try:
+        recipients = await asyncio.to_thread(
+            mail_service.send, oek_mail_subject(period),
+            oek_mail_body(period), result.path)
+    except Exception as exc:                   # noqa: BLE001 — причина в тексте
+        logger.exception("Не удалось отправить реестр ОЭК почтой")
+        await _tell_admins(
+            bot, f"📧 Реестр ОЭК не отправлен: {exc}\n\n"
+                 "Проверю ещё раз на следующем круге. Файл готов — его можно "
+                 "отправить кнопкой «📧 Отправить в ОЭК».")
+        return False                           # связь могла моргнуть — повторим
+
+    _claim(oek_sent_key(period))
+    await _tell_admins(
+        bot, f"📧 Реестр ОЭК за {period_title(period)} отправлен: "
+             f"{', '.join(recipients)}.\nФайл: <b>{result.path.name}</b>")
+    logger.info("Реестр ОЭК за %s отправлен на %s", period, recipients)
+    return True
+
+
+def oek_mail_subject(period: str) -> str:
+    from bot.texts import HOUSE_ADDRESS
+    return (f"Реестр показаний электроэнергии, {HOUSE_ADDRESS}, "
+            f"{period_title(period)}")
+
+
+def oek_mail_body(period: str) -> str:
+    from bot.texts import HOUSE_ADDRESS, HOUSE_SHORT
+    return ("Здравствуйте!\n\n"
+            "Направляю реестр показаний приборов учёта электроэнергии "
+            f"за {period_title(period)} по адресу: {HOUSE_ADDRESS}.\n\n"
+            "Файл заполнен в присланной вами форме: имя файла и листы не "
+            "изменялись, строки и столбцы не добавлялись, формулы не "
+            "использовались.\n\n"
+            "С уважением,\n"
+            f"Председатель МКД {HOUSE_SHORT}")
+
+
+async def _tell_admins(bot: Bot, text: str) -> None:
+    for admin_id in config.admin_ids:
+        try:
+            await bot.send_message(admin_id, text)
+        except TelegramAPIError as exc:
+            logger.warning("Не удалось написать админу %s: %s", admin_id, exc)
 
 
 async def deliver_oek_registry(bot: Bot, chat_id: int, result,

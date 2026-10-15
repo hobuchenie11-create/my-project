@@ -22,7 +22,6 @@ from bot.keyboards.admin_menu import BTN_OEK, BTN_OEK_TEMPLATE, admin_menu
 from bot.scheduler import deliver_oek_registry
 from bot.services.reading_service import current_period, period_title
 from bot.states.oek import OekTemplate
-from bot.texts import HOUSE_ADDRESS, HOUSE_SHORT
 from excel.oek_registry import OekFormatError
 
 logger = logging.getLogger(__name__)
@@ -185,15 +184,11 @@ async def mail_registry(callback: CallbackQuery) -> None:
         await callback.message.answer(f"Письмо не отправлено: {exc}")
         return
 
-    subject = f"Реестр показаний электроэнергии, {HOUSE_ADDRESS}, {period_title(period)}"
-    body = (f"Здравствуйте!\n\n"
-            f"Направляю реестр показаний приборов учёта электроэнергии "
-            f"за {period_title(period)} по адресу: {HOUSE_ADDRESS}.\n\n"
-            "С уважением,\n"
-            f"Председатель МКД {HOUSE_SHORT}")
+    from bot.scheduler import oek_mail_body, oek_mail_subject
     try:
         recipients = await asyncio.to_thread(
-            mail_service.send, subject, body, result.path)
+            mail_service.send, oek_mail_subject(period),
+            oek_mail_body(period), result.path)
     except mail_service.MailNotConfigured as exc:
         await callback.message.answer(f"📧 {exc}")
         return
@@ -205,7 +200,28 @@ async def mail_registry(callback: CallbackQuery) -> None:
             "Файл в чате остался — его можно отправить почтой вручную.")
         return
 
+    # Отметка «за этот период уже отправлено»: вечернее задание увидит её
+    # и не отправит реестр второй раз
+    from bot.scheduler import _claim, oek_sent_key
+    _claim(oek_sent_key(period))
+
     await callback.message.answer(
         f"📧 Реестр за {period_title(period)} отправлен: "
         f"{', '.join(recipients)}.\n"
         f"Файл: <b>{result.path.name}</b>")
+
+
+@router.callback_query(F.data.startswith("oekhold:"))
+async def hold_registry(callback: CallbackQuery) -> None:
+    """«Отложить отправку»: вечером бот реестр в ОЭК не отправит."""
+    from bot.scheduler import _claim, oek_hold_key
+
+    period = callback.data.split(":", 1)[1]
+    _claim(oek_hold_key(period))
+    await callback.answer("Отправка отложена")
+    await callback.message.answer(
+        f"⏸ Отправка реестра за {period_title(period)} отложена — "
+        "автоматически он не уйдёт.\n\n"
+        "Исправьте показания («✏️ Исправить показание»), а затем отправьте "
+        "реестр кнопкой «📧 Отправить в ОЭК»: он соберётся заново, уже "
+        "с исправлениями.")

@@ -83,3 +83,18 @@ def oek_send_mail(period: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="📧 Отправить в ОЭК",
                              callback_data=f"oekmail:{period}")]])
+
+
+def oek_review(period: str) -> InlineKeyboardMarkup:
+    """Кнопки под реестром, присланным на сверку перед автоматической отправкой.
+
+    «Отложить» нужна так же, как «отправить»: если в показаниях ошибка,
+    остановить вечернюю отправку должно быть одним движением, а не поиском
+    настроек в .env.
+    """
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📧 Отправить в ОЭК сейчас",
+                              callback_data=f"oekmail:{period}")],
+        [InlineKeyboardButton(text="⏸ Отложить отправку",
+                              callback_data=f"oekhold:{period}")],
+    ])

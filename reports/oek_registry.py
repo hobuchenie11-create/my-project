@@ -94,8 +94,11 @@ def generate_oek_registry(period: str | None = None,
     finally:
         conn.close()
 
-    suffix = template.suffix.lower()
-    out_path = config.reports_dir / f"{OUT_PREFIX}{period}{suffix}"
+    # Имя файла ресурсника сохраняем до буквы: ОЭК разбирает реестры
+    # автоматически, и переименованный файл у них не обрабатывается. Чтобы
+    # заполненные реестры разных месяцев не затирали друг друга, каждый
+    # кладём в свою папку периода — имя внутри неё остаётся прежним.
+    out_path = config.reports_dir / "oek" / period / template.name
     # Дата снятия показаний — день, когда реестр собран. По регламенту это
     # 20 число: в 14:30 задание заполняет шаблон тем, что собралось к сроку.
     taken_on = taken_on or date.today()
@@ -105,9 +108,10 @@ def generate_oek_registry(period: str | None = None,
     except PermissionError:
         # Прошлый реестр открыт в Excel — Windows не даёт перезаписать файл.
         # Отказываться из-за этого нельзя: 20 числа в 14:30 реестр нужен
-        # председателю, а открытая книга — обычное дело. Сохраняем рядом.
-        out_path = (config.reports_dir
-                    / f"{OUT_PREFIX}{period}_{datetime.now():%d%m_%H%M}{suffix}")
+        # председателю, а открытая книга — обычное дело. Кладём в соседнюю
+        # папку, но под тем же именем: переименовывать файл ОЭК запрещает.
+        out_path = (config.reports_dir / "oek"
+                    / f"{period}_{datetime.now():%d%m_%H%M}" / template.name)
         result = fill_registry(template, readings, out_path,
                                taken_on=taken_on, known_apartments=known)
 

@@ -348,6 +348,19 @@ def test_taken_on_is_the_day_the_registry_was_built(registry_env):
     assert fmt.format_str == DATE_FORMAT
 
 
+def test_output_keeps_the_template_filename(registry_env):
+    """Правило ОЭК: файл переименовывать нельзя — его разбирают автоматически.
+
+    Раньше бот сохранял реестр как «reestr_oek_2026-08.xls», и такой файл
+    у ресурсника не обрабатывался. Имя шаблона остаётся прежним, а месяцы
+    не затирают друг друга за счёт папки периода.
+    """
+    result = registry_env.module.generate_oek_registry("2026-08")
+
+    assert result.path.name == "oek.xls"
+    assert result.path.parent.name == "2026-08"
+
+
 def test_locked_output_file_does_not_stop_the_registry(registry_env, monkeypatch):
     """Прошлый реестр открыт в Excel — новый должен лечь рядом, а не пропасть.
 
@@ -358,7 +371,8 @@ def test_locked_output_file_does_not_stop_the_registry(registry_env, monkeypatch
     out_dir = registry_env.out_dir
 
     # Занятое имя: обращение к нему падает так же, как у Windows
-    taken = out_dir / "reestr_oek_2026-08.xls"
+    taken = out_dir / "oek" / "2026-08" / "oek.xls"
+    taken.parent.mkdir(parents=True, exist_ok=True)
     taken.write_bytes(b"open in Excel")
     real_fill = reports_oek.fill_registry
 
@@ -373,7 +387,9 @@ def test_locked_output_file_does_not_stop_the_registry(registry_env, monkeypatch
 
     assert result.path != taken
     assert result.path.exists()
-    assert result.path.name.startswith("reestr_oek_2026-08_")
+    # Имя файла ресурсника неприкосновенно — меняется только папка
+    assert result.path.name == "oek.xls"
+    assert result.path.parent.name.startswith("2026-08_")
     assert taken.read_bytes() == b"open in Excel"   # открытый файл не тронут
 
 

@@ -8,6 +8,7 @@
 import asyncio
 from dataclasses import replace
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 
@@ -46,7 +47,8 @@ def bot(monkeypatch):
 
     for name in ("send_reminders", "send_chat_reminder",
                  "send_debtors_statement", "send_monthly_statement",
-                 "send_oek_registry", "send_task_reminders"):
+                 "send_oek_registry", "send_oek_review", "mail_oek_registry",
+                 "send_task_reminders"):
         monkeypatch.setattr(scheduler, name, noop)
     # Config заморожен — подменяем целиком, а не отдельное поле
     monkeypatch.setattr(scheduler, "config",
@@ -440,3 +442,136 @@ def test_failed_chat_reminder_is_retried(db, monkeypatch):
     _tick(bot, datetime(2026, 9, 19, 10, 0))
     _tick(bot, datetime(2026, 9, 19, 10, 1))
     assert attempts == [True, True]
+
+
+# ---------------------------------------------------------------------------
+# Отправка реестра ресурснику: сутки на сверку, вечером — письмо
+# ---------------------------------------------------------------------------
+
+class MailEnv:
+    """Планировщик с готовым реестром и почтой, которая никуда не ходит."""
+
+    def __init__(self):
+        self.sent: list[tuple[str, str]] = []     # (тема, файл)
+        self.generated = 0
+
+
+@pytest.fixture()
+def mail_env(db, monkeypatch, tmp_path):
+    from bot.services import mail_service
+
+    env = MailEnv()
+    registry = tmp_path / "ОЭК_реестр.xls"
+    registry.write_bytes(b"\xd0\xcf\x11\xe0")
+
+    class Result:
+        path = registry
+        filled = ["1"]
+        rows_total = 2
+
+        def summary(self, _name=""):
+            return "Заполнено 1 из 2"
+
+    def fake_generate(period=None, **kwargs):
+        env.generated += 1
+        return Result()
+
+    def fake_send(subject, body, attachment=None, to=None):
+        env.sent.append((subject, Path(attachment).name))
+        return ["oek_orc@omesc.ru"]
+
+    import reports.oek_registry as reports_oek
+    monkeypatch.setattr(reports_oek, "generate_oek_registry", fake_generate)
+    monkeypatch.setattr(mail_service, "send", fake_send)
+    monkeypatch.setattr(mail_service, "is_configured", lambda: True)
+    monkeypatch.setattr(scheduler, "config",
+                        replace(config, admin_ids=(777,),
+                                mail_to=("oek_orc@omesc.ru",)))
+    return env
+
+
+def test_registry_goes_to_oek_on_the_21st_at_20(mail_env):
+    bot = FakeBot()
+    day = config.oek_mail_day
+
+    asyncio.run(scheduler.mail_oek_registry(bot))
+
+    assert [subject for subject, _ in mail_env.sent]
+    assert mail_env.sent[0][1] == "ОЭК_реестр.xls"       # имя не меняли
+    assert "Реестр показаний электроэнергии" in mail_env.sent[0][0]
+    assert any("отправлен" in text for _, text in bot.sent)
+    assert (config.oek_mail_day, config.oek_mail_hour) == (day, 20)
+
+
+def test_registry_is_not_mailed_twice(mail_env):
+    """Председатель отправила кнопкой — вечером второго письма быть не должно."""
+    from bot.services.reading_service import current_period
+
+    scheduler._claim(scheduler.oek_sent_key(current_period()))
+
+    asyncio.run(scheduler.mail_oek_registry(FakeBot()))
+
+    assert mail_env.sent == []
+
+
+def test_hold_stops_the_evening_letter(mail_env):
+    from bot.services.reading_service import current_period
+
+    scheduler._claim(scheduler.oek_hold_key(current_period()))
+
+    bot = FakeBot()
+    asyncio.run(scheduler.mail_oek_registry(bot))
+
+    assert mail_env.sent == []
+    assert any("отложена" in text for _, text in bot.sent)
+
+
+def test_failed_letter_is_retried_on_the_next_tick(mail_env, monkeypatch):
+    """Связь моргнула — реестр не должен остаться неотправленным до утра."""
+    from bot.services import mail_service
+
+    def boom(*args, **kwargs):
+        raise OSError("connection reset")
+
+    monkeypatch.setattr(mail_service, "send", boom)
+
+    bot = FakeBot()
+    assert asyncio.run(scheduler.mail_oek_registry(bot)) is False
+    assert any("не отправлен" in text for _, text in bot.sent)
+
+    # Отметки «отправлено» нет — следующий круг попробует снова
+    from bot.services.reading_service import current_period
+    monkeypatch.setattr(mail_service, "send",
+                        lambda *a, **kw: ["oek_orc@omesc.ru"])
+    assert asyncio.run(scheduler.mail_oek_registry(FakeBot())) is True
+    assert scheduler._done(scheduler.oek_sent_key(current_period())) is True
+
+
+def test_review_comes_hours_before_the_letter(db, bot, monkeypatch):
+    """Утром 21 числа — файл на сверку, вечером — письмо."""
+    order = []
+
+    async def fake_review(_bot):
+        order.append("review")
+        return True
+
+    async def fake_mail(_bot):
+        order.append("mail")
+        return True
+
+    monkeypatch.setattr(scheduler, "send_oek_review", fake_review)
+    monkeypatch.setattr(scheduler, "mail_oek_registry", fake_mail)
+
+    day = config.oek_mail_day
+    _tick(bot, datetime(2026, 8, day, config.oek_review_hour - 1))
+    assert order == []
+
+    _tick(bot, datetime(2026, 8, day, config.oek_review_hour))
+    assert order == ["review"]
+
+    _tick(bot, datetime(2026, 8, day, config.oek_mail_hour))
+    assert order == ["review", "mail"]
+
+    # Перезапуск в тот же вечер второго письма не шлёт
+    _tick(bot, datetime(2026, 8, day, config.oek_mail_hour + 1))
+    assert order == ["review", "mail"]
