@@ -28,6 +28,7 @@ BTN_FAQ_GAPS = "❓ Вопросы без ответа"
 BTN_USERS = "👥 Пользователи"
 BTN_SETTINGS = "⚙ Настройки"
 BTN_MAIL_TEST = "✉️ Проверить почту"
+BTN_CLEANUP = "🧹 Очистить переписку"
 BTN_BACKUP = "💾 Резервная копия"
 BTN_BACK = "⬅️ Главное меню"
 
@@ -53,6 +54,7 @@ def admin_menu() -> ReplyKeyboardMarkup:
             [KeyboardButton(text=BTN_USERS), KeyboardButton(text=BTN_SETTINGS)],
             [KeyboardButton(text=BTN_MAIL_TEST),
              KeyboardButton(text=BTN_BACKUP)],
+            [KeyboardButton(text=BTN_CLEANUP)],
             [KeyboardButton(text=BTN_BACK)],
         ],
         resize_keyboard=True,
@@ -99,4 +101,13 @@ def oek_review(period: str) -> InlineKeyboardMarkup:
                               callback_data=f"oekmail:{period}")],
         [InlineKeyboardButton(text="⏸ Отложить отправку",
                               callback_data=f"oekhold:{period}")],
+    ])
+
+
+def cleanup_confirm() -> InlineKeyboardMarkup:
+    """Очистка переписки — действие без отмены, поэтому через подтверждение."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🧹 Да, очистить",
+                              callback_data="cleanup:yes")],
+        [InlineKeyboardButton(text="Отмена", callback_data="cleanup:no")],
     ])

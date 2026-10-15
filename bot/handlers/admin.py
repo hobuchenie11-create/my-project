@@ -9,8 +9,8 @@ from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from bot.config import config
 from bot.keyboards.admin_menu import (BTN_ACTS, BTN_ADMIN, BTN_BACK,
-                                      BTN_BACKUP, BTN_DEBTORS,
-                                      BTN_MAIL_TEST,
+                                      BTN_BACKUP, BTN_CLEANUP,
+                                      BTN_DEBTORS, BTN_MAIL_TEST,
                                       BTN_BLANKS, BTN_CHAT_REMINDER,
                                       BTN_CORRECTION, BTN_DEBTORS_DOC,
                                       BTN_FAQ_GAPS, BTN_METERS,
@@ -21,7 +21,7 @@ from bot.keyboards.admin_menu import (BTN_ACTS, BTN_ADMIN, BTN_BACK,
                                       BTN_SPECIAL, BTN_STATS, BTN_TEMPLATES,
                                       BTN_USERS,
                                       BTN_WORKBOOK, admin_menu,
-                                      apartment_layouts)
+                                      apartment_layouts, cleanup_confirm)
 from bot.keyboards.menu import main_menu
 from bot.scheduler import send_reminders
 from bot.services import meters_service
@@ -416,6 +416,61 @@ async def test_mail(message: Message) -> None:
         "минут — посмотрите папку «Спам».\n\n"
         f"Реестр ОЭК уйдёт на {', '.join(config.mail_to)} "
         f"{config.oek_mail_day} числа в {config.oek_mail_hour:02d}:00.")
+
+
+# Сколько сообщений назад просматривать при очистке. Telegram разрешает
+# удалять не всё подряд, а только своё и не старше 48 часов, поэтому просто
+# идём по номерам вниз и пропускаем то, что не поддалось
+CLEANUP_DEPTH = 300
+# Пауза после каждой партии: у Telegram есть предел запросов в секунду
+CLEANUP_CHUNK = 20
+CLEANUP_PAUSE = 0.4
+
+
+@router.message(F.text == BTN_CLEANUP)
+async def ask_cleanup(message: Message) -> None:
+    await message.answer(
+        "🧹 <b>Очистить переписку?</b>\n\n"
+        "Удалю свои и ваши сообщения в этом чате — до 300 последних. "
+        "Telegram разрешает ботам удалять сообщения не старше 48 часов: "
+        "что старее, останется. Для такого есть «Очистить историю» в меню "
+        "чата.\n\n"
+        "Показания, ведомости и памятки хранятся в базе на компьютере — "
+        "очистка переписки их не трогает.",
+        reply_markup=cleanup_confirm())
+
+
+@router.callback_query(F.data == "cleanup:no")
+async def cancel_cleanup(callback: CallbackQuery) -> None:
+    await callback.answer("Отменено")
+    await callback.message.edit_text("Переписку оставила как есть.")
+
+
+@router.callback_query(F.data == "cleanup:yes")
+async def do_cleanup(callback: CallbackQuery) -> None:
+    """Удаляет последние сообщения чата, не спотыкаясь о недоступные."""
+    await callback.answer("Чищу…")
+    chat_id = callback.message.chat.id
+    last = callback.message.message_id
+
+    deleted = 0
+    for number, message_id in enumerate(
+            range(last, max(1, last - CLEANUP_DEPTH), -1), start=1):
+        try:
+            await callback.bot.delete_message(chat_id, message_id)
+            deleted += 1
+        except TelegramAPIError:
+            continue                  # чужое, слишком старое или уже удалено
+        if number % CLEANUP_CHUNK == 0:
+            await asyncio.sleep(CLEANUP_PAUSE)
+
+    logger.info("Очистка переписки в чате %s: удалено %s", chat_id, deleted)
+    await callback.bot.send_message(
+        chat_id,
+        f"🧹 Удалено сообщений: {deleted}.\n\n"
+        "Что осталось — старше 48 часов: такие Telegram удалять ботам "
+        "не разрешает. Их уберёт «Очистить историю» в меню чата.",
+        reply_markup=admin_menu())
 
 
 @router.message(F.text == BTN_BACKUP)
