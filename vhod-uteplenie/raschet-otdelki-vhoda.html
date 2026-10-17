@@ -494,6 +494,40 @@
     <div class="note red">
       <strong>Проверьте это до покупки материала.</strong> Если дверь открывается наружу, а петли стоят со стороны узкого простенка, толстая отделка упрётся в полотно и дверь перестанет открываться до конца. Померьте рулеткой, сколько сейчас от края дверной коробки до угла, и в какую сторону ходит дверь.
     </div>
+
+    <div class="card">
+      <h3>Сколько утеплителя купить</h3>
+      <p class="muted">Выбран вариант с фасадными панелями — значит, утеплитель укладывается между брусками обрешётки, а сверху идут панели. Считается по площади с запасом из Шага 1.</p>
+
+      <div class="row2">
+        <div class="field">
+          <label for="ins-layers">В сколько слоёв кладём</label>
+          <select id="ins-layers">
+            <option value="1" selected>в один слой</option>
+            <option value="2">в два слоя крест-накрест</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ins-pack">В упаковке, м² <span class="muted">(с этикетки)</span></label>
+          <input type="number" id="ins-pack" min="0" step="0.01" placeholder="впишите">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Нужно утеплителя</label>
+          <div class="big" id="ins-need">8,29 м²</div>
+        </div>
+        <div class="field">
+          <label>Это упаковок</label>
+          <div class="big" id="ins-packs">—</div>
+        </div>
+      </div>
+
+      <p class="muted" id="ins-hint">Толщина берётся из поля выше. Впишите, сколько квадратных метров в одной упаковке — посчитаю, сколько пачек брать и сколько останется.</p>
+
+      <p class="muted">Два слоя крест-накрест берут вдвое больше материала, зато перекрывают стыки нижнего слоя — там, где иначе холод проходит насквозь. На маленькой площади разница в деньгах невелика, а эффект заметный.</p>
+    </div>
   </section>
 
   <!-- ================= ВАРИАНТЫ ================= -->
@@ -587,27 +621,27 @@
         <tbody>
           <tr>
             <td>Основание: клей + сетка / обрешётка</td>
-            <td class="num"><input type="number" data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Основание, плитка"></td>
-            <td class="num"><input type="number" data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Основание, панели"></td>
-            <td class="num"><input type="number" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Основание, сайдинг"></td>
+            <td class="num"><input type="number" id="base-tile"   data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Основание, плитка"></td>
+            <td class="num"><input type="number" id="base-panel"  data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Основание, панели"></td>
+            <td class="num"><input type="number" id="base-siding" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Основание, сайдинг"></td>
           </tr>
           <tr>
             <td>Сам отделочный материал</td>
-            <td class="num"><input type="number" data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Материал, плитка"></td>
-            <td class="num"><input type="number" data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Материал, панели"></td>
-            <td class="num"><input type="number" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Материал, сайдинг"></td>
+            <td class="num"><input type="number" id="mat-tile"   data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Материал, плитка"></td>
+            <td class="num"><input type="number" id="mat-panel"  data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Материал, панели"></td>
+            <td class="num"><input type="number" id="mat-siding" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Материал, сайдинг"></td>
           </tr>
           <tr>
             <td>Доборы: затирка / углы, планки, стартовая</td>
-            <td class="num"><input type="number" data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Доборы, плитка"></td>
-            <td class="num"><input type="number" data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Доборы, панели"></td>
-            <td class="num"><input type="number" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Доборы, сайдинг"></td>
+            <td class="num"><input type="number" id="add-tile"   data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Доборы, плитка"></td>
+            <td class="num"><input type="number" id="add-panel"  data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Доборы, панели"></td>
+            <td class="num"><input type="number" id="add-siding" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Доборы, сайдинг"></td>
           </tr>
           <tr>
             <td>Работа, если считаете за м² <span class="muted">(можно не заполнять)</span></td>
-            <td class="num"><input type="number" data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Работа, плитка"></td>
-            <td class="num"><input type="number" data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Работа, панели"></td>
-            <td class="num"><input type="number" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Работа, сайдинг"></td>
+            <td class="num"><input type="number" id="work-tile"   data-opt="tile"   min="0" step="10" placeholder="—" aria-label="Работа, плитка"></td>
+            <td class="num"><input type="number" id="work-panel"  data-opt="panel"  min="0" step="10" placeholder="—" aria-label="Работа, панели"></td>
+            <td class="num"><input type="number" id="work-siding" data-opt="siding" min="0" step="10" placeholder="—" aria-label="Работа, сайдинг"></td>
           </tr>
           <tr class="total">
             <td>Итого за всю нишу</td>
@@ -756,7 +790,15 @@
   "use strict";
 
   var AREA_NET = 7.54;
-  var STORE_KEY = "vhod-uteplenie-v1";
+  var STORE_KEY = "vhod-uteplenie-v2";
+
+  // русские окончания: 1 упаковка, 2-4 упаковки, 5-20 упаковок, 21 упаковка
+  function plural(n, one, few, many) {
+    var d = n % 10, h = n % 100;
+    if (d === 1 && h !== 11) return one;
+    if (d >= 2 && d <= 4 && (h < 12 || h > 14)) return few;
+    return many;
+  }
 
   function num(el) {
     if (!el) return 0;
@@ -782,7 +824,14 @@
   var insLeft   = document.getElementById("ins-left");
   var verdictEl = document.getElementById("verdict");
 
-  var allInputs = Array.prototype.slice.call(document.querySelectorAll('input[type="number"]'));
+  var allInputs = Array.prototype.slice.call(document.querySelectorAll('input[type="number"], #ins-layers'));
+
+  var insLayers = document.getElementById("ins-layers");
+  var insPack   = document.getElementById("ins-pack");
+  var insNeed   = document.getElementById("ins-need");
+  var insPacks  = document.getElementById("ins-packs");
+  var insHint   = document.getElementById("ins-hint");
+  var INS_HINT_DEFAULT = insHint.textContent;
 
   function areaWithSpare() {
     var z = num(zapasEl);
@@ -828,6 +877,32 @@
     }
   }
 
+  function renderInsulation() {
+    var layers = parseInt(insLayers.value, 10) || 1;
+    var need = areaWithSpare() * layers;
+    insNeed.textContent = fmt(need, 2) + " м²";
+
+    var pack = num(insPack);
+    if (pack <= 0) {
+      insPacks.textContent = "—";
+      insHint.textContent = INS_HINT_DEFAULT;
+      return;
+    }
+
+    var packs = Math.ceil(need / pack);
+    var left = packs * pack - need;
+    insPacks.textContent = packs + " " + plural(packs, "упаковка", "упаковки", "упаковок");
+
+    var t = num(tInsEl);
+    var text = "Берём " + packs + " " + plural(packs, "упаковку", "упаковки", "упаковок") +
+      " по " + fmt(pack, 2) + " м² — это " + fmt(packs * pack, 2) + " м², " +
+      "останется " + fmt(left, 2) + " м² про запас.";
+    if (layers === 2 && t > 0) {
+      text += " Два слоя по " + fmt(t / 2, 0) + " мм каждый — в сумме ваши " + fmt(t, 0) + " мм.";
+    }
+    insHint.textContent = text;
+  }
+
   function renderSums() {
     var common = 0;
     document.querySelectorAll("input[data-common]").forEach(function (el) { common += num(el); });
@@ -865,7 +940,7 @@
   function save() {
     try {
       var data = {};
-      allInputs.forEach(function (el, i) { data["i" + i] = el.value; });
+      allInputs.forEach(function (el) { data[el.id] = el.value; });
       localStorage.setItem(STORE_KEY, JSON.stringify(data));
     } catch (e) { /* приватный режим или запрет хранения — просто не сохраняем */ }
   }
@@ -875,8 +950,8 @@
       var raw = localStorage.getItem(STORE_KEY);
       if (!raw) return;
       var data = JSON.parse(raw);
-      allInputs.forEach(function (el, i) {
-        if (typeof data["i" + i] === "string") el.value = data["i" + i];
+      allInputs.forEach(function (el) {
+        if (typeof data[el.id] === "string") el.value = data[el.id];
       });
     } catch (e) { /* читать нечего — показываем значения по умолчанию */ }
   }
@@ -884,6 +959,7 @@
   function renderAll() {
     renderArea();
     renderThickness();
+    renderInsulation();
     renderSums();
   }
 
