@@ -195,6 +195,7 @@
     border-radius: 4px;
   }
   input[type="number"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input[readonly] { color: var(--ink-soft); background: var(--surface); cursor: default; }
   table input[type="number"] { min-width: 88px; }
   @media (max-width: 560px) {
     table { min-width: 380px; font-size: 14px; }
@@ -202,6 +203,8 @@
     table input[type="number"] { min-width: 62px; font-size: 14px; padding: 7px 5px; }
   }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 560px) { .row3 { grid-template-columns: 1fr; } }
   @media (max-width: 560px) { .row2 { grid-template-columns: 1fr; } }
   .big { font-family: "PT Mono", monospace; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .muted { color: var(--ink-faint); font-size: 14px; }
@@ -470,8 +473,8 @@
     <div class="card">
       <div class="row2">
         <div class="field">
-          <label for="t-ins">Толщина утеплителя, мм</label>
-          <input type="number" id="t-ins" value="100" min="0" max="250" step="10">
+          <label for="t-ins">Толщина утеплителя, мм <span class="muted">(считается по слоям ниже)</span></label>
+          <input type="number" id="t-ins" value="90" min="0" max="400" step="10" readonly>
         </div>
         <div class="field">
           <label for="t-fin">Толщина отделки с основанием, мм</label>
@@ -497,36 +500,61 @@
 
     <div class="card">
       <h3>Сколько утеплителя купить</h3>
-      <p class="muted">Выбран вариант с фасадными панелями — значит, утеплитель укладывается между брусками обрешётки, а сверху идут панели. Считается по площади с запасом из Шага 1.</p>
+      <p class="muted">Данные подставлены с вашего скриншота: ТЕХНОНИКОЛЬ XPS ТЕХНОПЛЕКС MASTER, лист 30&nbsp;мм, 13 листов в упаковке, 8,9&nbsp;м², 4&nbsp;652&nbsp;₽ за упаковку. Листы тонкие, поэтому толщина набирается слоями — меняйте их число и смотрите, что получается.</p>
 
-      <div class="row2">
+      <div class="row3">
         <div class="field">
-          <label for="ins-layers">В сколько слоёв кладём</label>
-          <select id="ins-layers">
-            <option value="1" selected>в один слой</option>
-            <option value="2">в два слоя крест-накрест</option>
-          </select>
+          <label for="ins-sheet">Толщина листа, мм</label>
+          <input type="number" id="ins-sheet" value="30" min="5" max="200" step="5">
         </div>
         <div class="field">
-          <label for="ins-pack">В упаковке, м² <span class="muted">(с этикетки)</span></label>
-          <input type="number" id="ins-pack" min="0" step="0.01" placeholder="впишите">
+          <label for="ins-layers">Сколько слоёв</label>
+          <input type="number" id="ins-layers" value="3" min="1" max="8" step="1">
+        </div>
+        <div class="field">
+          <label for="ins-pack">В упаковке, м²</label>
+          <input type="number" id="ins-pack" value="8.9" min="0" step="0.01">
         </div>
       </div>
 
-      <div class="row2">
+      <div class="row3">
+        <div class="field">
+          <label>Получается толщина</label>
+          <div class="big" id="ins-total">90 мм</div>
+        </div>
         <div class="field">
           <label>Нужно утеплителя</label>
-          <div class="big" id="ins-need">8,29 м²</div>
+          <div class="big" id="ins-need">24,87 м²</div>
         </div>
         <div class="field">
           <label>Это упаковок</label>
-          <div class="big" id="ins-packs">—</div>
+          <div class="big" id="ins-packs">3 упаковки</div>
         </div>
       </div>
 
-      <p class="muted" id="ins-hint">Толщина берётся из поля выше. Впишите, сколько квадратных метров в одной упаковке — посчитаю, сколько пачек брать и сколько останется.</p>
+      <div class="row2">
+        <div class="field">
+          <label for="ins-price">Цена за упаковку, ₽</label>
+          <input type="number" id="ins-price" value="4652" min="0" step="1">
+        </div>
+        <div class="field">
+          <label>Утеплитель обойдётся в</label>
+          <div class="big" id="ins-sum">13 956 ₽</div>
+        </div>
+      </div>
 
-      <p class="muted">Два слоя крест-накрест берут вдвое больше материала, зато перекрывают стыки нижнего слоя — там, где иначе холод проходит насквозь. На маленькой площади разница в деньгах невелика, а эффект заметный.</p>
+      <p class="muted" id="ins-hint"></p>
+
+      <p class="muted">Слои кладут вразбежку, чтобы стыки верхнего ряда не совпадали с нижним: именно по сквозным стыкам холод и проходит. Толщина отсюда подставляется в расчёт простенка выше, а цена за квадрат — в смету на Шаге 5.</p>
+    </div>
+
+    <div class="note red">
+      <strong>XPS и фасадные панели — спорное сочетание. Прочтите до оплаты.</strong>
+      Экструзионный пенополистирол практически не пропускает пар. Фасадные панели — это вентилируемая система: воздушный зазор под ними существует как раз для того, чтобы выпускать влагу из стены наружу. С паронепроницаемым утеплителем этот зазор работать не будет, и если за стеной отапливаемая комната, влага останется запертой в кирпиче. Под вентилируемые панели обычно берут каменную вату — она пар пропускает. Плюс XPS горюч, а у вас рядом электрощиток с проводами.
+      <br><br>
+      Это <em>не</em> значит, что товар плохой: XPS прочен, не боится воды и при той же толщине греет лучше ваты. Он отлично работает на цоколе и под «мокрую» отделку — под ту самую фасадную плитку. Но тогда это другая система, без обрешётки и вентзазора.
+      <br><br>
+      <strong>И всё решает один ваш ответ:</strong> что находится за этими стенами? Если отапливаемая комната — связку «XPS + вентилируемые панели» надо менять: либо утеплитель на вату, либо отделку на плитку. Если за стеной холодное помещение или улица — пара вопросов снимается, и XPS вполне годится.
     </div>
   </section>
 
@@ -597,8 +625,8 @@
       <h3>Общая часть — одинаково для всех трёх вариантов</h3>
       <div class="row2">
         <div class="field">
-          <label for="p-ins">Утеплитель, ₽ за м²</label>
-          <input type="number" id="p-ins" data-common min="0" step="10" placeholder="впишите">
+          <label for="p-ins">Утеплитель, ₽ за м² <span class="muted">(из Шага 3)</span></label>
+          <input type="number" id="p-ins" data-common min="0" step="10" placeholder="цена за упаковку в Шаге 3" readonly>
         </div>
         <div class="field">
           <label for="p-fix">Клей и дюбели для утеплителя, ₽ за м²</label>
@@ -826,12 +854,16 @@
 
   var allInputs = Array.prototype.slice.call(document.querySelectorAll('input[type="number"], #ins-layers'));
 
+  var insSheet  = document.getElementById("ins-sheet");
   var insLayers = document.getElementById("ins-layers");
   var insPack   = document.getElementById("ins-pack");
+  var insPrice  = document.getElementById("ins-price");
+  var insTotal  = document.getElementById("ins-total");
   var insNeed   = document.getElementById("ins-need");
   var insPacks  = document.getElementById("ins-packs");
+  var insSum    = document.getElementById("ins-sum");
   var insHint   = document.getElementById("ins-hint");
-  var INS_HINT_DEFAULT = insHint.textContent;
+  var pInsEl    = document.getElementById("p-ins");
 
   function areaWithSpare() {
     var z = num(zapasEl);
@@ -878,27 +910,48 @@
   }
 
   function renderInsulation() {
-    var layers = parseInt(insLayers.value, 10) || 1;
+    var sheet  = num(insSheet);
+    var layers = Math.max(1, parseInt(insLayers.value, 10) || 1);
+    var total  = sheet * layers;
+
+    // толщина отсюда управляет расчётом простенка выше
+    insTotal.textContent = fmt(total, 0) + " мм";
+    tInsEl.value = String(total);
+
     var need = areaWithSpare() * layers;
     insNeed.textContent = fmt(need, 2) + " м²";
 
-    var pack = num(insPack);
+    var pack  = num(insPack);
+    var price = num(insPrice);
+
     if (pack <= 0) {
       insPacks.textContent = "—";
-      insHint.textContent = INS_HINT_DEFAULT;
+      insSum.textContent = "—";
+      insHint.textContent = "Впишите, сколько квадратных метров в одной упаковке — посчитаю, сколько пачек брать и сколько останется.";
       return;
     }
 
     var packs = Math.ceil(need / pack);
-    var left = packs * pack - need;
+    var left  = packs * pack - need;
     insPacks.textContent = packs + " " + plural(packs, "упаковка", "упаковки", "упаковок");
 
-    var t = num(tInsEl);
+    // цена за квадрат уходит в смету на Шаге 5
+    var perM2 = price > 0 ? price / pack : 0;
+    if (price > 0) {
+      insSum.textContent = money(packs * price);
+      pInsEl.value = String(Math.round(perM2));
+    } else {
+      insSum.textContent = "—";
+      pInsEl.value = "";
+    }
+
     var text = "Берём " + packs + " " + plural(packs, "упаковку", "упаковки", "упаковок") +
-      " по " + fmt(pack, 2) + " м² — это " + fmt(packs * pack, 2) + " м², " +
-      "останется " + fmt(left, 2) + " м² про запас.";
-    if (layers === 2 && t > 0) {
-      text += " Два слоя по " + fmt(t / 2, 0) + " мм каждый — в сумме ваши " + fmt(t, 0) + " мм.";
+      " по " + fmt(pack, 2) + " м² — это " + fmt(packs * pack, 2) + " м² при нужных " +
+      fmt(need, 2) + " м², останется " + fmt(left, 2) + " м² про запас. " +
+      layers + " " + plural(layers, "слой", "слоя", "слоёв") + " по " + fmt(sheet, 0) +
+      " мм дают " + fmt(total, 0) + " мм.";
+    if (perM2 > 0) {
+      text += " Выходит " + money(perM2) + " за м² — эта цифра подставлена в смету на Шаге 5.";
     }
     insHint.textContent = text;
   }
@@ -958,8 +1011,8 @@
 
   function renderAll() {
     renderArea();
+    renderInsulation();   // задаёт толщину и цену за м², поэтому идёт первым
     renderThickness();
-    renderInsulation();
     renderSums();
   }
 
