@@ -81,10 +81,32 @@ def login_failed_hint(exc: Exception) -> str:
         return (f"Почта не приняла вход: адрес {config.smtp_user} — "
                 f"а сервер в .env указан {config.smtp_host}. "
                 f"Впишите SMTP_HOST={proper} и перезапустите бота.")
-    return ("Почта не приняла логин и пароль. Проверьте в .env SMTP_USER и "
-            "SMTP_PASSWORD: нужен «пароль приложения» из настроек почты, "
-            "а не пароль, которым вы входите в ящик.\n\n"
+    return ("Почта не приняла логин и пароль. Нужен «пароль приложения» из "
+            "настроек почты, а не пароль, которым вы входите в ящик.\n\n"
+            f"{credentials_hint()}\n\n"
             f"Ответ сервера: {exc}")
+
+
+def credentials_hint() -> str:
+    """Что бот прочитал из .env — без самого пароля.
+
+    Половина отказов — не в самом пароле, а в том, как он попал в файл:
+    прилипли пробелы при копировании, остались кавычки, адрес с опечаткой.
+    Увидеть это можно только по тому, что прочитал бот, а показывать пароль
+    в переписке нельзя — поэтому показываем длину и форму.
+    """
+    password = config.smtp_password
+    quirks = []
+    if password != password.strip():
+        quirks.append("по краям есть пробелы")
+    if " " in password.strip():
+        quirks.append("внутри есть пробел")
+    if password[:1] in "\"'" or password[-1:] in "\"'":
+        quirks.append("есть кавычки")
+    note = f" — {', '.join(quirks)}" if quirks else ""
+    return (f"Бот прочитал из .env: логин <code>{config.smtp_user}</code>, "
+            f"пароль из {len(password)} знаков{note}.\n"
+            "У Яндекса пароль приложения — 16 букв без пробелов.")
 
 
 def build_message(subject: str, body: str, attachment: Path | None = None,

@@ -210,3 +210,37 @@ def test_test_letter_explains_what_is_missing(monkeypatch):
 
     assert "SMTP_USER" in message.answers[0]
     assert "Настройки" in message.answers[0]
+
+
+def test_hint_shows_what_was_read_without_the_password(monkeypatch):
+    """Половина отказов — прилипшие пробелы, а не сам пароль."""
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="dom@yandex.ru",
+                                smtp_host="smtp.yandex.ru",
+                                smtp_password="abcd efgh ijkl mnop"))
+
+    hint = mail_service.credentials_hint()
+
+    assert "dom@yandex.ru" in hint
+    assert "19 знаков" in hint
+    assert "внутри есть пробел" in hint
+    assert "abcd" not in hint                 # сам пароль не показываем
+
+
+def test_hint_notices_quotes(monkeypatch):
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="dom@yandex.ru",
+                                smtp_password='"abcdefghijklmnop"'))
+
+    assert "есть кавычки" in mail_service.credentials_hint()
+
+
+def test_clean_password_gets_no_remarks(monkeypatch):
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="dom@yandex.ru",
+                                smtp_password="abcdefghijklmnop"))
+
+    hint = mail_service.credentials_hint()
+
+    assert "16 знаков" in hint
+    assert "пробел" not in hint and "кавычки" not in hint
