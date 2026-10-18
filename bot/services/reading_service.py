@@ -68,8 +68,11 @@ def save_reading(conn: sqlite3.Connection, apartment_id: int, kind: str, value: 
     last = (repository.last_reading_before_period(conn, meter["id"], period)
             if correction else repository.last_reading(conn, meter["id"]))
     result = (CheckResult(ok=True) if replaced
-              else check_reading(kind, value, last["value"] if last else None,
-                                 last["period"] if last else None))
+              else check_reading(
+                  kind, value, last["value"] if last else None,
+                  last["period"] if last else None,
+                  same_period=bool(last and last["period"] == period),
+                  last_when=last["created_at"] if last else None))
     if result.ok:
         if late is None:
             # Правка не делает показание опоздавшим: пометку наследуем от той

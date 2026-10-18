@@ -56,7 +56,10 @@ def test_correction_may_lower_the_value(conn, flat):
     save_reading(conn, flat["id"], "electricity", 99999, None)
 
     rejected = save_reading(conn, flat["id"], "electricity", 15230, None)
-    assert rejected.ok is False and "меньше показания за" in rejected.error
+    assert rejected.ok is False
+    # Цифра принята в этом же месяце — об этом и сказано, про прошлый месяц речи нет
+    assert "За этот месяц уже принято" in rejected.error
+    assert "Исправить за" in rejected.error
 
     fixed = save_reading(conn, flat["id"], "electricity", 15230, None,
                          correction=True)
@@ -191,3 +194,24 @@ def test_the_wrong_august_figure_stays_in_history(conn, flat):
     rows = repository.readings_history_for_apartment(conn, flat["id"])
     august = [r["value"] for r in rows if r["period"] == "2026-08"]
     assert sorted(august) == [147.0, 197.0]
+
+
+def test_duplicate_within_the_month_names_the_right_culprit(conn, flat):
+    """Кв. 75: показания за месяц прислали дважды, первое — с опечаткой.
+
+    Прежний ответ звал проверить «показание за октябрь» так, будто речь
+    о прошлом месяце: председатель проверяла сентябрь и не находила ошибки,
+    потому что ошибка лежала в этом же октябре.
+    """
+    save_reading(conn, flat["id"], "cws", 2314, None, period="2026-10")
+
+    rejected = save_reading(conn, flat["id"], "cws", 1314, None,
+                            period="2026-10")
+
+    assert rejected.ok is False
+    assert "За этот месяц уже принято показание 2314" in rejected.error
+    assert "«Исправить за октябрь»" in rejected.error
+    # Правка проходит и ставит верную цифру
+    fixed = save_reading(conn, flat["id"], "cws", 1314, None,
+                         period="2026-10", correction=True)
+    assert fixed.ok is True

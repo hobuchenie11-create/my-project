@@ -74,18 +74,39 @@ class CheckResult:
 
 
 def check_reading(kind: str, new_value: float, last_value: float | None,
-                  last_period: str | None = None) -> CheckResult:
+                  last_period: str | None = None,
+                  same_period: bool = False,
+                  last_when: str | None = None) -> CheckResult:
     """Сверяет новое показание с предыдущим.
 
-    Меньше предыдущего — ошибка (замену счетчика оформляет председатель).
-    Аномально большой расход — принимается, но с предупреждением.
+    Меньше предыдущего — ошибка. Аномально большой расход — принимается,
+    но с предупреждением.
 
     `last_period` — месяц той цифры, с которой сравниваем. Без него ответ
     «меньше предыдущего (197)» заводит в тупик: непонятно, где лежит эта
     197 и как до неё добраться, если неверна как раз она.
+
+    `same_period` — та цифра принята в этом же месяце. Случай совсем другой:
+    показания за месяц прислали дважды, и первое из них с опечаткой. Писать
+    про «предыдущий месяц» здесь — сбивать с толку: в прошлом месяце всё
+    как раз в порядке, и проверять надо не его.
     """
     if last_value is None:
         return CheckResult(ok=True)
+
+    if new_value < last_value and same_period:
+        when = f" ({last_when[:10]})" if last_when else ""
+        month = (MONTHS_RU[int(last_period[5:7]) - 1] if last_period
+                 else "этот месяц")
+        return CheckResult(
+            ok=False,
+            error=(f"За этот месяц уже принято показание {last_value:g}"
+                   f"{when}, а новое {new_value:g} меньше него.\n"
+                   f"Если ошибка в той, ранней цифре — пришлите "
+                   f"«Исправить за {month}» и правильное показание. "
+                   "Если счётчик заменили — припишите рядом «заменили "
+                   "счётчик»."),
+        )
 
     if new_value < last_value:
         whose = (f"показания за {period_title(last_period)}" if last_period
