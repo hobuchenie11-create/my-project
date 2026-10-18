@@ -92,6 +92,25 @@ CORRECTION_RE = re.compile(
     r"\b(?:исправ\w*|правка|поправ\w*|корректир\w*|замен\w*\s+показан\w*)\b[\s:.,–—-]*",
     re.IGNORECASE)
 
+# Пометка о замене прибора: «(заменили счётчик)», «новый счётчик»,
+# «поменяли ПУ». После замены прибор считает с нуля, и сверять показание
+# с прошлым месяцем нельзя — иначе оно отклоняется как «меньше предыдущего»,
+# и записать показания нового счётчика нечем.
+REPLACED_RE = re.compile(
+    r"(?:замен\w*|помен\w*|нов\w*)\s*"
+    r"(?:прибор\w*(?:\s+учет\w*|\s+учёт\w*)?|счет\w*|счёт\w*|пу\b)"
+    r"|(?:прибор\w*(?:\s+учет\w*|\s+учёт\w*)?|счет\w*|счёт\w*)"
+    r"\s*(?:замен\w*|помен\w*)",
+    re.IGNORECASE)
+
+
+def _strip_note(line: str) -> str:
+    """Убирает пометку о замене и осиротевшие скобки, оставляя показание."""
+    line = REPLACED_RE.sub(" ", line)
+    line = re.sub(r"[()\[\]]", " ", line)
+    return re.sub(r"\s+", " ", line).strip(" -–—:;,.")
+
+
 # Месяц у правки: «Исправить за август», «Исправить 08.2026». Без месяца
 # правка идёт в текущий период — так было и раньше.
 MONTH_NAMES = ("январ", "феврал", "март", "апрел", "ма", "июн", "июл",
@@ -208,6 +227,9 @@ class ParsedReadings:
     mentions_apartment: bool = False   # в тексте есть «кв», номер мог не читаться
     is_correction: bool = False        # помечено «Исправить» — переписать принятое
     period: str | None = None          # «Исправить за август» — правка не за текущий месяц
+    # Приборы, рядом с которыми житель написал «заменили счётчик»:
+    # их показания принимаются без сверки с прошлым месяцем
+    replaced_meters: set[str] = field(default_factory=set)
 
     @property
     def is_empty(self) -> bool:
@@ -276,6 +298,7 @@ def parse_message(text: str) -> ParsedReadings:
     # записанное одной буквой («ХВС К» — кухня).
     pending_raw = ""
     pending_value = ""
+    last_kind: str | None = None   # к нему относится пометка отдельной строкой
 
     for raw_line in text.splitlines():
         for segment in SEGMENT_RE.split(raw_line):
@@ -283,6 +306,17 @@ def parse_message(text: str) -> ParsedReadings:
             line = UNIT_TAIL_RE.sub("", line).strip()
             if not line:
                 continue
+
+            # «Гвс ванна 3 (заменили счетчик)»: пометку убираем до разбора,
+            # иначе за числом окажется текст и показание не прочитается
+            replaced_here = bool(REPLACED_RE.search(line))
+            if replaced_here:
+                line = _strip_note(line)
+                if not line:
+                    # Пометка отдельной строкой — о приборе из строки выше
+                    if last_kind:
+                        result.replaced_meters.add(last_kind)
+                    continue
 
             value_match = VALUE_RE.search(line)
             reversed_match = None if value_match else LEADING_VALUE_RE.match(line)
@@ -341,6 +375,9 @@ def parse_message(text: str) -> ParsedReadings:
                     f"Прибор «{label_part.strip()}» указан дважды")
                 continue
             result.values[kind] = value
+            last_kind = kind
+            if replaced_here:
+                result.replaced_meters.add(kind)
 
     return result
 

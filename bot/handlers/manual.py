@@ -100,7 +100,8 @@ async def manual_readings(message: Message) -> None:
                              f"{len(outcome.saved)} за "
                              f"{parsed.period or current_period()}")
         text = (receipt_text(conn, apartment, outcome.saved,
-                             replaced=outcome.replaced)
+                             replaced=outcome.replaced,
+                             new_meters=outcome.new_meters)
                 if outcome.anything_saved else "Показания не записаны.")
     finally:
         conn.close()

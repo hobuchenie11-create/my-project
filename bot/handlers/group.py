@@ -191,7 +191,8 @@ async def handle_group_message(message: Message) -> None:
                              f"за {current_period()}")
 
         receipt = (receipt_text(conn, apartment, outcome.saved,
-                                replaced=outcome.replaced)
+                                replaced=outcome.replaced,
+                                new_meters=outcome.new_meters)
                    if outcome.anything_saved else "Показания не записаны.")
     finally:
         conn.close()

@@ -44,7 +44,8 @@ def unit_for(kind: str) -> str:
 def save_reading(conn: sqlite3.Connection, apartment_id: int, kind: str, value: float,
                  user_id: int | None, source: str = "bot",
                  period: str | None = None, late: bool | None = None,
-                 correction: bool = False) -> CheckResult:
+                 correction: bool = False,
+                 replaced: bool = False) -> CheckResult:
     """Проверяет и сохраняет одно показание. Возвращает результат проверки.
 
     Правка (correction=True) переписывает уже принятое показание за период:
@@ -52,6 +53,11 @@ def save_reading(conn: sqlite3.Connection, apartment_id: int, kind: str, value: 
     остаётся в истории. Сверяем такую запись не с ошибочной цифрой этого же
     месяца, а с показанием прошлого месяца, иначе исправить завышенное
     показание было бы нечем: «меньше предыдущего» отклоняло бы правку.
+
+    Замена прибора (replaced=True) отменяет сверку совсем: новый счётчик
+    считает с нуля, и прежние цифры к нему отношения не имеют. Без этого
+    показания нового прибора было бы не записать — любое из них меньше
+    последнего показания старого.
     """
     meter = repository.get_meter(conn, apartment_id, kind)
     if meter is None:
@@ -61,8 +67,9 @@ def save_reading(conn: sqlite3.Connection, apartment_id: int, kind: str, value: 
     previous = repository.reading_for_period(conn, meter["id"], period)
     last = (repository.last_reading_before_period(conn, meter["id"], period)
             if correction else repository.last_reading(conn, meter["id"]))
-    result = check_reading(kind, value, last["value"] if last else None,
-                           last["period"] if last else None)
+    result = (CheckResult(ok=True) if replaced
+              else check_reading(kind, value, last["value"] if last else None,
+                                 last["period"] if last else None))
     if result.ok:
         if late is None:
             # Правка не делает показание опоздавшим: пометку наследуем от той
@@ -82,6 +89,7 @@ class SaveOutcome:
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     replaced: dict[str, float] = field(default_factory=dict)  # что было до правки
+    new_meters: list[str] = field(default_factory=list)       # счётчик заменён
 
     @property
     def anything_saved(self) -> bool:
@@ -122,11 +130,14 @@ def save_parsed_readings(conn: sqlite3.Connection, apartment: sqlite3.Row,
         was = (_current_value(conn, apartment["id"], target,
                               period or current_period())
                if correction else None)
+        replaced_meter = kind in parsed.replaced_meters
         result = save_reading(conn, apartment["id"], target, value, user_id,
                               source=source, period=period, late=late,
-                              correction=correction)
+                              correction=correction, replaced=replaced_meter)
         if result.ok:
             outcome.saved[target] = value
+            if replaced_meter:
+                outcome.new_meters.append(target)
             if was is not None and was != value:
                 outcome.replaced[target] = was
             if result.warning:
@@ -262,7 +273,8 @@ def _display(apartment: sqlite3.Row) -> str:
 
 def receipt_text(conn: sqlite3.Connection, apartment: sqlite3.Row,
                  saved: dict[str, float], when: datetime | None = None,
-                 replaced: dict[str, float] | None = None) -> str:
+                 replaced: dict[str, float] | None = None,
+                 new_meters: list[str] | None = None) -> str:
     """Квитанция-подтверждение после передачи показаний (Этап 5).
 
     Для правки показываем и прежнюю цифру: по квитанции сразу видно, что
@@ -270,6 +282,7 @@ def receipt_text(conn: sqlite3.Connection, apartment: sqlite3.Row,
     """
     when = when or datetime.now()
     replaced = replaced or {}
+    new_meters = set(new_meters or ())
     header = ("✏️ {} — показания исправлены" if replaced
               else "✅ {} — показания приняты")
     lines = [header.format(_display(apartment)), ""]
@@ -280,7 +293,14 @@ def receipt_text(conn: sqlite3.Connection, apartment: sqlite3.Row,
         line = f"{METER_KINDS[kind]}: {saved[kind]:g}"
         if kind in replaced:
             line += f"  (было {replaced[kind]:g})"
+        if kind in new_meters:
+            line += "  (новый счётчик)"
         lines.append(line)
+    if new_meters:
+        lines.append("")
+        lines.append("🔄 Счётчик заменён — показание принято как начальное, "
+                     "с прошлым месяцем не сверяла. Расход по нему посчитаю "
+                     "со следующей передачи.")
     lines.append("")
     lines.append(f"{'Исправлено' if replaced else 'Передано'}: "
                  f"{when.strftime('%d.%m.%Y %H:%M')}")

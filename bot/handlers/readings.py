@@ -170,7 +170,8 @@ async def _try_whole_message(message: Message, state: FSMContext) -> bool:
 
         outcome = save_parsed_readings(conn, apartment, parsed,
                                        data.get("user_id"), source="bot")
-        text = (receipt_text(conn, apartment, outcome.saved)
+        text = (receipt_text(conn, apartment, outcome.saved,
+                             new_meters=outcome.new_meters)
                 if outcome.anything_saved else "Показания не записаны.")
     finally:
         conn.close()

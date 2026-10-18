@@ -96,8 +96,9 @@ def check_reading(kind: str, new_value: float, last_value: float | None,
         return CheckResult(
             ok=False,
             error=(f"Показание {new_value:g} меньше {whose} ({last_value:g}). "
-                   "Проверьте цифры. Если счетчик заменили — сообщите "
-                   f"председателю.{fix}"),
+                   "Проверьте цифры.\nЕсли счётчик заменили — припишите "
+                   "рядом «заменили счётчик», и я приму показание как "
+                   f"начальное.{fix}"),
         )
 
     delta = new_value - last_value
