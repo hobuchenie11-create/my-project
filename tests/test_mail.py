@@ -243,4 +243,6 @@ def test_clean_password_gets_no_remarks(monkeypatch):
     hint = mail_service.credentials_hint()
 
     assert "16 знаков" in hint
-    assert "пробел" not in hint and "кавычки" not in hint
+    # Замечаний нет: строка о прочитанном заканчивается точкой после «знаков»
+    assert "16 знаков." in hint
+    assert "есть пробел" not in hint and "есть кавычки" not in hint
