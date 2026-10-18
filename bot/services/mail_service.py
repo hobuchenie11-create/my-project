@@ -126,6 +126,28 @@ def build_message(subject: str, body: str, attachment: Path | None = None,
     return message
 
 
+def _login(server) -> None:
+    """Вход на почтовый сервер. При отказе пробует логин без домена.
+
+    У Яндекса ящик часто заведён на один логин, а адрес для переписки —
+    алиас. Сервер тогда отвечает «Invalid user or password» на полный
+    адрес, но пускает по самому логину. Разница незаметна, а выглядит как
+    неверный пароль — и человек в третий раз создаёт новый.
+    """
+    try:
+        server.login(config.smtp_user, config.smtp_password)
+        return
+    except smtplib.SMTPAuthenticationError:
+        local = config.smtp_user.partition("@")[0]
+        if not local or local == config.smtp_user:
+            raise
+
+    server.login(local, config.smtp_password)
+    logger.warning(
+        "Почта приняла вход по логину «%s» без домена. Впишите его в "
+        "SMTP_USER — иначе бот каждый раз пробует дважды.", local)
+
+
 def send(subject: str, body: str, attachment: Path | None = None,
          to: tuple[str, ...] | None = None) -> list[str]:
     """Отправляет письмо и возвращает адреса получателей.
@@ -140,7 +162,7 @@ def send(subject: str, body: str, attachment: Path | None = None,
     with smtplib.SMTP_SSL(config.smtp_host, config.smtp_port,
                           context=context, timeout=TIMEOUT_SECONDS) as server:
         try:
-            server.login(config.smtp_user, config.smtp_password)
+            _login(server)
         except smtplib.SMTPAuthenticationError as exc:
             raise MailNotConfigured(login_failed_hint(exc)) from exc
         server.send_message(message)

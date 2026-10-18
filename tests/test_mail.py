@@ -246,3 +246,60 @@ def test_clean_password_gets_no_remarks(monkeypatch):
     # Замечаний нет: строка о прочитанном заканчивается точкой после «знаков»
     assert "16 знаков." in hint
     assert "есть пробел" not in hint and "есть кавычки" not in hint
+
+
+# ---------------------------------------------------------------------------
+# Вход по логину без домена: ящик на логине, адрес — алиас
+# ---------------------------------------------------------------------------
+
+class FakeServer:
+    """Почтовый сервер, который пускает только по логину без домена."""
+
+    def __init__(self, accepts: str):
+        self.accepts = accepts
+        self.tried: list[str] = []
+
+    def login(self, user, password):
+        self.tried.append(user)
+        if user != self.accepts:
+            import smtplib
+            raise smtplib.SMTPAuthenticationError(535, b"Invalid user")
+
+
+def test_login_falls_back_to_the_bare_login(mail, monkeypatch):
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="yavorsuk@yandex.ru",
+                                smtp_password="секрет"))
+    server = FakeServer(accepts="yavorsuk")
+
+    mail_service._login(server)
+
+    assert server.tried == ["yavorsuk@yandex.ru", "yavorsuk"]
+
+
+def test_login_does_not_hide_a_real_refusal(mail, monkeypatch):
+    import smtplib
+
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="yavorsuk@yandex.ru",
+                                smtp_password="неверный"))
+    server = FakeServer(accepts="никто")
+
+    with pytest.raises(smtplib.SMTPAuthenticationError):
+        mail_service._login(server)
+
+    assert server.tried == ["yavorsuk@yandex.ru", "yavorsuk"]
+
+
+def test_login_without_at_sign_is_tried_once(mail, monkeypatch):
+    import smtplib
+
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="yavorsuk",
+                                smtp_password="неверный"))
+    server = FakeServer(accepts="никто")
+
+    with pytest.raises(smtplib.SMTPAuthenticationError):
+        mail_service._login(server)
+
+    assert server.tried == ["yavorsuk"]
