@@ -1,4 +1,6 @@
 """Тесты разбора реальных сообщений жителей (из шаблонов и чата дома)."""
+import pytest
+
 from bot.services.parser import parse_message
 
 
@@ -337,3 +339,22 @@ def test_label_without_digits_still_waits_for_its_value():
     parsed = parse_message("КВ.41\nЭЛ.ЭНЕРГИЯ\n31560")
     assert parsed.values == {"electricity": 31560.0}
     assert parsed.errors == []
+
+
+@pytest.mark.parametrize("line", [
+    "Общ.гвс.606. (4)",               # точка-разделитель перед скобкой
+    "Гвс всего 606 (4)",
+    "Гвс всего 606(4)",
+    "Гвс всего 606,  (4)",
+    "Гвс всего 606 - (4)",
+])
+def test_red_rollers_in_brackets_are_dropped(line):
+    """Литры в скобках — не показание. Кв. 37: «(4)» уходило вместо 606."""
+    parsed = parse_message(f"Кв. 37\n{line}")
+
+    assert list(parsed.values.values()) == [606], line
+
+
+def test_a_number_in_brackets_alone_is_still_the_reading():
+    """«Хвс (30)» — житель просто взял показание в скобки."""
+    assert parse_message("Кв. 5\nХвс (30)").values == {"cws": 30}
