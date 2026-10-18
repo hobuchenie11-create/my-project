@@ -271,6 +271,39 @@ def _done(key: str) -> bool:
         conn.close()
 
 
+def oek_cutoff(period: str) -> datetime:
+    """Момент, когда реестр был собран: 20 числа в 14:30 того же месяца."""
+    return datetime(int(period[:4]), int(period[5:7]), config.oek_day,
+                    config.oek_hour, config.oek_minute)
+
+
+def added_after_cutoff(period: str) -> list[str]:
+    """Квартиры, передавшие показания после сборки реестра 20 числа."""
+    conn = repository.connect()
+    try:
+        return repository.apartments_reported_after(
+            conn, period, oek_cutoff(period).strftime("%Y-%m-%d %H:%M:%S"))
+    finally:
+        conn.close()
+
+
+def additions_text(period: str) -> str:
+    """Что изменилось в реестре со вчерашнего дня — одной строкой.
+
+    Накануне председатель уже просмотрела файл. Пересматривать его целиком
+    незачем — важно, что прибавилось: эти квартиры она ещё не видела.
+    """
+    cutoff = oek_cutoff(period)
+    added = added_after_cutoff(period)
+    when = cutoff.strftime("%d.%m в %H:%M")
+    if not added:
+        return (f"После сборки реестра {when} новых показаний не поступало — "
+                "файл тот же, что вы смотрели вчера.")
+    flats = ", ".join(f"кв. {number}" for number in added)
+    return (f"➕ После сборки реестра {when} показания передали: {flats}. "
+            "Они уже в файле.")
+
+
 async def send_oek_review(bot: Bot) -> bool:
     """Реестр председателю на сверку — за часы до автоматической отправки.
 
@@ -301,8 +334,11 @@ async def send_oek_review(bot: Bot) -> bool:
     text = (
         f"📨 <b>Реестр ОЭК на сверку</b> — {period_title(period)}\n\n"
         f"{result.summary(period_title(period))}\n\n"
+        f"{additions_text(period)}\n\n"
         f"Файл: <b>{result.path.name}</b> (имя ресурсника сохранено)\n"
-        f"Сегодня в {config.oek_mail_hour:02d}:00 уйдёт на {where}.\n\n"
+        f"Сегодня в {config.oek_mail_hour:02d}:00 уйдёт на {where}. "
+        "В него войдёт всё, что жители успеют передать до этого часа: "
+        "перед отправкой реестр собирается заново.\n\n"
         "Если в показаниях ошибка — нажмите «⏸ Отложить отправку», "
         "исправьте и отправьте кнопкой, когда будете готовы."
     )
@@ -372,7 +408,9 @@ async def mail_oek_registry(bot: Bot) -> bool:
     _claim(oek_sent_key(period))
     await _tell_admins(
         bot, f"📧 Реестр ОЭК за {period_title(period)} отправлен: "
-             f"{', '.join(recipients)}.\nФайл: <b>{result.path.name}</b>")
+             f"{', '.join(recipients)}.\nФайл: <b>{result.path.name}</b>\n"
+             f"Заполнено показаний: {len(result.filled)} "
+             f"из {result.rows_total}.\n\n{additions_text(period)}")
     logger.info("Реестр ОЭК за %s отправлен на %s", period, recipients)
     return True
 

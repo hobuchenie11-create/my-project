@@ -189,6 +189,28 @@ def add_reading(conn: sqlite3.Connection, meter_id: int, user_id: int | None,
     conn.commit()
 
 
+def apartments_reported_after(conn: sqlite3.Connection, period: str,
+                              moment: str,
+                              kind: str = "electricity") -> list[str]:
+    """Квартиры, чьи показания приняты позже указанного момента.
+
+    Реестр ОЭК формируется 20 числа, а уходит 21-го вечером: всё, что
+    пришло между этими сроками, в файл попадает. Председателю важно видеть
+    именно эти квартиры — остальные она уже проверила накануне.
+    """
+    rows = conn.execute(
+        """SELECT a.number AS number, MIN(a.sort_order) AS sort_order
+             FROM readings r
+             JOIN meters m ON m.id = r.meter_id
+             JOIN apartments a ON a.id = m.apartment_id
+            WHERE r.period = ? AND r.created_at > ? AND m.kind = ?
+            GROUP BY a.number
+            ORDER BY sort_order""",
+        (period, moment, kind),
+    ).fetchall()
+    return [row["number"] for row in rows]
+
+
 def readings_for_period(conn: sqlite3.Connection, period: str) -> list[sqlite3.Row]:
     """Последнее показание каждого прибора за период, с номером квартиры."""
     return conn.execute(

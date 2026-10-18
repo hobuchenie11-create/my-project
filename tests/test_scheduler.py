@@ -575,3 +575,51 @@ def test_review_comes_hours_before_the_letter(db, bot, monkeypatch):
     # Перезапуск в тот же вечер второго письма не шлёт
     _tick(bot, datetime(2026, 8, day, config.oek_mail_hour + 1))
     assert order == ["review", "mail"]
+
+
+# ---------------------------------------------------------------------------
+# Что прибавилось в реестре между сборкой и отправкой
+# ---------------------------------------------------------------------------
+
+def test_late_flats_are_named_before_the_letter(db):
+    """Реестр собран 20-го в 14:30, уходит 21-го: кто успел — в файле."""
+    from bot.services.reading_service import save_reading
+
+    conn = repository.connect(db)
+    try:
+        first = repository.get_apartment_by_number(conn, "1")
+        second = repository.get_apartment_by_number(conn, "2")
+        # Кв. 1 передала до сборки реестра, кв. 2 — уже после
+        save_reading(conn, first["id"], "electricity", 100, None,
+                     period="2026-08")
+        conn.execute("UPDATE readings SET created_at = '2026-08-20 09:00:00'")
+        save_reading(conn, second["id"], "electricity", 200, None,
+                     period="2026-08")
+        conn.execute(
+            "UPDATE readings SET created_at = '2026-08-20 22:10:00' "
+            "WHERE meter_id IN (SELECT id FROM meters WHERE apartment_id = ?)",
+            (second["id"],))
+        conn.commit()
+    finally:
+        conn.close()
+
+    assert scheduler.added_after_cutoff("2026-08") == ["2"]
+
+    text = scheduler.additions_text("2026-08")
+    assert "кв. 2" in text and "кв. 1" not in text
+    assert "20.08 в 14:30" in text
+
+
+def test_nothing_new_is_said_plainly(db):
+    text = scheduler.additions_text("2026-08")
+
+    assert "новых показаний не поступало" in text
+    assert "вчера" in text                      # файл тот же, что смотрели
+
+
+def test_cutoff_is_the_day_the_registry_is_built(db):
+    cutoff = scheduler.oek_cutoff("2026-08")
+
+    assert (cutoff.day, cutoff.hour, cutoff.minute) == (
+        config.oek_day, config.oek_hour, config.oek_minute)
+    assert (cutoff.year, cutoff.month) == (2026, 8)
