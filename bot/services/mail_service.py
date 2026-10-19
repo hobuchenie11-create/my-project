@@ -51,6 +51,41 @@ def check_configured() -> None:
             "Почта не настроена: в файле .env не заполнено — "
             + ", ".join(missing))
 
+    for name, value in (("SMTP_USER", config.smtp_user),
+                        ("SMTP_FROM", config.smtp_from)):
+        problem = address_problem(value)
+        if problem:
+            raise MailNotConfigured(
+                f"Строка {name} в .env записана неверно: «{value}» — "
+                f"{problem}.\n\nВ строке должен быть только адрес, без "
+                "пояснений, стрелок и кавычек: "
+                f"<code>{name}=имя@yandex.ru</code>")
+    for address in config.mail_to:
+        problem = address_problem(address)
+        if problem:
+            raise MailNotConfigured(
+                f"Адрес получателя в MAIL_TO записан неверно: «{address}» — "
+                f"{problem}.\n\nАдреса перечисляются через запятую, без "
+                "пробелов и пояснений.")
+
+
+def address_problem(address: str) -> str:
+    """Почему этот адрес не адрес. Пусто — всё в порядке.
+
+    Пояснение, дописанное в строку .env («почта ← отсюда шлём»), попадает
+    в адрес целиком, и почтовая библиотека падает с «ascii codec can't
+    encode character» — по такой ошибке причину не найти.
+    """
+    if not address:
+        return ""
+    if " " in address.strip():
+        return "в нём есть пробел — похоже, рядом осталось пояснение"
+    if not address.isascii():
+        return "в нём есть русские буквы или стрелка"
+    if address.count("@") != 1 or address.startswith("@") or address.endswith("@"):
+        return "он не похож на адрес почты"
+    return ""
+
 
 # Какому адресу какой сервер исходящей почты полагается
 SMTP_HOSTS = {

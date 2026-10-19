@@ -303,3 +303,47 @@ def test_login_without_at_sign_is_tried_once(mail, monkeypatch):
         mail_service._login(server)
 
     assert server.tried == ["yavorsuk"]
+
+
+# ---------------------------------------------------------------------------
+# Пояснение, дописанное в строку .env
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("value, mark", [
+    ("dom@yandex.ru    ← чем бот входит", "пробел"),
+    ("дом@яндекс.рф", "русские буквы"),
+    ("dom.yandex.ru", "не похож на адрес"),
+    ("dom@@yandex.ru", "не похож на адрес"),
+])
+def test_annotated_address_is_named_before_sending(value, mark):
+    assert mark in mail_service.address_problem(value)
+
+
+def test_clean_address_passes():
+    assert mail_service.address_problem("dom@yandex.ru") == ""
+
+
+def test_check_points_at_the_broken_line(monkeypatch):
+    """Прежде ошибка выглядела как «ascii codec can't encode character»."""
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="dom@yandex.ru ← вход",
+                                smtp_password="секрет",
+                                mail_to=("oek@omesc.ru",)))
+
+    with pytest.raises(mail_service.MailNotConfigured) as exc:
+        mail_service.check_configured()
+
+    assert "SMTP_USER" in str(exc.value)
+    assert "только адрес" in str(exc.value)
+
+
+def test_check_points_at_a_broken_recipient(monkeypatch):
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="dom@yandex.ru",
+                                smtp_password="секрет",
+                                mail_to=("oek@omesc.ru", "копия себе")))
+
+    with pytest.raises(mail_service.MailNotConfigured) as exc:
+        mail_service.check_configured()
+
+    assert "MAIL_TO" in str(exc.value)
