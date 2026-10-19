@@ -144,3 +144,42 @@ def test_single_water_figure_stays_a_checksum_when_parts_are_there(conn):
 
     assert outcome.saved == {"cws_kitchen": 100.0, "cws_bathroom": 204.0}
     assert not any("два счётчика" in e for e in outcome.errors)
+
+
+# «Гор всего 835» — так итог ГВС пишет часть жителей. Строка не прибор:
+# в квартире с четырьмя счётчиками она идёт на сверку, а в квартире с одним
+# ГВС это и есть его показание.
+TOTAL_WORDINGS = ("Гор всего 15", "Гвс итого 15", "Общ.гвс.15", "Сумма ГВ 15",
+                  "ГВС общий 15")
+
+
+@pytest.mark.parametrize("line", TOTAL_WORDINGS)
+def test_total_wordings_are_checked_not_stored(conn, line):
+    apt = repository.get_apartment_by_number(conn, "1")
+    parsed = parse_message(f"Кв 1\nГвс кухня 7\nГвс ванна 8\n{line}")
+
+    outcome = save_parsed_readings(conn, apt, parsed, None, period="2026-07")
+
+    assert outcome.saved == {"hws_kitchen": 7.0, "hws_bathroom": 8.0}, line
+    assert not outcome.errors and not outcome.warnings, line
+
+
+@pytest.mark.parametrize("line", TOTAL_WORDINGS)
+def test_total_wordings_catch_a_mismatch(conn, line):
+    apt = repository.get_apartment_by_number(conn, "1")
+    parsed = parse_message(f"Кв 1\nГвс кухня 7\nГвс ванна 9\n{line}")
+
+    outcome = save_parsed_readings(conn, apt, parsed, None, period="2026-07")
+
+    assert any("не сходится" in warning for warning in outcome.warnings), line
+
+
+def test_total_wording_is_the_reading_where_the_meter_is_single(conn):
+    """У кв. 2 один ГВС: «Гор всего 835» — его показание, а не итог."""
+    apt = repository.get_apartment_by_number(conn, "2")
+    parsed = parse_message("Кв 2\nХв 50\nГор всего 835")
+
+    outcome = save_parsed_readings(conn, apt, parsed, None, period="2026-07")
+
+    assert outcome.saved == {"cws": 50.0, "hws": 835.0}
+    assert not outcome.errors
