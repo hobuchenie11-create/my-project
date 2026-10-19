@@ -347,3 +347,54 @@ def test_check_points_at_a_broken_recipient(monkeypatch):
         mail_service.check_configured()
 
     assert "MAIL_TO" in str(exc.value)
+
+
+# ---------------------------------------------------------------------------
+# Отправитель, не принадлежащий аккаунту
+# ---------------------------------------------------------------------------
+
+class PickySender:
+    """Сервер, который принимает письма только от адреса входа."""
+
+    def __init__(self, allowed: str):
+        self.allowed = allowed
+        self.accepted: list[str] = []
+
+    def send_message(self, message):
+        sender = message["From"]
+        if sender != self.allowed:
+            import smtplib
+            raise smtplib.SMTPSenderRefused(
+                550, b"Sender address rejected: not owned by authorized user",
+                sender)
+        self.accepted.append(sender)
+
+
+def test_letter_goes_from_the_login_when_the_alias_is_refused(monkeypatch):
+    """Реестр не должен теряться из-за подписи отправителя."""
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="dom@yandex.ru",
+                                smtp_from="sovet@yandex.ru",
+                                mail_to=("oek@omesc.ru",)))
+    server = PickySender(allowed="dom@yandex.ru")
+    message = mail_service.build_message("Реестр", "текст")
+
+    mail_service._send_message(server, message)
+
+    assert server.accepted == ["dom@yandex.ru"]
+    assert message["From"] == "dom@yandex.ru"
+
+
+def test_refusal_of_the_login_itself_is_explained(monkeypatch):
+    monkeypatch.setattr(mail_service, "config",
+                        replace(config, smtp_user="dom@yandex.ru",
+                                smtp_from="dom@yandex.ru",
+                                mail_to=("oek@omesc.ru",)))
+    server = PickySender(allowed="никто@yandex.ru")
+    message = mail_service.build_message("Реестр", "текст")
+
+    with pytest.raises(mail_service.MailNotConfigured) as exc:
+        mail_service._send_message(server, message)
+
+    assert "SMTP_FROM" in str(exc.value)
+    assert "dom@yandex.ru" in str(exc.value)

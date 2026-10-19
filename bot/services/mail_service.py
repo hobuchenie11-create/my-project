@@ -183,6 +183,40 @@ def _login(server) -> None:
         "SMTP_USER — иначе бот каждый раз пробует дважды.", local)
 
 
+def _send_message(server, message) -> None:
+    """Отправка письма. Если сервер не принял отправителя — шлём от логина.
+
+    Яндекс разрешает отправлять только с адресов своего аккаунта и отвечает
+    «Sender address rejected: not owned by authorized user». Это не повод
+    терять реестр: письмо то же, меняется только подпись отправителя, —
+    и в журнале видно, какую строку .env поправить.
+    """
+    try:
+        server.send_message(message)
+        return
+    except smtplib.SMTPSenderRefused as exc:
+        sender = message["From"]
+        if not config.smtp_user or sender == config.smtp_user:
+            raise MailNotConfigured(sender_rejected_hint(sender, exc)) from exc
+
+    del message["From"]
+    message["From"] = config.smtp_user
+    server.send_message(message)
+    logger.warning(
+        "Почта не приняла отправителя «%s» — письмо ушло от «%s». "
+        "Впишите этот адрес в SMTP_FROM (или очистите строку).",
+        config.smtp_from, config.smtp_user)
+
+
+def sender_rejected_hint(sender: str, exc: Exception) -> str:
+    return (f"Почта не разрешает отправлять с адреса {sender}: он не "
+            f"принадлежит аккаунту {config.smtp_user}.\n\n"
+            "В .env в строке SMTP_FROM должен стоять тот же адрес, что и в "
+            "SMTP_USER, либо строку SMTP_FROM можно оставить пустой — тогда "
+            "бот подставит адрес входа сам.\n\n"
+            f"Ответ сервера: {exc}")
+
+
 def send(subject: str, body: str, attachment: Path | None = None,
          to: tuple[str, ...] | None = None) -> list[str]:
     """Отправляет письмо и возвращает адреса получателей.
@@ -200,7 +234,7 @@ def send(subject: str, body: str, attachment: Path | None = None,
             _login(server)
         except smtplib.SMTPAuthenticationError as exc:
             raise MailNotConfigured(login_failed_hint(exc)) from exc
-        server.send_message(message)
+        _send_message(server, message)
 
     recipients = list(to or config.mail_to)
     logger.info("Письмо «%s» отправлено: %s", subject, ", ".join(recipients))
