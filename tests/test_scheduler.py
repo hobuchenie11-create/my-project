@@ -47,8 +47,8 @@ def bot(monkeypatch):
 
     for name in ("send_reminders", "send_chat_reminder",
                  "send_debtors_statement", "send_monthly_statement",
-                 "send_oek_registry", "send_oek_review", "mail_oek_registry",
-                 "send_task_reminders"):
+                 "refresh_statement", "send_oek_registry", "send_oek_review",
+                 "mail_oek_registry", "send_task_reminders"):
         monkeypatch.setattr(scheduler, name, noop)
     # Config заморожен — подменяем целиком, а не отдельное поле
     monkeypatch.setattr(scheduler, "config",
@@ -454,6 +454,7 @@ class MailEnv:
     def __init__(self):
         self.sent: list[tuple[str, str]] = []     # (тема, файл)
         self.generated = 0
+        self.statements = 0
 
 
 @pytest.fixture()
@@ -480,8 +481,15 @@ def mail_env(db, monkeypatch, tmp_path):
         env.sent.append((subject, Path(attachment).name))
         return ["oek_orc@omesc.ru"]
 
+    def fake_statement(period=None):
+        env.statements += 1
+        return tmp_path / f"vedomost_{period}.xlsx"
+
+    import reports.monthly_statement as reports_statement
     import reports.oek_registry as reports_oek
     monkeypatch.setattr(reports_oek, "generate_oek_registry", fake_generate)
+    monkeypatch.setattr(reports_statement, "generate_statement",
+                        fake_statement)
     monkeypatch.setattr(mail_service, "send", fake_send)
     monkeypatch.setattr(mail_service, "is_configured", lambda: True)
     monkeypatch.setattr(scheduler, "config",
@@ -623,3 +631,131 @@ def test_cutoff_is_the_day_the_registry_is_built(db):
     assert (cutoff.day, cutoff.hour, cutoff.minute) == (
         config.oek_day, config.oek_hour, config.oek_minute)
     assert (cutoff.year, cutoff.month) == (2026, 8)
+
+
+# ---------------------------------------------------------------------------
+# Итоговая ведомость вечером: в ней те, кто передал после 14:00
+# ---------------------------------------------------------------------------
+
+def test_statement_is_rebuilt_in_the_evening(db, bot, monkeypatch):
+    """В 14:00 ведомость собирается для реестра, вечером — пересобирается."""
+    runs = []
+
+    async def fake_refresh(_bot):
+        runs.append(True)
+        return True
+
+    monkeypatch.setattr(scheduler, "refresh_statement", fake_refresh)
+
+    _tick(bot, datetime(2026, 8, config.statement_day, config.statement_hour))
+    assert runs == []                      # днём пересобирать ещё нечего
+
+    _tick(bot, datetime(2026, 8, config.statement_day,
+                        config.statement_final_hour))
+    assert runs == [True]
+    assert config.statement_final_hour == 20
+
+
+def test_evening_statement_is_not_repeated_after_a_restart(db, bot, monkeypatch):
+    runs = []
+
+    async def fake_refresh(_bot):
+        runs.append(True)
+        return True
+
+    monkeypatch.setattr(scheduler, "refresh_statement", fake_refresh)
+    moment = datetime(2026, 8, config.statement_day,
+                      config.statement_final_hour)
+
+    _tick(bot, moment)
+    _tick(bot, moment.replace(minute=30))
+
+    assert runs == [True]
+
+
+def test_evening_statement_carries_the_file_when_flats_were_added(db, monkeypatch,
+                                                                 tmp_path):
+    """Прибавились квартиры — ведомость другая, значит высылаем и файл."""
+    statement = tmp_path / "vedomost_2026-08.xlsx"
+    statement.write_bytes(b"x")
+    monkeypatch.setattr(scheduler, "config", replace(config, admin_ids=(777,)))
+
+    import reports.monthly_statement as reports_statement
+    monkeypatch.setattr(reports_statement, "generate_statement",
+                        lambda period=None: statement)
+    monkeypatch.setattr(scheduler, "reported_after",
+                        lambda period, since: ["7", "49"])
+
+    class DocBot(FakeBot):
+        def __init__(self):
+            super().__init__()
+            self.documents = []
+
+        async def send_document(self, chat_id, document, caption="", **kwargs):
+            self.documents.append((chat_id, caption))
+
+    bot = DocBot()
+    assert asyncio.run(scheduler.refresh_statement(bot)) is True
+
+    assert bot.sent == []                        # файл вместо сухой строки
+    chat_id, caption = bot.documents[0]
+    assert chat_id == 777
+    assert "кв. 7, кв. 49" in caption
+    assert "Итоговая ведомость" in caption
+
+
+def test_evening_statement_without_additions_is_just_a_line(db, monkeypatch,
+                                                            tmp_path):
+    """Ничего не изменилось — второй такой же файл в чате лишний."""
+    statement = tmp_path / "vedomost_2026-08.xlsx"
+    statement.write_bytes(b"x")
+    monkeypatch.setattr(scheduler, "config", replace(config, admin_ids=(777,)))
+
+    import reports.monthly_statement as reports_statement
+    monkeypatch.setattr(reports_statement, "generate_statement",
+                        lambda period=None: statement)
+    monkeypatch.setattr(scheduler, "reported_after",
+                        lambda period, since: [])
+
+    bot = FakeBot()
+    assert asyncio.run(scheduler.refresh_statement(bot)) is True
+
+    assert len(bot.sent) == 1
+    assert "новых показаний не поступало" in bot.sent[0][1]
+
+
+def test_final_statement_names_the_afternoon_cutoff():
+    text = scheduler.final_statement_text("2026-08", 78, 80, ["49"], None)
+
+    assert "20.08 в 14:00" in text
+    assert "кв. 49" in text
+    assert "78 из 80" in text
+
+
+def test_statement_cutoff_is_the_afternoon_of_the_statement_day():
+    cutoff = scheduler.statement_cutoff("2026-08")
+
+    assert (cutoff.day, cutoff.hour) == (config.statement_day,
+                                         config.statement_hour)
+    assert (cutoff.year, cutoff.month) == (2026, 8)
+
+
+def test_registry_and_statement_are_rebuilt_right_before_the_letter(mail_env):
+    """Опоздавшие показания должны уйти ресурснику и лечь в папку."""
+    asyncio.run(scheduler.mail_oek_registry(FakeBot()))
+
+    assert mail_env.generated == 1       # реестр собран заново перед письмом
+    assert mail_env.statements == 1      # и ведомость — теми же цифрами
+
+
+def test_statement_trouble_does_not_stop_the_letter(mail_env, monkeypatch):
+    """Папка недоступна, ведомость не собралась — письмо всё равно уходит."""
+    import reports.monthly_statement as reports_statement
+
+    def boom(period=None):
+        raise OSError("папка недоступна")
+
+    monkeypatch.setattr(reports_statement, "generate_statement", boom)
+
+    assert asyncio.run(scheduler.mail_oek_registry(FakeBot())) is True
+    assert mail_env.sent

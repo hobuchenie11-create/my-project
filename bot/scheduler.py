@@ -8,7 +8,8 @@
   • ведомость непередавших — в DEBTORS_DAY в DEBTORS_HOUR часов
     (по умолчанию 20 числа в 09:00) отправляется председателю;
   • итоговая ведомость — в STATEMENT_DAY в STATEMENT_HOUR (20 числа в 14:00),
-    уходит председателю;
+    уходит председателю, а вечером того же дня, в STATEMENT_FINAL_HOUR
+    (в 20:00), пересобирается: в неё попадают передавшие после 14:00;
   • реестр ОЭК — в OEK_DAY в OEK_HOUR:OEK_MINUTE (20 числа в 14:30): шаблон
     ресурсника, заполненный теми же показаниями, что ушли в ведомости;
   • объявление в чат дома, что сбор завершён (показания всё ещё принимаются,
@@ -22,6 +23,7 @@
 import asyncio
 import logging
 from datetime import date, datetime
+from pathlib import Path
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
@@ -102,6 +104,15 @@ async def _tick(bot: Bot, now: datetime) -> None:
     if (now.day == config.statement_day and now.hour >= config.statement_hour
             and _claim(f"statement:{today}")):
         await send_monthly_statement(bot)
+
+    # Вечером того же дня ведомость пересобирается: к 14:00 часть жителей
+    # ещё не передала показания, и файл в папке отставал от того, что
+    # ушло ресурснику
+    if (now.day == config.statement_day
+            and now.hour >= config.statement_final_hour
+            and _claim(f"statement_final:{today}")):
+        if not await refresh_statement(bot):
+            _release(f"statement_final:{today}")
 
     # Реестр ОЭК — через полчаса после ведомости, той же цифрой
     if (now.day == config.oek_day
@@ -226,6 +237,75 @@ async def send_monthly_statement(bot: Bot) -> None:
     logger.info("Ведомость сформирована: %s (собрано %s из %s)", path, submitted, total)
 
 
+def statement_cutoff(period: str) -> datetime:
+    """Момент, когда ведомость собиралась днём: 20 числа в 14:00."""
+    return datetime(int(period[:4]), int(period[5:7]), config.statement_day,
+                    config.statement_hour)
+
+
+def final_statement_text(period: str, submitted: int, total: int,
+                         added: list[str], saved: Path | None) -> str:
+    """Что писать председателю вечером: чем итоговая ведомость отличается."""
+    from bot.services.archive_service import archive_note
+
+    when = statement_cutoff(period).strftime("%d.%m в %H:%M")
+    if added:
+        flats = ", ".join(f"кв. {number}" for number in added)
+        change = (f"➕ После {when} показания передали: {flats}. "
+                  "В ведомости они уже есть.")
+    else:
+        change = (f"После {when} новых показаний не поступало — "
+                  "ведомость та же, что днём.")
+    return (f"📄 <b>Итоговая ведомость</b> — {period_title(period)}\n"
+            f"Собрано: {submitted} из {total}.\n\n"
+            f"{change}" + archive_note(saved))
+
+
+async def refresh_statement(bot: Bot) -> bool:
+    """Вечером 20 числа пересобрать ведомость и обновить файл в папке.
+
+    Днём, в 14:00, ведомость собирается ради реестра ресурсника. Но срок
+    жителям объявлен до полудня «мягко»: кто-то передаёт показания и
+    вечером, и в реестр, который уходит 21 числа, они попадают. Ведомость
+    же в папке оставалась дневной — расходилась с тем, что ушло в ОЭК.
+    Поэтому вечером тот же файл пересобирается заново.
+    """
+    from reports.monthly_statement import generate_statement
+
+    period = current_period()
+    path = generate_statement(period)
+    conn = repository.connect()
+    try:
+        submitted = len(repository.apartments_submitted(conn, period))
+        total = len(repository.list_apartments(conn))
+    finally:
+        conn.close()
+
+    from bot.services.archive_service import saved_path
+    added = reported_after(period, statement_cutoff(period))
+    text = final_statement_text(period, submitted, total, added,
+                                saved_path(path, period))
+
+    ok = False
+    for admin_id in config.admin_ids:
+        try:
+            # Прибавились квартиры — высылаем и сам файл: дневную ведомость
+            # председатель уже видела, а эта от неё отличается. Ничего не
+            # изменилось — хватит строки, второй такой же файл в чате лишний.
+            if added:
+                await bot.send_document(admin_id, FSInputFile(path),
+                                        caption=text)
+            else:
+                await bot.send_message(admin_id, text)
+            ok = True
+        except TelegramAPIError as exc:
+            logger.warning("Не удалось отправить итоговую ведомость %s: %s",
+                           admin_id, exc)
+    logger.info("Итоговая ведомость за %s пересобрана: %s (добавились: %s)",
+                period, path, ", ".join(added) or "никто")
+    return ok
+
+
 async def send_oek_registry(bot: Bot) -> None:
     """Заполнить шаблон ОЭК показаниями за период и отправить председателю.
 
@@ -281,14 +361,19 @@ def oek_cutoff(period: str) -> datetime:
                     config.oek_hour, config.oek_minute)
 
 
-def added_after_cutoff(period: str) -> list[str]:
-    """Квартиры, передавшие показания после сборки реестра 20 числа."""
+def reported_after(period: str, since: datetime) -> list[str]:
+    """Квартиры, передавшие показания за период позже указанного момента."""
     conn = repository.connect()
     try:
         return repository.apartments_reported_after(
-            conn, period, oek_cutoff(period).strftime("%Y-%m-%d %H:%M:%S"))
+            conn, period, since.strftime("%Y-%m-%d %H:%M:%S"))
     finally:
         conn.close()
+
+
+def added_after_cutoff(period: str) -> list[str]:
+    """Квартиры, передавшие показания после сборки реестра 20 числа."""
+    return reported_after(period, oek_cutoff(period))
 
 
 def additions_text(period: str) -> str:
@@ -393,12 +478,24 @@ async def mail_oek_registry(bot: Bot) -> bool:
                  "Заполните в .env SMTP_USER, SMTP_PASSWORD и MAIL_TO.")
         return True
 
+    # Реестр собирается заново перед самой отправкой: показания, присланные
+    # после 20 числа, тоже должны уйти ресурснику. Эта же сборка обновляет
+    # файл в папке председателя — там всегда лежит то, что ушло в ОЭК.
     try:
         result = generate_oek_registry(period)
     except (NoTemplateError, OekFormatError) as exc:
         logger.warning("Реестр ОЭК не сформирован: %s", exc)
         await _tell_admins(bot, f"📨 Реестр ОЭК не отправлен.\n\n{exc}")
         return True
+
+    # И ведомость дома — чтобы домовой архив и реестр ресурсника показывали
+    # одни и те же цифры. Ошибка здесь не должна задержать письмо.
+    try:
+        from reports.monthly_statement import generate_statement
+
+        generate_statement(period)
+    except Exception:                       # noqa: BLE001 — письмо важнее
+        logger.exception("Ведомость перед отправкой реестра не пересобрана")
 
     try:
         recipients = await asyncio.to_thread(
@@ -413,11 +510,14 @@ async def mail_oek_registry(bot: Bot) -> bool:
         return False                           # связь могла моргнуть — повторим
 
     _claim(oek_sent_key(period))
+    from bot.services.archive_service import (REGISTRY, archive_note,
+                                              saved_path)
     await _tell_admins(
         bot, f"📧 Реестр ОЭК за {period_title(period)} отправлен: "
              f"{', '.join(recipients)}.\nФайл: <b>{result.path.name}</b>\n"
              f"Заполнено показаний: {len(result.filled)} "
-             f"из {result.rows_total}.\n\n{additions_text(period)}")
+             f"из {result.rows_total}.\n\n{additions_text(period)}"
+             + archive_note(saved_path(result.path, period, REGISTRY)))
     logger.info("Реестр ОЭК за %s отправлен на %s", period, recipients)
     return True
 

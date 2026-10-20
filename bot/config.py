@@ -42,6 +42,10 @@ class Config:
     # опоздавшими было бы неправдой.
     statement_day: int = int(os.getenv("STATEMENT_DAY", "20"))
     statement_hour: int = int(os.getenv("STATEMENT_HOUR", "14"))
+    # Итоговая ведомость: вечером того же дня бот пересобирает её и
+    # обновляет в папке. К 14:00 часть жителей ещё не передала показания,
+    # и ведомость в папке отставала от того, что ушло ресурснику.
+    statement_final_hour: int = int(os.getenv("STATEMENT_FINAL_HOUR", "20"))
     # Объявление в чат дома о завершении сбора — отдельно от ведомости:
     # ведомость уходит в 14:00, а жителям сообщаем вечером, когда чат читают
     announce_day: int = int(os.getenv("ANNOUNCE_DAY",
