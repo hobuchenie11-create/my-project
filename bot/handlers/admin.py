@@ -13,7 +13,8 @@ from bot.keyboards.admin_menu import (BTN_ACTS, BTN_ADMIN, BTN_BACK,
                                       BTN_DEBTORS, BTN_MAIL_TEST,
                                       BTN_BLANKS, BTN_CHAT_REMINDER,
                                       BTN_CORRECTION, BTN_DEBTORS_DOC,
-                                      BTN_FAQ_GAPS, BTN_METERS,
+                                      BTN_FAQ_GAPS, BTN_FLAT_HISTORY,
+                                      BTN_METERS,
                                       BTN_INVITE, BTN_REGISTRY,
                                       BTN_REMIND, BTN_RESIDENT_REPLY,
                                       BTN_RSO_LETTER, BTN_SETTINGS,
@@ -30,6 +31,7 @@ from bot.services.parser import parse_message
 from bot.services.reading_service import current_period, period_title
 from bot.services.reminder_service import debtors_text
 from bot.services.report_service import stats_text
+from bot.states.history import ApartmentHistory
 from bot.states.meters import ApartmentMeters
 from bot.texts import (HOUSE_ADDRESS, collection_reminder_text,
                        collection_window, correction_text,
@@ -315,6 +317,54 @@ async def apply_apartment_layout(callback: CallbackQuery) -> None:
         "больше не опрашиваются. Попросите жителя прислать показания "
         "заново, и они встанут на свои места.")
     await callback.answer("Готово")
+
+
+@router.message(F.text == BTN_FLAT_HISTORY)
+async def ask_apartment_for_history(message: Message, state: FSMContext) -> None:
+    """История показаний одной квартиры — без книги Excel.
+
+    Вопрос «а что у них было в сентябре» возникает при каждом разговоре
+    с жителем и с ресурсником, а ради одной квартиры открывать книгу долго.
+    """
+    await state.set_state(ApartmentHistory.number)
+    await message.answer(
+        "📊 <b>История квартиры</b>\n\n"
+        "Номер квартиры или помещения? Например: <code>49</code>, "
+        "<code>кв. 29</code>, <code>нежилое 1</code>.\n\n"
+        "Отправлю показания за последние месяцы с расходом — сообщение можно "
+        "переслать жителю.\n\n"
+        "Отправьте «отмена», чтобы выйти.")
+
+
+@router.message(ApartmentHistory.number)
+async def show_apartment_history(message: Message, state: FSMContext) -> None:
+    from bot.services.history_service import apartment_history_text
+
+    text = (message.text or "").strip()
+    if text.lower() in ("отмена", "❌ отмена", "-"):
+        await state.clear()
+        await message.answer("Отменено.", reply_markup=admin_menu())
+        return
+
+    # Номер пишут как придётся — разбираем тем же кодом, что и показания
+    parsed = parse_message(text)
+    number = parsed.apartment_number or (text if text.isdigit() else None)
+
+    conn = repository.connect()
+    try:
+        apartment = (repository.get_apartment_by_number(conn, str(number))
+                     if number else None)
+        if apartment is None:
+            await message.answer(
+                f"Не нашла помещение «{text}». Пришлите номер ещё раз "
+                "или «отмена».")
+            return
+        history = apartment_history_text(conn, apartment)
+    finally:
+        conn.close()
+
+    await state.clear()
+    await message.answer(history, reply_markup=admin_menu())
 
 
 @router.message(F.text == BTN_ACTS)

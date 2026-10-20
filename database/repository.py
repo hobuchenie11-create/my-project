@@ -238,6 +238,23 @@ def readings_history_for_apartment(conn: sqlite3.Connection, apartment_id: int,
     ).fetchall()
 
 
+def readings_for_apartment(conn: sqlite3.Connection,
+                           apartment_id: int) -> list[sqlite3.Row]:
+    """Все показания квартиры — по месяцам, от свежих к старым.
+
+    Без ограничения по числу строк: внутри месяца их всего несколько, а
+    обрезать по счёту нельзя — месяц разорвался бы посередине, и расход
+    по нему посчитался бы не от того показания.
+    """
+    return conn.execute(
+        """SELECT r.period, m.kind, r.value, r.source, r.late, r.created_at
+           FROM readings r JOIN meters m ON m.id = r.meter_id
+           WHERE m.apartment_id = ?
+           ORDER BY r.period DESC, r.id ASC""",
+        (apartment_id,),
+    ).fetchall()
+
+
 def find_readings(conn: sqlite3.Connection, before: str = "", period: str = "",
                   apartment: str = "", source: str = "") -> list[sqlite3.Row]:
     """Показания по фильтрам — для разбора и удаления тестовых записей."""

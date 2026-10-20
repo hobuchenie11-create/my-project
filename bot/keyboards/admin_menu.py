@@ -19,6 +19,7 @@ BTN_CHAT_REMINDER = "🔔 Напоминание в чат"
 BTN_TEMPLATES = "📋 Шаблоны в чат"
 BTN_SPECIAL = "🏢 Нежилые и ОДПУ"
 BTN_METERS = "🔧 Счётчики квартиры"
+BTN_FLAT_HISTORY = "📊 История квартиры"
 BTN_CORRECTION = "✏️ Исправить показание"
 BTN_BLANKS = "🖨 Бланки для печати"
 BTN_RSO_LETTER = "✉️ Письмо в ОмскВодоканал"
@@ -38,7 +39,8 @@ def admin_menu() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=BTN_TASKS)],
             [KeyboardButton(text=BTN_REGISTRY), KeyboardButton(text=BTN_SPECIAL)],
-            [KeyboardButton(text=BTN_METERS)],
+            [KeyboardButton(text=BTN_METERS),
+             KeyboardButton(text=BTN_FLAT_HISTORY)],
             [KeyboardButton(text=BTN_STATEMENT),
              KeyboardButton(text=BTN_CORRECTION)],
             [KeyboardButton(text=BTN_OEK), KeyboardButton(text=BTN_OEK_TEMPLATE)],
