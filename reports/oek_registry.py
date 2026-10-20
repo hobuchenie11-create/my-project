@@ -121,8 +121,8 @@ def generate_oek_registry(period: str | None = None,
     finally:
         conn.close()
 
-    from bot.services.archive_service import archive
-    archive(result.path, period)
+    from bot.services.archive_service import REGISTRY, archive
+    archive(result.path, period, kind=REGISTRY)
     return result
 
 

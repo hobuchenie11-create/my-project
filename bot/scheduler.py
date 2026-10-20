@@ -335,11 +335,14 @@ async def send_oek_review(bot: Bot) -> bool:
 
     where = (", ".join(config.mail_to) if mail_service.is_configured()
              else "почта не настроена — отправлю только по кнопке")
+    from bot.services.archive_service import (REGISTRY, archive_note,
+                                              saved_path)
     text = (
         f"📨 <b>Реестр ОЭК на сверку</b> — {period_title(period)}\n\n"
         f"{result.summary(period_title(period))}\n\n"
         f"{additions_text(period)}\n\n"
-        f"Файл: <b>{result.path.name}</b> (имя ресурсника сохранено)\n"
+        f"Файл: <b>{result.path.name}</b> (имя ресурсника сохранено)"
+        f"{archive_note(saved_path(result.path, period, REGISTRY))}\n"
         f"Сегодня в {config.oek_mail_hour:02d}:00 уйдёт на {where}. "
         "В него войдёт всё, что жители успеют передать до этого часа: "
         "перед отправкой реестр собирается заново.\n\n"

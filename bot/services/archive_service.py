@@ -5,11 +5,18 @@
 лежат по месяцам. Бот собирает файл на том же компьютере, поэтому может
 положить его сразу куда нужно.
 
-Папка задаётся строкой DOCS_DIR в .env. Пусто — ничего не копируем, бот
-работает как раньше: это должен быть осознанный выбор председателя, а не
-сюрприз в виде файлов, появившихся неизвестно где.
+Папки задаются в .env двумя строками:
 
-Ведомости ложатся прямо в указанную папку: месяц уже в имени файла
+    STATEMENTS_DIR — ведомости дома (передачи и непередавших);
+    DOCS_DIR       — заполненные реестры ОЭК.
+
+Стопки разные по смыслу: ведомости остаются домовым архивом, реестры
+уходят ресурснику. STATEMENTS_DIR не задан — ведомости идут в DOCS_DIR.
+Обе строки пустые — ничего не копируем, бот работает как раньше: это
+должен быть осознанный выбор председателя, а не сюрприз в виде файлов,
+появившихся неизвестно где.
+
+Ведомости ложатся прямо в свою папку: месяц уже в имени файла
 (vedomost_2026-10.xlsx), и подпапки только мешали бы. А реестр ОЭК носит
 имя, которое задаёт ресурсник, и каждый месяц оно одно и то же — такой
 файл уходит в подпапку месяца, иначе новый затирал бы прошлый.
@@ -23,39 +30,53 @@ from bot.config import config
 logger = logging.getLogger(__name__)
 
 
-def _target(path: Path, period: str | None) -> Path:
+STATEMENT = "statement"     # ведомости дома
+REGISTRY = "registry"       # реестры ресурсника
+
+
+def folder_for(kind: str) -> Path | None:
+    """В какую папку кладём документ этого вида."""
+    if kind == REGISTRY:
+        return config.docs_dir
+    return config.statements_dir or config.docs_dir
+
+
+def _target(path: Path, period: str | None, folder: Path) -> Path:
     """Куда ляжет файл: месяц в имени — прямо в папку, иначе в подпапку."""
     same_name_each_month = bool(period) and period not in path.stem
-    folder = (config.docs_dir / period if same_name_each_month
-              else config.docs_dir)
-    return folder / path.name
+    return (folder / period / path.name if same_name_each_month
+            else folder / path.name)
 
 
-def saved_path(path: Path, period: str | None = None) -> Path | None:
+def saved_path(path: Path, period: str | None = None,
+               kind: str = STATEMENT) -> Path | None:
     """Где лежит копия документа — чтобы назвать путь в сообщении."""
-    if config.docs_dir is None:
+    folder = folder_for(kind)
+    if folder is None:
         return None
-    target = _target(Path(path), period)
+    target = _target(Path(path), period, folder)
     return target if target.exists() else None
 
 
-def archive(path: Path, period: str | None = None) -> Path | None:
+def archive(path: Path, period: str | None = None,
+            kind: str = STATEMENT) -> Path | None:
     """Кладёт копию документа в папку председателя. None — папка не задана.
 
     Ошибку копирования не поднимаем наверх: документ уже готов и уйдёт в
     Telegram, а из-за отключённой флешки или занятого файла терять его
     нельзя. Причина остаётся в журнале.
     """
-    if config.docs_dir is None:
+    folder = folder_for(kind)
+    if folder is None:
         return None
 
-    target = _target(Path(path), period)
+    target = _target(Path(path), period, folder)
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, target)
     except OSError as exc:
         logger.warning("Не удалось сохранить %s в папку %s: %s",
-                       path.name, config.docs_dir, exc)
+                       path.name, folder, exc)
         return None
 
     logger.info("Документ сохранён: %s", target)

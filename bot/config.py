@@ -71,6 +71,11 @@ class Config:
     # Папку указывать целиком: DOCS_DIR=C:\\Users\\Елена\\Documents\\Домовед
     docs_dir: Path | None = (Path(os.getenv("DOCS_DIR"))
                              if os.getenv("DOCS_DIR") else None)
+    # Ведомости лежат отдельно от реестров ресурсника: у них разная судьба —
+    # ведомости остаются домовым архивом, реестры уходят в ОЭК. Не задано —
+    # обе стопки идут в DOCS_DIR.
+    statements_dir: Path | None = (Path(os.getenv("STATEMENTS_DIR"))
+                                   if os.getenv("STATEMENTS_DIR") else None)
     # Куда класть шаблон, который присылает ресурсник. Файл можно просто
     # положить в папку или отправить боту в личку — он сохранит его сюда.
     oek_dir: Path = Path(os.getenv("OEK_TEMPLATE_DIR")

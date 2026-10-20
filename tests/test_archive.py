@@ -83,3 +83,53 @@ def test_saved_path_finds_the_copy(docs, made):
     archive_service.archive(source, "2026-10")
 
     assert archive_service.saved_path(source, "2026-10") == docs / source.name
+
+
+# ---------------------------------------------------------------------------
+# Две стопки: ведомости дома и реестры ресурсника
+# ---------------------------------------------------------------------------
+
+@pytest.fixture()
+def two_folders(tmp_path, monkeypatch):
+    statements = tmp_path / "ВЕДОМОСТИ показаний автосбор"
+    registries = tmp_path / "Омскэнерго" / "Показания за 2026 год"
+    monkeypatch.setattr(archive_service, "config",
+                        replace(config, statements_dir=statements,
+                                docs_dir=registries))
+    return statements, registries
+
+
+def test_statements_and_registries_go_to_their_own_folders(two_folders, made):
+    statements, registries = two_folders
+
+    vedomost = archive_service.archive(made("vedomost_2026-10.xlsx"), "2026-10")
+    debtors = archive_service.archive(made("ne_peredali_2026-10.xlsx"), "2026-10")
+    registry = archive_service.archive(made("ОЭК реестр.xls"), "2026-10",
+                                       kind=archive_service.REGISTRY)
+
+    assert vedomost == statements / "vedomost_2026-10.xlsx"
+    assert debtors == statements / "ne_peredali_2026-10.xlsx"
+    assert registry == registries / "2026-10" / "ОЭК реестр.xls"
+
+
+def test_statements_fall_back_to_the_common_folder(tmp_path, monkeypatch, made):
+    """STATEMENTS_DIR не заполнен — ведомости идут туда же, куда реестры."""
+    common = tmp_path / "Документы дома"
+    monkeypatch.setattr(archive_service, "config",
+                        replace(config, statements_dir=None, docs_dir=common))
+
+    target = archive_service.archive(made("vedomost_2026-10.xlsx"), "2026-10")
+
+    assert target == common / "vedomost_2026-10.xlsx"
+
+
+def test_registry_folder_alone_does_not_catch_statements(tmp_path, monkeypatch,
+                                                         made):
+    """Задана только папка ведомостей — реестр остаётся только в чате."""
+    monkeypatch.setattr(archive_service, "config",
+                        replace(config, statements_dir=tmp_path / "ved",
+                                docs_dir=None))
+
+    assert archive_service.archive(made("ОЭК реестр.xls"), "2026-10",
+                                   kind=archive_service.REGISTRY) is None
+    assert archive_service.archive(made("vedomost_2026-10.xlsx"), "2026-10")
