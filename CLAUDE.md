@@ -11,3 +11,48 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- In a cloud session `graphify-out/graph.json` is absent (only GRAPH_REPORT.md is
+  in the repository), so `graphify query` is unavailable there: use the map below
+  and read GRAPH_REPORT.md only for architecture questions — 25 KB is not free.
+
+## Карта проекта
+
+Чтобы не искать заново то, что уже известно.
+
+- `bot/handlers/` — кнопки и диалоги · `bot/services/` — логика ·
+  `bot/keyboards/` — меню · `bot/states/` — шаги диалогов ·
+  `bot/texts.py` — тексты жителям · `bot/config.py` — чтение `.env` ·
+  `bot/scheduler.py` — всё по календарю.
+- `database/repository.py` — все SQL-запросы · `database/models.py` — схема,
+  названия приборов, подписи источников.
+- `reports/`, `excel/` — ведомости, реестр ОЭК, книга, бланки ·
+  `content/faq/` — памятки жителям · `scripts/` — письма ресурсникам.
+- `docs/РУКОВОДСТВО.md` — инструкция председателя (расписание, `.env`,
+  резервные копии) · `docs/oek-reestr.md` — правила ОЭК и что с ними делает
+  бот · `docs/templates.md` — как жители пишут показания.
+
+Типовые задачи:
+
+- Кнопка председателю → `bot/keyboards/admin_menu.py` + `bot/handlers/admin.py`
+  (диалог — ещё `bot/states/`); кнопка жителю → `bot/keyboards/menu.py` + свой
+  handler.
+- Бот не понял сообщение жителя → `bot/services/parser.py` +
+  `tests/test_parser.py`; отклонил показание → `bot/services/validation.py`.
+- Изменилось расписание → `bot/scheduler.py` + `bot/config.py` +
+  `.env.example` + таблица в `docs/РУКОВОДСТВО.md`.
+
+Правила проекта:
+
+- `Config` — frozen dataclass: в тестах `dataclasses.replace`, не присваивание.
+- Схема БД только дополняется (`CREATE TABLE IF NOT EXISTS`, `MIGRATIONS`):
+  база на компьютере председателя живая, её не пересоздают.
+- Комментарии, тексты и названия тестов — по-русски; комментарий объясняет
+  причину, а не пересказывает код.
+- `python3 -m pytest` перед коммитом; зависимости — `python3 -m pip`
+  (простой `pip` в контейнере смотрит на другой Python).
+- Не раскрывать и не коммитить: `BOT_TOKEN`, `SMTP_PASSWORD`, сам `.env`.
+  Суммы задач и внутренние заметки — не в чат дома; технические ошибки — только
+  председателю в личку; копии ЕГРН житель отправляет председателю, не боту.
+- Дом: ул. Магистральная, 2 (Омск) — 80 квартир, 2 нежилых и ОДПУ. Сбор
+  показаний 16–20 числа до 12:00, ведомость 20-го в 14:00 и в 20:00,
+  реестр в ОЭК 21-го в 20:00.
