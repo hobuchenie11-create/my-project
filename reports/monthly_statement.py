@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from bot.config import config
+from bot.services.archive_service import archive
 from bot.services.reading_service import current_period, period_title
 from bot.services.report_service import build_statement
 from database import repository
@@ -23,6 +24,8 @@ def generate_statement(period: str | None = None) -> Path:
         repository.save_report(conn, period, str(out_path))
     finally:
         conn.close()
+    # Копия в папку председателя: скачивать из чата каждый месяц не нужно
+    archive(out_path, period)
     return out_path
 
 

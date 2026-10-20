@@ -66,6 +66,11 @@ class Config:
     oek_day: int = int(os.getenv("OEK_DAY", os.getenv("STATEMENT_DAY", "20")))
     oek_hour: int = int(os.getenv("OEK_HOUR", "14"))
     oek_minute: int = int(os.getenv("OEK_MINUTE", "30"))
+    # Куда бот складывает готовые документы на компьютере председателя:
+    # ведомость, ведомость непередавших, реестр ОЭК. Пусто — только в чат.
+    # Папку указывать целиком: DOCS_DIR=C:\\Users\\Елена\\Documents\\Домовед
+    docs_dir: Path | None = (Path(os.getenv("DOCS_DIR"))
+                             if os.getenv("DOCS_DIR") else None)
     # Куда класть шаблон, который присылает ресурсник. Файл можно просто
     # положить в папку или отправить боту в личку — он сохранит его сюда.
     oek_dir: Path = Path(os.getenv("OEK_TEMPLATE_DIR")

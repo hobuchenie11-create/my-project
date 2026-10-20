@@ -186,8 +186,10 @@ async def send_debtors_statement(bot: Bot) -> int:
 
     period = current_period()
     path, count = generate_debtors_statement(period)
+    from bot.services.archive_service import archive_note, saved_path
     caption = (f"📕 Ведомость непередавших показания — {period_title(period)}\n"
-               f"Не передали: {count}")
+               f"Не передали: {count}"
+               + archive_note(saved_path(path, period)))
     for admin_id in config.admin_ids:
         try:
             await bot.send_document(admin_id, FSInputFile(path), caption=caption)
@@ -210,10 +212,12 @@ async def send_monthly_statement(bot: Bot) -> None:
     finally:
         conn.close()
 
+    from bot.services.archive_service import archive_note, saved_path
     caption = (f"📄 Ведомость передачи показаний — {period_title(period)}\n"
                f"Собрано: {submitted} из {total}.\n"
                "Показания, переданные после срока, попадут в следующий "
-               "расчётный период (в ведомости они с пометкой).")
+               "расчётный период (в ведомости они с пометкой)."
+               + archive_note(saved_path(path, period)))
     for admin_id in config.admin_ids:
         try:
             await bot.send_document(admin_id, FSInputFile(path), caption=caption)

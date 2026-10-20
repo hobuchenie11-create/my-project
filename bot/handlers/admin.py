@@ -69,11 +69,14 @@ async def show_registry(message: Message) -> None:
 
 @router.message(F.text == BTN_STATEMENT)
 async def send_statement(message: Message) -> None:
+    from bot.services.archive_service import archive_note, saved_path
+
     period = current_period()
     path = generate_statement(period)
     await message.answer_document(
         FSInputFile(path),
-        caption=f"📄 Ведомость передачи показаний за {period_title(period)}",
+        caption=(f"📄 Ведомость передачи показаний за {period_title(period)}"
+                 + archive_note(saved_path(path, period))),
     )
 
 
@@ -149,11 +152,14 @@ async def show_debtors(message: Message) -> None:
 async def send_debtors_doc(message: Message) -> None:
     from reports.debtors_statement import generate_debtors_statement
     period = current_period()
+    from bot.services.archive_service import archive_note, saved_path
+
     path, count = generate_debtors_statement(period)
     await message.answer_document(
         FSInputFile(path),
         caption=(f"📕 Ведомость непередавших показания — {period_title(period)}\n"
-                 f"Не передали: {count}"),
+                 f"Не передали: {count}"
+                 + archive_note(saved_path(path, period))),
     )
 
 

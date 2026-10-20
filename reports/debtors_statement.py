@@ -113,9 +113,13 @@ def _short(value: str | None) -> str:
 
 
 def generate_debtors_statement(period: str | None = None) -> tuple[Path, int]:
+    from bot.services.archive_service import archive
+
     period = period or current_period()
     out = config.reports_dir / f"ne_peredali_{period}.xlsx"
-    return build_debtors_statement(period, out)
+    path, count = build_debtors_statement(period, out)
+    archive(path, period)
+    return path, count
 
 
 if __name__ == "__main__":

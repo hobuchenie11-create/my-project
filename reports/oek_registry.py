@@ -120,6 +120,9 @@ def generate_oek_registry(period: str | None = None,
         repository.save_report(conn, period, str(result.path))
     finally:
         conn.close()
+
+    from bot.services.archive_service import archive
+    archive(result.path, period)
     return result
 
 
