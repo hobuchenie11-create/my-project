@@ -40,6 +40,13 @@ PCT = '0.0%'
 
 PWD = "arenda"
 
+# значения выпадающих списков: подставляются в проверку данных напрямую
+CATS_LIST = ["Аренда", "Налог", "Коммунальные услуги", "Залог", "Прочее"]
+PAYS_LIST = ["Наличные", "Перевод СБП", "Банковская карта", "Расчётный счёт",
+             "Почтовый перевод", "Другое"]
+CAT_LIST = '"' + ",".join(CATS_LIST) + '"'
+PAY_LIST = '"' + ",".join(PAYS_LIST) + '"'
+
 JR_FIRST, JR_LAST = 7, 306          # строки журнала «Регистрация»
 HS_FIRST, HS_LAST = 6, 41           # строки «История» (36 месяцев)
 AN_FIRST, AN_LAST = 7, 42           # строки «Аналитика»
@@ -295,12 +302,17 @@ tips = [
     "1.  Заполните карточку договора — поля с бирюзовой рамкой (белый фон) открыты для ввода.",
     "2.  Каждый платёж вносите на листе «Регистрация»: дата, категория, сумма — месяц подставится сам.",
     "3.  Листы «История» и «Аналитика» и карточки итогов пересчитываются сами — их не трогаем.",
-    "4.  Сиреневые ячейки 🤖 — формулы. Защита без пароля: «Рецензирование → Снять защиту листа».",
+    "4.  Сиреневые ячейки 🤖 — формулы, их заполнять не нужно.",
+    "5.  Если ввод не вставляется — вверху Excel нажмите «Разрешить редактирование» "
+    "(жёлтая полоса «Защищённый просмотр») и сохраните файл на компьютер.",
 ]
 for i, t in enumerate(tips):
-    put(ws, f"A{28+i}:E{28+i}", t, bg=LIL_BG if i % 2 == 0 else WHITE,
-        font=Font(F, 9.5, color=MUTED), align=A_L, h=19)
-box(ws, "A28:E31", LIL_SOFT)
+    put(ws, f"A{28+i}:E{28+i}", t,
+        bg=AMBER_BG if i == len(tips) - 1 else (LIL_BG if i % 2 == 0 else WHITE),
+        font=Font(F, 9.5, bold=(i == len(tips) - 1),
+                  color=AMBER if i == len(tips) - 1 else MUTED),
+        align=A_L, h=19 if i < len(tips) - 1 else 28)
+box(ws, "A28:E32", LIL_SOFT)
 
 # подсветка незаполненных обязательных полей
 for rng in ("B5:E5", "B6:E6", "B7", "E7", "B9", "E9", "B10"):
@@ -344,7 +356,7 @@ dv_term = DataValidation(type="whole", operator="between", formula1=1, formula2=
 dv_term.errorStyle = "warning"
 ws.add_data_validation(dv_term); dv_term.add("E7")
 
-page(ws, "A1:E31")
+page(ws, "A1:E32")
 ws.sheet_view.zoomScale = 100
 
 # =====================================================================
@@ -357,8 +369,8 @@ for c, w in widths.items():
 paint(ws, f"A1:I{JR_LAST+2}", bg=WHITE)
 
 banner(ws, "A1:I1", "РЕГИСТРАЦИЯ ПЛАТЕЖЕЙ", "A2:I2",
-       "Одна строка — один платёж. Достаточно заполнить: Дата · Категория · Сумма — "
-       "месяц подставится сам из даты платежа",
+       "Одна строка — один платёж. Достаточно заполнить: Дата · Категория · Сумма — месяц "
+       "подставится сам. Не вставляется значение? Нажмите «Разрешить редактирование» вверху Excel",
        color=TRQ)
 ws.row_dimensions[3].height = 6
 
@@ -455,7 +467,7 @@ def add_dv(dv, rng, prompt_title=None, prompt=None):
     dv.add(rng)
     return dv
 
-add_dv(DataValidation(type="list", formula1="L_CAT", allow_blank=True,
+add_dv(DataValidation(type="list", formula1=CAT_LIST, allow_blank=True,
                       showErrorMessage=True, errorTitle="Категория",
                       error="Обычно выбирают из списка. Оставить введённое значение?"),
        f"C{JR_FIRST}:C{JR_LAST}", "Категория платежа",
@@ -468,7 +480,7 @@ add_dv(DataValidation(type="list", formula1="L_PER", allow_blank=True,
        "Оставьте пусто — платёж зачтётся за месяц своей даты. "
        "Заполняйте только для аванса или погашения долга за другой месяц.")
 
-add_dv(DataValidation(type="list", formula1="L_PAY", allow_blank=True,
+add_dv(DataValidation(type="list", formula1=PAY_LIST, allow_blank=True,
                       showErrorMessage=True, errorTitle="Способ оплаты",
                       error="Обычно выбирают из списка. Оставить введённое значение?"),
        f"F{JR_FIRST}:F{JR_LAST}", "Способ оплаты",
@@ -794,8 +806,8 @@ for i, h in enumerate(["Категории платежей", "", "Способ�
 ws.merge_cells("A10:B10")
 ws.row_dimensions[10].height = 26
 
-cats = ["Аренда", "Налог", "Коммунальные услуги", "Залог", "Прочее"]
-pays = ["Наличные", "Перевод СБП", "Банковская карта", "Расчётный счёт", "Почтовый перевод", "Другое"]
+cats = CATS_LIST
+pays = PAYS_LIST
 stats_l = ["✔ Оплачено", "◐ Частично", "⚠ Просрочено", "⏳ Ожидается", "—"]
 for i in range(6):
     r = 11 + i
@@ -847,8 +859,10 @@ put(ws, "D26:E30",
     "Это только образец на память — копировать ничего не нужно. "
     "Столбец «Месяц» можно не заполнять: платёж зачтётся за месяц своей даты, "
     "а колонка «🤖 Учтён за месяц» покажет результат. "
-    "Значения можно выбирать из списка или вписывать вручную. "
-    "Листы защищены без пароля: «Рецензирование → Снять защиту листа».",
+    "Значения выбираются из списка или вписываются вручную. "
+    "Списки категорий и способов оплаты зашиты в проверку данных на листе "
+    "«Регистрация»: чтобы изменить, выделите столбец и откройте "
+    "«Данные → Проверка данных».",
     bg=TRQ_BG, font=Font(F, 9.5, color=TRQ_DEEP),
     align=Alignment(horizontal="left", vertical="top", wrap_text=True))
 box(ws, "D26:E30", TRQ_SOFT)
@@ -881,8 +895,8 @@ names = {
 for n, t in names.items():
     wb.defined_names.add(DefinedName(n, attr_text=t))
 
-for ws_ in wb.worksheets:
-    protect(ws_, rows=(ws_ is reg))
+for ws_ in (hist, anal, ref):
+    protect(ws_)
 
 wb.calculation.fullCalcOnLoad = True   # Excel/мобильный Excel пересчитает всё при открытии
 wb.active = 0
